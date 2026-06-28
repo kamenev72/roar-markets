@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# secrets / host-local — NEVER commit (the wallet keypair, the TxLINE guest JWT, the X-Api-Token are runtime-only)
+.env
+.env.*
+*keypair*.json
+*-keypair.json
+id.json
+secrets/
