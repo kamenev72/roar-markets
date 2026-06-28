@@ -4,7 +4,7 @@ import { bootstrapLadder, coldStartMultiplier, type BootstrapConfig } from "../s
 
 const cfg: BootstrapConfig = { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 };
 
-describe("cold-start liquidity ladder (PLAN-1789, §14-P-M3)", () => {
+describe("cold-start liquidity ladder", () => {
   it("coldStartMultiplier: cold (conf 0) = 1+coldExtra; warm (conf 1) = 1; clamped", () => {
     expect(coldStartMultiplier(0, 2)).toBe(3);
     expect(coldStartMultiplier(1, 2)).toBe(1);
