@@ -1,0 +1,78 @@
+// PROPCAST quality/coverage metrics — the venue is graded on EXPERIENCE + TRUST, never profit. This module
+// reports market QUALITY and coverage ONLY: NO $-PnL, NO MM-profit, ever (the honesty contract). Pure +
+// side-effect-free: identical records ⇒ identical metrics; all timestamps are passed in (no clock / RNG /
+// global reads), mirroring the pricing kernel's purity discipline.
+
+import type { PropResolution } from "../onchain/settle_consumer.js";
+
+/** One micro-market's lifecycle, timestamped by the caller (the resolver/factory supplies the clock). */
+export interface MarketQualityRecord {
+  /** the market_id hex (the factory Map key). */
+  marketId: string;
+  /** wall-clock ms when the goal frame was observed (the spawn trigger). */
+  goalSeenAtMs: number;
+  /** wall-clock ms when the seed ladder was first posted (the market became quotable). */
+  firstQuoteAtMs: number;
+  /** wall-clock ms when the market resolved; undefined = still open. */
+  settledAtMs?: number;
+  /** the de-vigged seed P(YES) at spawn — the quality-of-seed reference. */
+  seedFairYes: number;
+  /** the realized outcome; undefined = still open. VOID is excluded from calibration. */
+  resolution?: PropResolution;
+}
+
+/** Coverage + quality aggregate. EVERY field is dimensionless / a count / a probability / ms — NEVER a $. */
+export interface QualityMetrics {
+  marketsSpawned: number;
+  goalsSeen: number;
+  /** marketsSpawned / goalsSeen × 100 (0 when no goals seen). */
+  goalCoveragePct: number;
+  marketsSettled: number;
+  marketsVoided: number;
+  /** median (firstQuote − goalSeen) ms over all spawned markets. */
+  timeToFirstQuoteMsP50: number;
+  /** mean (firstQuote − goalSeen) ms over all spawned markets. */
+  timeToFirstQuoteMsMean: number;
+  /** median (settled − goalSeen) ms over SETTLED markets (YES/NO; VOID excluded). */
+  timeToSettleMsP50: number;
+  /** mean signed calibration markout over SETTLED markets: mean(realized − seedFairYes), realized∈{0,1}.
+   *  0 = well-calibrated seed; >0 = seed under-priced YES; <0 = over-priced. A SEED-QUALITY gauge, NOT PnL. */
+  seedVsRealizedMarkout: number;
+}
+
+function median(xs: number[]): number {
+  if (xs.length === 0) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 === 1 ? s[mid]! : (s[mid - 1]! + s[mid]!) / 2;
+}
+
+function mean(xs: number[]): number {
+  return xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length;
+}
+
+/**
+ * Aggregate coverage + quality from the per-market records and the number of goal frames seen.
+ * `goalsSeen` is the count of distinct goal frames presented to the factory (a deduped re-delivery is NOT a
+ * second goal), so coverage = spawned / seen ∈ [0,100]. Pure: no clock, no RNG, no I/O.
+ */
+export function aggregateQuality(records: readonly MarketQualityRecord[], goalsSeen: number): QualityMetrics {
+  const ttfq = records.map((r) => r.firstQuoteAtMs - r.goalSeenAtMs);
+  const settled = records.filter((r) => r.resolution === "YES" || r.resolution === "NO");
+  const ttsettle = settled
+    .filter((r) => r.settledAtMs !== undefined)
+    .map((r) => r.settledAtMs! - r.goalSeenAtMs);
+  const markout = settled.map((r) => (r.resolution === "YES" ? 1 : 0) - r.seedFairYes);
+
+  return {
+    marketsSpawned: records.length,
+    goalsSeen,
+    goalCoveragePct: goalsSeen === 0 ? 0 : (records.length / goalsSeen) * 100,
+    marketsSettled: settled.length,
+    marketsVoided: records.filter((r) => r.resolution === "VOID").length,
+    timeToFirstQuoteMsP50: median(ttfq),
+    timeToFirstQuoteMsMean: mean(ttfq),
+    timeToSettleMsP50: median(ttsettle),
+    seedVsRealizedMarkout: mean(markout),
+  };
+}
