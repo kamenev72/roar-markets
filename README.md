@@ -23,9 +23,15 @@ they **do not exist** on Polymarket/Kalshi today — there is no status quo to b
 
 ## Status
 
-**W1 — scaffold + factory spine (in progress).** Standalone repo scaffold, the vendored pure pricing/venue
-modules, the `market_id[32]` integration contract, and a `PropMarketFactory` spine that spawns + seeds a
-micro-market on a replayed goal over an in-process MemoryTransport (no live rail, no cluster). The live
-in-play scores-schema pin, the on-chain settle path, and the fan UI follow in W2/W3.
+**W1 + W2 complete; W3 packages the submission.** The auto-spawn factory, the `market_id[32]` integration
+contract, the on-chain settle-consumer (a 3-step fail-closed gate over a kickoff `OuBoundReceipt`), and the
+fan UI all ship. The trustless settle is proven end-to-end on Solana devnet: a live TxLINE Merkle goal-total
+proof → a real `OuBoundReceipt` minted via `kickoff_oracle`'s CPI-gated `settle_ou_bound` → PROPCAST's own
+gate re-verifies it on-chain, and the fan re-verifies it in-browser with no key.
 
-Build + test + clean-room gate: `npm install && npm run build && npm test && npm run cleanroom`.
+### Deployed (Solana devnet)
+
+- `kickoff_oracle` (the trust root PROPCAST consumes): `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw`
+- receipt PDA scheme: `["ou_bound", market_id]` · `market_id = SHA-256(domain ‖ fixtureId ‖ kind ‖ nonce)`.
+
+Gate: `npm install && npm run build && npm test && npm run cleanroom && npm run doc-drift`.

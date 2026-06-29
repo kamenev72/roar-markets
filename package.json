@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cleanroom": "bash scripts/check_cleanroom.sh"
+    "cleanroom": "bash scripts/check_cleanroom.sh",
+    "doc-drift": "bash scripts/check_doc_drift.sh"
   },
   "devDependencies": {
     "@solana/web3.js": "^1.98.4",
