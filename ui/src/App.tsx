@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
-import { PublicKey } from "@solana/web3.js";
+import { useEffect, useMemo, useState } from "react";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { binaryProb } from "../../src/signal/devig.js";
 import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../src/onchain/receipt.js";
 import { resolveFromReceipt, verifyOuReceipt, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
+import { REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
 
 const C = {
   bg: "#0b0f14", panel: "#121821", border: "#243040", text: "#dbe4ee", dim: "#7d8aa0",
@@ -35,6 +36,61 @@ type Side = "YES" | "NO";
 
 function Pill({ children, color }: { children: React.ReactNode; color: string }) {
   return <span style={{ background: color, color: "#fff", padding: "2px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>{children}</span>;
+}
+
+type RealState = { status: "loading" } | { status: "ok"; v: RealReceiptVerification } | { status: "err"; msg: string };
+
+/**
+ * The demo CLIMAX — a REAL kickoff_oracle OuBoundReceipt minted on devnet, fetched read-only and re-verified
+ * in THIS browser through the SAME 3-step gate, with no API key and no wallet. Distinct REAL styling vs the
+ * SIMULATED interactive cards below.
+ */
+function RealReceiptCard() {
+  const pda = useMemo(() => ouReceiptPda(marketIdFromHex(REAL_MARKET_ID_HEX)), []);
+  const [state, setState] = useState<RealState>({ status: "loading" });
+
+  async function load() {
+    setState({ status: "loading" });
+    try {
+      const conn = new Connection("https://api.devnet.solana.com", "confirmed");
+      const info = await conn.getAccountInfo(pda);
+      const fetched = info ? { owner: info.owner, data: new Uint8Array(info.data) } : null;
+      setState({ status: "ok", v: verifyRealReceipt(fetched) });
+    } catch (e) {
+      setState({ status: "err", msg: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  useEffect(() => { void load(); }, []);
+
+  const explorer = `https://explorer.solana.com/address/${pda.toBase58()}?cluster=devnet`;
+  return (
+    <div style={{ marginTop: 16, background: "#0e1f17", border: `1px solid ${C.ok}`, borderRadius: 10, padding: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ color: C.ok, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>● REAL · on-chain · devnet</div>
+        <Pill color={C.ok}>not a mock</Pill>
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>Re-verify a REAL kickoff receipt — in your browser, no key</div>
+      {state.status === "loading" && <div style={{ marginTop: 10, color: C.dim, fontSize: 13 }}>fetching the on-chain receipt from devnet…</div>}
+      {state.status === "err" && (
+        <div style={{ marginTop: 10, color: C.warn, fontSize: 12, fontFamily: C.mono }}>
+          ⚠ {state.msg}
+          <button onClick={() => void load()} style={{ marginLeft: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>↻ retry</button>
+        </div>
+      )}
+      {state.status === "ok" && (
+        <>
+          <div style={{ marginTop: 10, fontSize: 12, color: C.dim, fontFamily: C.mono, lineHeight: 1.7 }}>
+            ✓ fetched account {pda.toBase58().slice(0, 12)}… <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.accent }}>(explorer)</a><br />
+            ✓ owned by kickoff_oracle ({KICKOFF_ORACLE_PROGRAM_ID.toBase58().slice(0, 8)}…)<br />
+            ✓ OuBoundReceipt discriminator + ["ou_bound", market_id] PDA match<br />
+            ✓ outcome (over@50): <b style={{ color: C.text }}>{state.v.resolution === "YES" ? "another goal (YES)" : "no more goals (NO)"}</b> · fixture {String(state.v.fixtureId)}
+          </div>
+          <div style={{ marginTop: 10, color: C.ok, fontWeight: 700, fontSize: 13 }}>✓ verified on-chain — the proof decides, no authority, no key</div>
+          <button onClick={() => void load()} style={{ marginTop: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>↻ re-verify</button>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function App() {
@@ -71,6 +127,12 @@ export function App() {
           The in-match micro-market that <b>cannot exist on Polymarket</b> — auto-spawned from an objective
           goal, auto-settled trustlessly from TxODDS's Merkle-anchored score, re-verifiable in your browser.
         </p>
+
+        {/* the REAL on-chain re-verify (the climax — not a mock) */}
+        <RealReceiptCard />
+
+        {/* the SIMULATED interactive walkthrough below */}
+        <div style={{ marginTop: 18, color: C.dim, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>↓ interactive walkthrough (SIMULATED)</div>
 
         {/* the live match */}
         <div style={{ marginTop: 14, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
@@ -131,8 +193,10 @@ export function App() {
               </div>
             </div>
             <p style={{ color: C.dim, fontSize: 11, marginTop: 12 }}>
-              The receipt here is <b>SYNTHETIC</b> for the demo (the live mint of a real OuBoundReceipt for this
-              market is rail/proof-gated); the board runs the identical 3-step settle gate (`verifyOuReceipt`).
+              This card is <b>SIMULATED</b> for the walkthrough (the live mint of a real OuBoundReceipt for THIS
+              market is rail/proof-gated) — it runs the identical 3-step gate (<code>verifyOuReceipt</code>). The
+              <b> REAL on-chain instance is the green card at the top</b>. Venue close (claim/payout) is labeled
+              <b> trusted-now, proof-gated-target</b> — the trustless datum is the kickoff receipt shown here.
               No $-PnL — PROPCAST measures market coverage + the trustless receipt, not profit.
             </p>
             <button onClick={reset} style={{ marginTop: 6, background: C.panel, color: C.text, border: `1px solid ${C.border}`, padding: "8px 14px", borderRadius: 6, cursor: "pointer" }}>↺ next goal</button>
