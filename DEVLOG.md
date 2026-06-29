@@ -84,3 +84,13 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   `BttsBoundReceipt` layout + the verified discriminator + the `["btts_bound", market_id]` PDA;
   fail-closed + offset-pinned by `test/btts.test.ts` (6). Live mint for a PROPCAST market_id is DESIGN.
   Remaining if-time: the live ~60s match beat (gated on a live WC match + the private proof-build).
+
+2026-06-29  **W2 schema PINNED — risk #1 CLOSED (the daemon caught a live match).** The
+  `com.propcast.scores-capture` launchd daemon AUTONOMOUSLY captured a real in-play frame at 17:08Z
+  (Brazil-Japan, the R32 window) — the #1 cross-project unknown (the in-play `Participant`/which-side schema,
+  never seen live) is now KNOWN. Pinned: `fixtures/live_scores_frame.json` (a real captured frame) +
+  `src/factory/primitives.ts` gains `LiveScoreFrame` (the real schema — which-side = `Participant1IsHome`,
+  goals = `Stats["1"]`/`["2"]` per-participant, `Clock.Seconds`, `StatusId===2` in-play) + `isInPlay` +
+  `scoreEventFromLiveFrame` (bridges a real frame → the factory's `ScoreEvent`, resolving home/away via
+  `Participant1IsHome`). `test/live_frame.test.ts` 4/4 (the which-side mapping + its away-flip + the in-play
+  guard); build + 92/92 green. The synthetic W1 replay path is unchanged; the live bridge is additive.
