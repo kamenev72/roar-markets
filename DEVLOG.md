@@ -59,3 +59,23 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   bytes → txoracle Merkle-fail. And the proof must be FRESH (matching the finalized day-root; a mid-day
   snapshot fails). No $-PnL. The live in-play (`Participant`) schema pin still needs a live match (the
   `com.propcast.scores-capture` launchd daemon auto-captures it).
+
+2026-06-29  **W3 — finish + ship (primitives-harden-demo-docs).** The submittable v1:
+- **Golden edge-case battery** (`test/golden_edge_cases.test.ts`): abandoned→VOID (`resolveFromReceiptOrVoid`:
+  absent receipt = VOID, distinct from the fail-closed throw), VAR-disallowed (the consumer reads only the
+  FINAL receipt's `over`, never a provisional state), own-goal (the OU primitive is attribution-agnostic;
+  which-side stays a proxy), double-goal-in-tick (idempotent `onGoal` per goal frame — a duplicate poll
+  re-delivery does not double-spawn; a real 2nd goal advances the score → a fresh market).
+- **Quality/coverage metrics** (`src/metrics/quality.ts`, NO $-PnL): markets spawned, coverage %, time-to-
+  first-quote, time-to-settle, seed-vs-realized calibration markout — a code test asserts no money-named field.
+- **REAL on-chain re-verify card** (`ui/`, `src/onchain/real_receipt.ts`): the headline fetches the live
+  receipt `39vT6hs7…` read-only and runs the SAME 3-step gate in-browser (no key/wallet); a test PINS
+  `ouReceiptPda(real market_id)` to the live PDA. The interactive walkthrough is relabeled SIMULATED;
+  close-path (A) labeled "trusted-now, proof-gated-target".
+- **Factory harden**: per-key lock (one micro-market's confirm-block never starves others; race-free dedup),
+  orphan-sweep, rent-reclaim documented deferral.
+- **doc-drift CI gate** (`scripts/check_doc_drift.sh`) + the submission package (`CLAIMS`/`DEMO`/`HONESTY`/
+  `MOCKS`/`DEPLOYMENTS`/`docs/TXLINE_USAGE`) + README refreshed. Final gate green: **77/77** tests, typecheck,
+  ui build, cleanroom, doc-drift.
+- Pending (operator handoff, labeled): record + host the ≤5-min demo video, then flip the repo public before
+  the 2026-07-19 submission close. If-time: BTTS-grain primitive, the live ~60s match beat.
