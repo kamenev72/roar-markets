@@ -7,9 +7,8 @@ cd "$(dirname "$0")/.." || exit 2
 
 fail=0
 
-# Shipped current-state docs that must exist + stay drift-free. The submission set (CLAIMS/DEMO/HONESTY/
-# MOCKS/docs/TXLINE_USAGE) is added to this list as it lands, so the gate stays green at every checkpoint.
-REQUIRED=(README.md)
+# Shipped current-state docs that must exist + stay drift-free. The full submission set is enforced.
+REQUIRED=(README.md CLAIMS.md DEMO.md HONESTY.md MOCKS.md docs/TXLINE_USAGE.md)
 
 # 1. required docs exist
 for f in "${REQUIRED[@]}"; do
