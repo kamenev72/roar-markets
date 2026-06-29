@@ -41,15 +41,28 @@ export const DEFAULT_FACTORY_CONFIG: FactoryConfig = {
 export class PropMarketFactory {
   private readonly markets = new Map<string, SpawnedMarket>();
   private readonly nonce = new Map<string, number>(); // per (fixtureId, kind) instance counter
+  private readonly spawnedSig = new Map<string, SpawnedMarket>(); // per goal-frame signature (idempotency)
 
   constructor(
     private readonly transport: VenueTransport,
     private readonly cfg: FactoryConfig = DEFAULT_FACTORY_CONFIG,
   ) {}
 
-  /** On a goal event, spawn + seed the v1 PRIMARY "another goal" micro-market. */
+  /**
+   * On a goal event, spawn + seed the v1 PRIMARY "another goal" micro-market — IDEMPOTENT per goal frame.
+   * The free ~60s TxLINE poll can re-deliver the SAME scoring frame ("double-goal-in-tick"); a duplicate frame
+   * MUST NOT double-spawn. We key on the full goal signature (fixture, kind, score, minute): a genuine second
+   * goal advances the score (e.g. 1-0 -> 2-0) so its signature differs and it correctly opens a fresh market
+   * (nonce increments), while an exact re-delivery returns the already-spawned market unchanged.
+   */
   async onGoal(ev: ScoreEvent): Promise<SpawnedMarket> {
-    return this.spawn(ev.fixtureId, anotherGoalPrimitive(ev));
+    const prim = anotherGoalPrimitive(ev);
+    const sig = `${ev.fixtureId}:${prim.kind}:${ev.homeScore}-${ev.awayScore}:${ev.minute}`;
+    const existing = this.spawnedSig.get(sig);
+    if (existing) return existing;
+    const m = await this.spawn(ev.fixtureId, prim);
+    this.spawnedSig.set(sig, m);
+    return m;
   }
 
   private async spawn(fixtureId: bigint, prim: PropPrimitive): Promise<SpawnedMarket> {

@@ -51,9 +51,24 @@ export function verifyOuReceipt(acct: OnchainAccount, expectedMarketId: Uint8Arr
   return { fixtureId: dv.getBigInt64(FIXTURE_ID_OFFSET, true), over: acct.data[OVER_OFFSET] !== 0 };
 }
 
-export type PropResolution = "YES" | "NO";
+export type PropResolution = "YES" | "NO" | "VOID";
 
 /** Resolve a PROPCAST "another goal" market from a verified receipt: Over (another goal) ⇒ YES. */
-export function resolveFromReceipt(acct: OnchainAccount, expectedMarketId: Uint8Array): PropResolution {
+export function resolveFromReceipt(acct: OnchainAccount, expectedMarketId: Uint8Array): "YES" | "NO" {
   return verifyOuReceipt(acct, expectedMarketId).over ? "YES" : "NO";
+}
+
+/**
+ * Resolve OR VOID. A match abandoned mid-play never gets a final goal-total settle receipt minted by
+ * kickoff_oracle, so there is NO receipt at the market's PDA to consume — the market must VOID (stakes
+ * returned). VOID is DISTINCT from the fail-closed throw: the throw guards a MALICIOUS / wrong-type / wrong-PDA
+ * account, while VOID is the legitimately-ABSENT receipt (`acct === null`, fetched no account at the PDA).
+ *
+ * This also encodes the VAR-disallowed invariant: the settle binds the FINAL cumulative goal total, so a
+ * provisional-then-reversed goal never collapses the market early — the consumer only ever reads the single
+ * final minted receipt's `over` byte, it carries no intermediate/provisional state of its own.
+ */
+export function resolveFromReceiptOrVoid(acct: OnchainAccount | null, expectedMarketId: Uint8Array): PropResolution {
+  if (acct === null) return "VOID";
+  return resolveFromReceipt(acct, expectedMarketId);
 }
