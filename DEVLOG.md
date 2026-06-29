@@ -34,3 +34,15 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   (needs the VSD total proof = a TxLINE Merkle fetch for an anchored fixture) + the venue-resolve tx. The
   TxLINE rail is now live (subscribe + X-Api-Token); a background watcher auto-captures the in-play scores
   schema during the next live WC match.
+
+2026-06-29  **W2b — fan Goal-Markets board (the Track-C consumer surface).**
+- `ui/` — a vite React app (mirrors the kickoff explorer) that runs the W1 de-vig seed + the W2a
+  settle-consumer IN THE BROWSER: ⚽ a goal spawns the "another goal" micro-market (seeded from the de-vigged
+  consensus YES%, keyed by the `market_id`), the fan picks YES/NO, the whistle settles it from a (clearly
+  SYNTHETIC) `OuBoundReceipt` through the identical 3-step gate (`verifyOuReceipt` → owner / OU disc /
+  `["ou_bound", market_id]` PDA / `over`@50), and a "✓ trustless verify — the proof decides" badge renders.
+- `src/onchain/receipt.ts` `ouReceiptPda` now uses `TextEncoder` (not Node `Buffer`) → browser-safe, the
+  IDENTICAL PDA (root tests stay 53/53). `npm run build` (tsc + vite) green.
+- HONESTY: the receipt is labeled SYNTHETIC (the live mint of a real receipt for this market is rail/proof-
+  gated); no $-PnL; goal-grain only; event-granularity settle. Deferred: the live mint + the real venue-resolve
+  tx + the live scores-schema pin (the launchd daemon auto-captures that during a live WC match).

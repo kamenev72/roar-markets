@@ -20,7 +20,8 @@ export const LINE_Q_OFFSET = 48; // i16 LE @ 48..50
 /** `over: bool` @ 50 — AFTER line_q (48..50). A naive @48 read mis-reads line_q's low byte and fail-opens. */
 export const OVER_OFFSET = 50;
 
-/** The receipt PDA for a market: `["ou_bound", market_id]` under kickoff_oracle. */
+/** The receipt PDA for a market: `["ou_bound", market_id]` under kickoff_oracle. Uses `Uint8Array` seeds
+ *  (not Node `Buffer`) so the module is browser-safe (the fan UI calls this) while giving the identical PDA. */
 export function ouReceiptPda(marketId: Uint8Array): PublicKey {
-  return PublicKey.findProgramAddressSync([Buffer.from("ou_bound"), Buffer.from(marketId)], KICKOFF_ORACLE_PROGRAM_ID)[0];
+  return PublicKey.findProgramAddressSync([new TextEncoder().encode("ou_bound"), marketId], KICKOFF_ORACLE_PROGRAM_ID)[0];
 }
