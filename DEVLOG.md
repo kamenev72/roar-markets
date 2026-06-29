@@ -46,3 +46,16 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
 - HONESTY: the receipt is labeled SYNTHETIC (the live mint of a real receipt for this market is rail/proof-
   gated); no $-PnL; goal-grain only; event-granularity settle. Deferred: the live mint + the real venue-resolve
   tx + the live scores-schema pin (the launchd daemon auto-captures that during a live WC match).
+
+2026-06-29  **W2c — REAL on-chain settle (not synthetic).** The deferred live mint is DONE on devnet:
+- A fresh TxLINE composite total-proof (P1+P2, op=Add) **verified live** via `txoracle::validate_stat`
+  (tx `5k69yoyn…`), then a **real `OuBoundReceipt` minted** via `kickoff_oracle::settle_ou_bound`'s
+  CPI-gated `validate_stat` (tx `4CzqNgSp…` → receipt `39vT6hs7…` at market_id `532843…` =
+  `deriveMarketId(17588395, OuAnotherGoal, 0)`), and **PROPCAST's settle-consumer 3-step gate verified it
+  on-chain** (`over=false fixtureId=17588395 → NO`). `scripts/mint_real_receipt.ts` (producer) +
+  `scripts/verify_real_settle.ts` (consumer) + `evidence/real_onchain_settle.md`.
+- Root-caused the earlier `0x66`: `settle_ou_bound`'s current signature REQUIRES the `fixture_id:i64` field
+  (added by the trustless-gate hardening); the stale `live_ou_bound` layout omitted it → shifted the proof
+  bytes → txoracle Merkle-fail. And the proof must be FRESH (matching the finalized day-root; a mid-day
+  snapshot fails). No $-PnL. The live in-play (`Participant`) schema pin still needs a live match (the
+  `com.propcast.scores-capture` launchd daemon auto-captures it).
