@@ -78,4 +78,9 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   `MOCKS`/`DEPLOYMENTS`/`docs/TXLINE_USAGE`) + README refreshed. Final gate green: **77/77** tests, typecheck,
   ui build, cleanroom, doc-drift.
 - Pending (operator handoff, labeled): record + host the ≤5-min demo video, then flip the repo public before
-  the 2026-07-19 submission close. If-time: BTTS-grain primitive, the live ~60s match beat.
+  the 2026-07-19 submission close.
+- **CP8 (if-time) — BTTS secondary primitive done** (`844fc38`): a "both teams to score" consumer
+  (`verifyBttsReceipt`, `yes`@48 — NOT 50, no `line_q`) + `bttsPrimitive`, grounded in the real
+  `BttsBoundReceipt` layout + the verified discriminator + the `["btts_bound", market_id]` PDA;
+  fail-closed + offset-pinned by `test/btts.test.ts` (6). Live mint for a PROPCAST market_id is DESIGN.
+  Remaining if-time: the live ~60s match beat (gated on a live WC match + the private proof-build).
