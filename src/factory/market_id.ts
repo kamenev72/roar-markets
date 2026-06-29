@@ -19,6 +19,8 @@ export enum PrimitiveKind {
   GoalTotal = 1,
   /** next-goal which-side — a LABELED proxy ONLY; no trustless settle in v1 (no on-chain proof of goal order). */
   NextGoalProxy = 2,
+  /** "both teams to score" — the SECONDARY goal-key primitive, trustlessly settleable via settle_btts_bound. */
+  BttsYes = 3,
 }
 
 export interface MarketId {

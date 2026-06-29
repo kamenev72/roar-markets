@@ -5,6 +5,9 @@
 
 import { PublicKey } from "@solana/web3.js";
 import {
+  BTTS_BOUND_RECEIPT_DISCRIMINATOR,
+  BTTS_YES_OFFSET,
+  bttsReceiptPda,
   FIXTURE_ID_OFFSET,
   KICKOFF_ORACLE_PROGRAM_ID,
   OU_BOUND_RECEIPT_DISCRIMINATOR,
@@ -71,4 +74,33 @@ export function resolveFromReceipt(acct: OnchainAccount, expectedMarketId: Uint8
 export function resolveFromReceiptOrVoid(acct: OnchainAccount | null, expectedMarketId: Uint8Array): PropResolution {
   if (acct === null) return "VOID";
   return resolveFromReceipt(acct, expectedMarketId);
+}
+
+// ---------- BTTS ("both teams to score") — the SECONDARY primitive ----------
+
+export interface VerifiedBtts {
+  /** true = BTTS yes (both teams scored). */
+  yes: boolean;
+  fixtureId: bigint;
+}
+
+/**
+ * The three-step fail-closed gate over a `BttsBoundReceipt`, then read `yes`@48 + `fixture_id`@40. SAME gate
+ * shape as OU but with the BTTS discriminator, the `["btts_bound", market_id]` PDA, and the outcome at byte
+ * 48 (NOT 50 — BTTS has no `line_q`). A foreign / wrong-type / wrong-market account can NEVER resolve a BTTS
+ * market (it throws).
+ */
+export function verifyBttsReceipt(acct: OnchainAccount, expectedMarketId: Uint8Array): VerifiedBtts {
+  if (!acct.owner.equals(KICKOFF_ORACLE_PROGRAM_ID)) throw new ReceiptGateError("WrongOwner");
+  if (acct.data.length < 8) throw new ReceiptGateError("BadData");
+  if (!bytesEqual(acct.data.subarray(0, 8), BTTS_BOUND_RECEIPT_DISCRIMINATOR)) throw new ReceiptGateError("WrongDiscriminator");
+  if (!acct.pubkey.equals(bttsReceiptPda(expectedMarketId))) throw new ReceiptGateError("WrongPda");
+  if (acct.data.length <= BTTS_YES_OFFSET) throw new ReceiptGateError("BadData");
+  const dv = new DataView(acct.data.buffer, acct.data.byteOffset, acct.data.byteLength);
+  return { fixtureId: dv.getBigInt64(FIXTURE_ID_OFFSET, true), yes: acct.data[BTTS_YES_OFFSET] !== 0 };
+}
+
+/** Resolve a PROPCAST "both teams to score" market from a verified receipt: BTTS yes ⇒ YES. */
+export function resolveBttsFromReceipt(acct: OnchainAccount, expectedMarketId: Uint8Array): "YES" | "NO" {
+  return verifyBttsReceipt(acct, expectedMarketId).yes ? "YES" : "NO";
 }

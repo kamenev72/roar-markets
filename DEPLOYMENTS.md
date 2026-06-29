@@ -19,7 +19,8 @@ these.
 ```
 market_id[32] = SHA-256("propcast:market:v1" ‖ fixtureId_le64 ‖ kind_u8 ‖ nonce_le32)
 venue_u64     = little-endian decode of market_id[0..8]   (the pitchmaker_book venue id)
-receipt PDA   = findProgramAddress(["ou_bound", market_id], kickoff_oracle)
+receipt PDA   = findProgramAddress(["ou_bound",   market_id], kickoff_oracle)   # OU (primary)
+              | findProgramAddress(["btts_bound", market_id], kickoff_oracle)   # BTTS (secondary)
 ```
 
 One `market_id` threads spawn → settle → re-verify (`src/factory/market_id.ts`, `src/onchain/receipt.ts`).

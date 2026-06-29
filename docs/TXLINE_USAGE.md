@@ -12,6 +12,7 @@ trusted feed. This table maps each TxLINE touchpoint to where it is consumed.
 | **The minted `OuBoundReceipt`** (TxLINE-anchored) | PROPCAST's settle-consumer re-derives + re-verifies it via a 3-step fail-closed gate (owner / discriminator / PDA), then reads the outcome — no blind deserialize, no authority. | `src/onchain/settle_consumer.ts` (`verifyOuReceipt`), `src/onchain/receipt.ts` (layout + PDA), re-verified in-browser by the fan in `ui/src/App.tsx` |
 | **In-play scoring frames** (live goal trigger, `X-Api-Token`) | The goal event that spawns a micro-market + advances the score. v1 leads with goal-total (OU); the in-play which-side (`Participant`) schema pin awaits a live match (it auto-captures during the next live WC fixture). | `src/factory/primitives.ts` (the goal → "another goal" primitive), `src/factory/factory.ts` (spawn + seed) |
 | **Another-goal odds line** | De-vigged to the seed fair probability — the cold-start price of the spawned micro-market. | `src/signal/devig.ts` (de-vig), `src/signal/bootstrap.ts` (the depth ladder) |
+| **Goal-per-team stats** (P1>0 ∧ P2>0) — the SECONDARY "both teams to score" primitive | A two-proof composite settles `settle_btts_bound` (a `BttsBoundReceipt`, `yes`@48); PROPCAST's BTTS consumer re-verifies it via the same 3-step gate at the BTTS PDA `["btts_bound", market_id]`. Still goal-key only. | `src/factory/primitives.ts` (`bttsPrimitive`), `src/onchain/settle_consumer.ts` (`verifyBttsReceipt`) |
 
 ## What is on-chain vs in the private spike
 

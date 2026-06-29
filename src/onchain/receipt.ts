@@ -25,3 +25,20 @@ export const OVER_OFFSET = 50;
 export function ouReceiptPda(marketId: Uint8Array): PublicKey {
   return PublicKey.findProgramAddressSync([new TextEncoder().encode("ou_bound"), marketId], KICKOFF_ORACLE_PROGRAM_ID)[0];
 }
+
+// ---------- BTTS ("both teams to score") — the SECONDARY goal-key primitive ----------
+//
+// `BttsBoundReceipt` is a SEPARATE kickoff_oracle account (its own discriminator + PDA seed) — it is two-proof
+// (P1>0 AND P2>0 for `yes`). Layout AFTER the 8-byte discriminator: market_id[32]@8, fixture_id:i64@40,
+// `yes:bool`@48 (NO `line_q`, so the outcome sits at 48 — UNLIKE OU's `over`@50). Reading BTTS at @50 (or OU at
+// @48) mis-reads a neighbouring field and fail-opens; the per-kind offset is load-bearing.
+
+/** Anchor discriminator of `BttsBoundReceipt` = sha256("account:BttsBoundReceipt")[..8]. */
+export const BTTS_BOUND_RECEIPT_DISCRIMINATOR = new Uint8Array([142, 71, 83, 247, 15, 163, 91, 164]);
+/** `yes: bool` @ 48 — directly after `fixture_id`@40..48 (no `line_q`). */
+export const BTTS_YES_OFFSET = 48;
+
+/** The BTTS receipt PDA: `["btts_bound", market_id]` under kickoff_oracle (browser-safe `Uint8Array` seeds). */
+export function bttsReceiptPda(marketId: Uint8Array): PublicKey {
+  return PublicKey.findProgramAddressSync([new TextEncoder().encode("btts_bound"), marketId], KICKOFF_ORACLE_PROGRAM_ID)[0];
+}

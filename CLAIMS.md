@@ -20,6 +20,10 @@ live), **EXTERNAL** (a third-party fact), **NOT-CLAIMED** (an explicit non-claim
 - **REPRODUCIBLE** — the settle binds the FINAL goal total: the golden battery proves a VAR-reversed goal does
   not settle the market early, an abandoned match VOIDs (stakes returned, not a fabricated YES/NO), a duplicate
   goal frame does not double-spawn, and a foreign/wrong account is fail-closed (`test/golden_edge_cases.test.ts`).
+- **REPRODUCIBLE** — the SECONDARY "both teams to score" (BTTS) primitive: the consumer is grounded in the real
+  `BttsBoundReceipt` layout (`yes`@48, the `["btts_bound", market_id]` PDA, the on-chain discriminator) and is
+  fail-closed + offset-pinned by `test/btts.test.ts`. Not yet minted live for a PROPCAST market_id (DESIGN for
+  the live mint); the OU primary is the proven (VERIFIED-LIVE) path.
 
 ## What is design / pending
 

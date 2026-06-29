@@ -40,3 +40,18 @@ export function anotherGoalPrimitive(ev: ScoreEvent): PropPrimitive {
     trustlessSettleV1: true,
   };
 }
+
+/**
+ * SECONDARY primitive: "both teams to score?" — a fixture-level BTTS binary, de-vigged seed, trustlessly
+ * settleable via `settle_btts_bound` (two-proof: P1>0 AND P2>0 for `yes`). It is goal-key only (the same
+ * objective stat the rail validates), so it does not widen the honesty surface past goal grain.
+ */
+export function bttsPrimitive(bttsOdds: [number, number]): PropPrimitive {
+  const fairYes = binaryProb(bttsOdds, 0); // index 0 = YES (both teams score)
+  return {
+    kind: PrimitiveKind.BttsYes,
+    question: "Both teams to score?",
+    fairYes,
+    trustlessSettleV1: true,
+  };
+}
