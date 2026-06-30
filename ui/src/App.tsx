@@ -4,7 +4,13 @@ import { binaryProb } from "../../src/signal/devig.js";
 import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../src/onchain/receipt.js";
 import { resolveFromReceipt, verifyOuReceipt, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
 import { REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
-import { gateTraceLines, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel } from "./evidence.js";
+import { crossCheckVerdict, gateTraceLines, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel } from "./evidence.js";
+
+// A 2nd INDEPENDENT public devnet RPC for the cross-check (keyless; best-effort — the card degrades to
+// single-RPC + explorer if it is unavailable). Independence is the point: agreement of two providers is a
+// much stronger "the proof decides" than one provider's word.
+const PRIMARY_RPC = "https://api.devnet.solana.com";
+const SECOND_RPC = "https://rpc.ankr.com/solana_devnet";
 
 // de-vigged OVER seeds for the breadth strip — the auto-spawned total-goals lines (SIMULATED display).
 const TOTAL_GOALS_LINES: { line: number; odds: [number, number] }[] = [
@@ -65,7 +71,10 @@ function GateTrace({ lines }: { lines: string[] }) {
   );
 }
 
-type RealState = { status: "loading" } | { status: "ok"; v: RealReceiptVerification; trace: string[] } | { status: "err"; msg: string };
+type RealState =
+  | { status: "loading" }
+  | { status: "ok"; v: RealReceiptVerification; trace: string[]; verdict: { label: EvidenceLabel; note: string } }
+  | { status: "err"; msg: string };
 
 /**
  * The demo CLIMAX — a REAL kickoff_oracle OuBoundReceipt minted on devnet, fetched read-only and re-verified
@@ -79,17 +88,25 @@ function RealReceiptCard() {
   async function load() {
     setState({ status: "loading" });
     try {
-      const conn = new Connection("https://api.devnet.solana.com", "confirmed");
+      const marketId = marketIdFromHex(REAL_MARKET_ID_HEX);
+      const slice = { commitment: "confirmed" as const, dataSlice: { offset: 0, length: 51 } };
       // dataSlice bounds the read to the 51-byte receipt (gate max read = over@50) — a hostile RPC can't make
       // the tab download/copy a huge blob; owner is returned regardless of the slice.
-      const info = await conn.getAccountInfo(pda, { commitment: "confirmed", dataSlice: { offset: 0, length: 51 } });
+      const info = await new Connection(PRIMARY_RPC, "confirmed").getAccountInfo(pda, slice);
       const fetched = info ? { owner: info.owner, data: new Uint8Array(info.data) } : null;
       const v = verifyRealReceipt(fetched); // throws if pruned / fail-closed
       // re-read the decoded fields via the SAME authoritative gate (no second verifier) for the raw trace
-      const marketId = marketIdFromHex(REAL_MARKET_ID_HEX);
       const verified = verifyOuReceipt({ pubkey: pda, owner: fetched!.owner, data: fetched!.data }, marketId);
       const trace = gateTraceLines({ owner: fetched!.owner, pda, verified });
-      setState({ status: "ok", v, trace });
+      // SEC-RPC-01: cross-read the SAME receipt from a 2nd INDEPENDENT RPC and compare the decoded fields.
+      // Best-effort: any error / not-found / verify-fail ⇒ secondary=null ⇒ honest single-RPC label (no false green).
+      let secondary = null as ReturnType<typeof verifyOuReceipt> | null;
+      try {
+        const info2 = await new Connection(SECOND_RPC, "confirmed").getAccountInfo(pda, slice);
+        secondary = info2 ? verifyOuReceipt({ pubkey: pda, owner: info2.owner, data: new Uint8Array(info2.data) }, marketId) : null;
+      } catch { secondary = null; }
+      const verdict = crossCheckVerdict(verified, secondary);
+      setState({ status: "ok", v, trace, verdict });
     } catch (e) {
       setState({ status: "err", msg: e instanceof Error ? e.message : String(e) });
     }
@@ -101,7 +118,7 @@ function RealReceiptCard() {
     <div style={{ marginTop: 16, background: "#0e1f17", border: `1px solid ${C.ok}`, borderRadius: 10, padding: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ color: C.ok, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>● REAL · on-chain · devnet</div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><EvidenceBadge label={LABEL_LIVE} /><Pill color={C.ok}>not a mock</Pill></div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><EvidenceBadge label={state.status === "ok" ? state.verdict.label : LABEL_LIVE} /><Pill color={C.ok}>not a mock</Pill></div>
       </div>
       <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>Re-verify a REAL kickoff receipt — in your browser, no key</div>
       {state.status === "loading" && <div style={{ marginTop: 10, color: C.dim, fontSize: 13 }}>fetching the on-chain receipt from devnet…</div>}
@@ -119,8 +136,10 @@ function RealReceiptCard() {
             ✓ OuBoundReceipt discriminator + ["ou_bound", market_id] PDA match<br />
             ✓ outcome (over@50): <b style={{ color: C.text }}>{state.v.resolution === "YES" ? "another goal (YES)" : "no more goals (NO)"}</b> · fixture {String(state.v.fixtureId)}
           </div>
-          <div style={{ marginTop: 10, color: C.ok, fontWeight: 700, fontSize: 13 }}>✓ verified against api.devnet.solana.com (one read-only RPC, no key)</div>
-          <div style={{ marginTop: 4, color: C.dim, fontSize: 11 }}>the receipt's owner · discriminator · PDA · outcome are re-derived here; this single RPC is trusted to report them honestly — cross-check on the explorer for independence.</div>
+          <div style={{ marginTop: 10, color: state.verdict.label.rail === "PARTIAL" ? C.warn : C.ok, fontWeight: 700, fontSize: 13 }}>
+            {state.verdict.label.rail === "PARTIAL" ? "⚠ cross-check FAILED" : "✓ verified, no key"} — {state.verdict.note}
+          </div>
+          <div style={{ marginTop: 4, color: C.dim, fontSize: 11 }}>owner · discriminator · PDA · outcome are re-derived in your browser from the RPC's bytes; an RPC could lie, so we cross-read a 2nd independent RPC (above) and you can re-check on the <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.accent }}>explorer</a>.</div>
           <div style={{ marginTop: 10, fontSize: 11, color: C.dim, textTransform: "uppercase", letterSpacing: 1 }}>raw gate-trace (the decoded receipt bytes)</div>
           <GateTrace lines={state.trace} />
           <button onClick={() => void load()} style={{ marginTop: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>↻ re-verify</button>
@@ -253,6 +272,18 @@ export function App() {
             </div>
           ))}
         </div>
+
+        {/* how we keep this honest — the trust assumptions, fan-readable (mirrors SECURITY.md §3) */}
+        <details style={{ marginTop: 18, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px" }}>
+          <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🛡️ how we keep this honest</summary>
+          <ul style={{ marginTop: 10, marginBottom: 0, paddingLeft: 18, color: C.dim, fontSize: 12, lineHeight: 1.8 }}>
+            <li><b>The trustless datum is the on-chain receipt</b> — anyone re-verifies it (owner · discriminator · PDA · outcome). The green tick above is a 2-RPC cross-check, not our word.</li>
+            <li><b>The receipt is minted only behind a Merkle-proven score</b> (the oracle's <code>cpi_gated</code> path); a fabricated "trustless" mint is impossible while it is on.</li>
+            <li><b>The venue payout is trusted-now, proof-gated-target</b> — labeled, not hidden; the trustless datum is the receipt, the close is a future proof-gated upgrade.</li>
+            <li><b>Goal-grain only · event-granularity (~60s) · NO $-PnL</b> — we report market coverage + the trustless receipt, never profit; never "per-second".</li>
+            <li>Full threat model: <code>SECURITY.md</code>.</li>
+          </ul>
+        </details>
 
         <p style={{ color: C.dim, fontSize: 11, marginTop: 18 }}>
           goal-grain only (v1) · event-granularity settle (not per-second) · novelty = grain + objective Merkle

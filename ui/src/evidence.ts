@@ -14,10 +14,30 @@ export interface EvidenceLabel {
 
 export const LABEL_LIVE: EvidenceLabel = { rail: "LIVE", strength: "VERIFIED" };
 export const LABEL_SIMULATED: EvidenceLabel = { rail: "SIMULATED", strength: "DEMONSTRATED" };
+export const LABEL_PARTIAL: EvidenceLabel = { rail: "PARTIAL", strength: "DEMONSTRATED" };
 
 /** Render an EvidenceLabel as a compact badge string, e.g. "LIVE · VERIFIED". */
 export function labelText(l: EvidenceLabel): string {
   return `${l.rail} · ${l.strength}`;
+}
+
+/**
+ * Cross-RPC honesty verdict for the in-browser re-verify. A single RPC re-verify proves only that THAT RPC
+ * reports the right owner/disc/PDA/outcome (SEC-RPC-01) — so we read the SAME receipt from a 2nd independent
+ * devnet RPC and compare the DECODED fields:
+ *  - secondary === null (2nd RPC unavailable) → LIVE but flagged single-RPC (cross-check on the explorer);
+ *  - the two agree (over ∧ fixtureId ∧ lineQ) → LIVE, cross-confirmed on 2 independent RPCs (the strong claim);
+ *  - they disagree → PARTIAL: do NOT trust the green tick, verify on the explorer (one RPC is lying/lagging).
+ * Pure: no I/O — the caller does the two fetches+verifies and passes the decoded results.
+ */
+export function crossCheckVerdict(primary: VerifiedOu, secondary: VerifiedOu | null): { label: EvidenceLabel; note: string } {
+  if (secondary === null) {
+    return { label: LABEL_LIVE, note: "single RPC — cross-check on the explorer for independence" };
+  }
+  const agree = primary.over === secondary.over && primary.fixtureId === secondary.fixtureId && primary.lineQ === secondary.lineQ;
+  return agree
+    ? { label: LABEL_LIVE, note: "cross-confirmed on 2 independent RPCs" }
+    : { label: LABEL_PARTIAL, note: "RPCs DISAGREE — do not trust this read; verify on the explorer" };
 }
 
 const short = (s: string, n = 12): string => (s.length > n ? `${s.slice(0, n)}…` : s);
