@@ -10,6 +10,7 @@ import {
   bttsReceiptPda,
   FIXTURE_ID_OFFSET,
   KICKOFF_ORACLE_PROGRAM_ID,
+  LINE_Q_OFFSET,
   OU_BOUND_RECEIPT_DISCRIMINATOR,
   OVER_OFFSET,
   ouReceiptPda,
@@ -22,7 +23,7 @@ export interface OnchainAccount {
   data: Uint8Array;
 }
 
-export type GateReason = "WrongOwner" | "WrongDiscriminator" | "WrongPda" | "BadData";
+export type GateReason = "WrongOwner" | "WrongDiscriminator" | "WrongPda" | "BadData" | "WrongLine";
 
 export class ReceiptGateError extends Error {
   constructor(public readonly reason: GateReason) {
@@ -35,6 +36,8 @@ export interface VerifiedOu {
   /** true = "another goal" YES (Over); false = NO (Under). */
   over: boolean;
   fixtureId: bigint;
+  /** the bound half-line as the on-chain integer (`line_q:i16`@48); `lineQToLine` decodes the human line. */
+  lineQ: number;
 }
 
 const bytesEqual = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -51,7 +54,24 @@ export function verifyOuReceipt(acct: OnchainAccount, expectedMarketId: Uint8Arr
   if (!acct.pubkey.equals(ouReceiptPda(expectedMarketId))) throw new ReceiptGateError("WrongPda");
   if (acct.data.length <= OVER_OFFSET) throw new ReceiptGateError("BadData");
   const dv = new DataView(acct.data.buffer, acct.data.byteOffset, acct.data.byteLength);
-  return { fixtureId: dv.getBigInt64(FIXTURE_ID_OFFSET, true), over: acct.data[OVER_OFFSET] !== 0 };
+  return {
+    fixtureId: dv.getBigInt64(FIXTURE_ID_OFFSET, true),
+    lineQ: dv.getInt16(LINE_Q_OFFSET, true),
+    over: acct.data[OVER_OFFSET] !== 0,
+  };
+}
+
+/**
+ * The OU gate PLUS a binding of the receipt's `line_q`@48 to the market's DECLARED line. A receipt minted for
+ * a DIFFERENT total-goals line (e.g. a 2.5 receipt) can NEVER resolve a market declared at another line (e.g.
+ * 1.5) — it fail-closes with `WrongLine`. Without this binding a single shared receipt account would silently
+ * resolve every line market the same way (the multi-line fail-open §5.1 warns about); with it, each line is
+ * independently and trustlessly bound. `expectedLineQ` is the integer `lineToLineQ(line)` recorded at spawn.
+ */
+export function verifyOuReceiptForLine(acct: OnchainAccount, expectedMarketId: Uint8Array, expectedLineQ: number): VerifiedOu {
+  const v = verifyOuReceipt(acct, expectedMarketId);
+  if (v.lineQ !== expectedLineQ) throw new ReceiptGateError("WrongLine");
+  return v;
 }
 
 export type PropResolution = "YES" | "NO" | "VOID";
@@ -59,6 +79,11 @@ export type PropResolution = "YES" | "NO" | "VOID";
 /** Resolve a PROPCAST "another goal" market from a verified receipt: Over (another goal) ⇒ YES. */
 export function resolveFromReceipt(acct: OnchainAccount, expectedMarketId: Uint8Array): "YES" | "NO" {
   return verifyOuReceipt(acct, expectedMarketId).over ? "YES" : "NO";
+}
+
+/** Resolve a PROPCAST total-goals O/U market at a BOUND line: Over the line ⇒ YES (fail-closed on a wrong line). */
+export function resolveOuLineFromReceipt(acct: OnchainAccount, expectedMarketId: Uint8Array, expectedLineQ: number): "YES" | "NO" {
+  return verifyOuReceiptForLine(acct, expectedMarketId, expectedLineQ).over ? "YES" : "NO";
 }
 
 /**

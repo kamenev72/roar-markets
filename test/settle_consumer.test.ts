@@ -1,7 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { PublicKey } from "@solana/web3.js";
-import { ReceiptGateError, resolveFromReceipt, verifyOuReceipt, type OnchainAccount } from "../src/onchain/settle_consumer.js";
-import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../src/onchain/receipt.js";
+import {
+  ReceiptGateError,
+  resolveFromReceipt,
+  resolveOuLineFromReceipt,
+  verifyOuReceipt,
+  verifyOuReceiptForLine,
+  type OnchainAccount,
+} from "../src/onchain/settle_consumer.js";
+import {
+  KICKOFF_ORACLE_PROGRAM_ID,
+  lineQToLine,
+  lineToLineQ,
+  OU_BOUND_RECEIPT_DISCRIMINATOR,
+  ouReceiptPda,
+} from "../src/onchain/receipt.js";
 
 const MK = new Uint8Array(32).fill(0xa1);
 const SYSTEM = new PublicKey("11111111111111111111111111111111");
@@ -26,11 +39,30 @@ describe("PROPCAST settle-consumer (OuBoundReceipt 3-step gate)", () => {
     expect([...OU_BOUND_RECEIPT_DISCRIMINATOR]).toEqual([106, 75, 124, 75, 179, 40, 64, 35]);
   });
 
-  it("verifies a valid receipt: over -> YES, under -> NO", () => {
+  it("verifies a valid receipt: over -> YES, under -> NO (+ decodes line_q)", () => {
     const over = acct(MK, synthOu(MK, 17588395n, 10, true));
-    expect(verifyOuReceipt(over, MK)).toEqual({ over: true, fixtureId: 17588395n });
+    expect(verifyOuReceipt(over, MK)).toEqual({ over: true, fixtureId: 17588395n, lineQ: 10 });
     expect(resolveFromReceipt(over, MK)).toBe("YES");
     expect(resolveFromReceipt(acct(MK, synthOu(MK, 17588395n, 10, false)), MK)).toBe("NO");
+  });
+
+  it("pins the line_q quantization to the real W2c receipt: Under 2.5 <-> line_q 10 (x4)", () => {
+    expect(lineToLineQ(2.5)).toBe(10);
+    expect(lineQToLine(10)).toBe(2.5);
+    // the other v1 total-goals lines
+    expect(lineToLineQ(1.5)).toBe(6);
+    expect(lineToLineQ(3.5)).toBe(14);
+  });
+
+  it("binds line_q: a receipt for the WRONG line fail-closes (WrongLine)", () => {
+    // a valid receipt minted at line 2.5 (line_q=10) must NOT resolve a market declared at line 1.5 (line_q=6).
+    const at25 = acct(MK, synthOu(MK, 17588395n, 10, true));
+    expect(() => verifyOuReceiptForLine(at25, MK, 6)).toThrow(ReceiptGateError);
+    expect(() => verifyOuReceiptForLine(at25, MK, 6)).toThrow(/WrongLine/);
+    // the SAME receipt at its OWN line passes and resolves
+    expect(verifyOuReceiptForLine(at25, MK, 10)).toEqual({ over: true, fixtureId: 17588395n, lineQ: 10 });
+    expect(resolveOuLineFromReceipt(at25, MK, 10)).toBe("YES");
+    expect(resolveOuLineFromReceipt(acct(MK, synthOu(MK, 17588395n, 6, false)), MK, 6)).toBe("NO");
   });
 
   it("reads over at byte 50, NOT 48 (line_q low byte != over)", () => {
