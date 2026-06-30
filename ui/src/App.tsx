@@ -4,6 +4,14 @@ import { binaryProb } from "../../src/signal/devig.js";
 import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../src/onchain/receipt.js";
 import { resolveFromReceipt, verifyOuReceipt, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
 import { REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
+import { gateTraceLines, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel } from "./evidence.js";
+
+// de-vigged OVER seeds for the breadth strip — the auto-spawned total-goals lines (SIMULATED display).
+const TOTAL_GOALS_LINES: { line: number; odds: [number, number] }[] = [
+  { line: 1.5, odds: [1.35, 3.1] },
+  { line: 2.5, odds: [1.95, 1.85] },
+  { line: 3.5, odds: [3.2, 1.34] },
+];
 
 const C = {
   bg: "#0b0f14", panel: "#121821", border: "#243040", text: "#dbe4ee", dim: "#7d8aa0",
@@ -38,7 +46,26 @@ function Pill({ children, color }: { children: React.ReactNode; color: string })
   return <span style={{ background: color, color: "#fff", padding: "2px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>{children}</span>;
 }
 
-type RealState = { status: "loading" } | { status: "ok"; v: RealReceiptVerification } | { status: "err"; msg: string };
+/** Honest evidence badge: green for the LIVE on-chain card, amber for a SIMULATED walkthrough card. */
+function EvidenceBadge({ label }: { label: EvidenceLabel }) {
+  const live = label.rail === "LIVE";
+  return (
+    <span style={{ border: `1px solid ${live ? C.ok : C.warn}`, color: live ? C.ok : C.warn, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: C.mono }}>
+      {labelText(label)}
+    </span>
+  );
+}
+
+/** The RAW gate-trace — the decoded receipt bytes the 3-step gate matched, shown so a fan can read them. */
+function GateTrace({ lines }: { lines: string[] }) {
+  return (
+    <pre style={{ marginTop: 10, marginBottom: 0, background: "#0a0f15", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 12px", fontSize: 11.5, color: C.dim, fontFamily: C.mono, lineHeight: 1.7, overflowX: "auto", whiteSpace: "pre" }}>
+      {lines.join("\n")}
+    </pre>
+  );
+}
+
+type RealState = { status: "loading" } | { status: "ok"; v: RealReceiptVerification; trace: string[] } | { status: "err"; msg: string };
 
 /**
  * The demo CLIMAX — a REAL kickoff_oracle OuBoundReceipt minted on devnet, fetched read-only and re-verified
@@ -55,7 +82,12 @@ function RealReceiptCard() {
       const conn = new Connection("https://api.devnet.solana.com", "confirmed");
       const info = await conn.getAccountInfo(pda);
       const fetched = info ? { owner: info.owner, data: new Uint8Array(info.data) } : null;
-      setState({ status: "ok", v: verifyRealReceipt(fetched) });
+      const v = verifyRealReceipt(fetched); // throws if pruned / fail-closed
+      // re-read the decoded fields via the SAME authoritative gate (no second verifier) for the raw trace
+      const marketId = marketIdFromHex(REAL_MARKET_ID_HEX);
+      const verified = verifyOuReceipt({ pubkey: pda, owner: fetched!.owner, data: fetched!.data }, marketId);
+      const trace = gateTraceLines({ owner: fetched!.owner, pda, verified });
+      setState({ status: "ok", v, trace });
     } catch (e) {
       setState({ status: "err", msg: e instanceof Error ? e.message : String(e) });
     }
@@ -67,7 +99,7 @@ function RealReceiptCard() {
     <div style={{ marginTop: 16, background: "#0e1f17", border: `1px solid ${C.ok}`, borderRadius: 10, padding: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ color: C.ok, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>● REAL · on-chain · devnet</div>
-        <Pill color={C.ok}>not a mock</Pill>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><EvidenceBadge label={LABEL_LIVE} /><Pill color={C.ok}>not a mock</Pill></div>
       </div>
       <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>Re-verify a REAL kickoff receipt — in your browser, no key</div>
       {state.status === "loading" && <div style={{ marginTop: 10, color: C.dim, fontSize: 13 }}>fetching the on-chain receipt from devnet…</div>}
@@ -86,6 +118,8 @@ function RealReceiptCard() {
             ✓ outcome (over@50): <b style={{ color: C.text }}>{state.v.resolution === "YES" ? "another goal (YES)" : "no more goals (NO)"}</b> · fixture {String(state.v.fixtureId)}
           </div>
           <div style={{ marginTop: 10, color: C.ok, fontWeight: 700, fontSize: 13 }}>✓ verified on-chain — the proof decides, no authority, no key</div>
+          <div style={{ marginTop: 10, fontSize: 11, color: C.dim, textTransform: "uppercase", letterSpacing: 1 }}>raw gate-trace (the decoded receipt bytes)</div>
+          <GateTrace lines={state.trace} />
           <button onClick={() => void load()} style={{ marginTop: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>↻ re-verify</button>
         </>
       )}
@@ -181,7 +215,7 @@ export function App() {
           <div style={{ marginTop: 16, background: C.panel, border: `1px solid ${result.won ? C.ok : C.border}`, borderRadius: 10, padding: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 18, fontWeight: 700 }}>Resolved: {result.outcome === "YES" ? "another goal ✓ (YES)" : "no more goals (NO)"}</div>
-              <Pill color={result.won ? C.ok : C.bad}>{result.won ? `your ${pick} won` : `your ${pick} lost`}</Pill>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}><EvidenceBadge label={LABEL_SIMULATED} /><Pill color={result.won ? C.ok : C.bad}>{result.won ? `your ${pick} won` : `your ${pick} lost`}</Pill></div>
             </div>
             <div style={{ marginTop: 12, background: "#0e2a18", border: `1px solid ${C.ok}`, borderRadius: 8, padding: 12 }}>
               <div style={{ color: C.ok, fontWeight: 700 }}>✓ trustless verify — the proof decides, not an authority</div>
@@ -191,6 +225,7 @@ export function App() {
                 ✓ account == ["ou_bound", market_id] PDA<br />
                 ✓ outcome read at byte 50 (over), fixture_id {String(result.verified.fixtureId)} @40
               </div>
+              <GateTrace lines={gateTraceLines({ owner: KICKOFF_ORACLE_PROGRAM_ID, pda: receiptPda, verified: result.verified })} />
             </div>
             <p style={{ color: C.dim, fontSize: 11, marginTop: 12 }}>
               This card is <b>SIMULATED</b> for the walkthrough (the live mint of a real OuBoundReceipt for THIS
@@ -202,6 +237,19 @@ export function App() {
             <button onClick={reset} style={{ marginTop: 6, background: C.panel, color: C.text, border: `1px solid ${C.border}`, padding: "8px 14px", borderRadius: 6, cursor: "pointer" }}>↺ next goal</button>
           </div>
         )}
+
+        {/* breadth: the auto-spawned total-goals line markets (each line-bound + trustlessly settleable) */}
+        <div style={{ marginTop: 18, color: C.dim, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>more goal-grain markets · auto-spawned · O/U total goals (SIMULATED)</div>
+        <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+          {TOTAL_GOALS_LINES.map(({ line, odds }) => (
+            <div key={line} style={{ flex: "1 1 160px", background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>O/U {line} total goals</div>
+              <div style={{ marginTop: 6, fontSize: 12, color: C.dim, fontFamily: C.mono }}>
+                seed OVER <b style={{ color: C.text }}>{Math.round(binaryProb(odds, 0) * 1000) / 10}%</b><br />line_q {Math.round(line * 4)} · settle-bound
+              </div>
+            </div>
+          ))}
+        </div>
 
         <p style={{ color: C.dim, fontSize: 11, marginTop: 18 }}>
           goal-grain only (v1) · event-granularity settle (not per-second) · novelty = grain + objective Merkle
