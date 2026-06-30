@@ -9,3 +9,12 @@ dist/
 *-keypair.json
 id.json
 secrets/
+# name-agnostic key catch-alls (a signer under any of these names is ignored even if mis-named)
+*wallet*.json
+*signer*.json
+*admin*.json
+*devnet*.json
+wc_devnet*.json
+*key.json
+keys/
+*creds*.json
