@@ -93,4 +93,14 @@ describe("PROPCAST settle-consumer (OuBoundReceipt 3-step gate)", () => {
     const acctAtMkPdaButOtherData = acct(MK, synthOu(OTHER, 1n, 10, true), KICKOFF_ORACLE_PROGRAM_ID, ouReceiptPda(MK));
     expect(() => verifyOuReceipt(acctAtMkPdaButOtherData, MK)).toThrow(/WrongPda/);
   });
+
+  it("BadData on truncation: a too-short account fail-closes (no JS out-of-bounds fail-open)", () => {
+    const full = synthOu(MK, 17588395n, 10, true); // 51 bytes, valid
+    // < 8 (no discriminator), 40 (id but no line_q/over), exactly OVER_OFFSET=50 (over byte missing) all → BadData.
+    for (const n of [5, 40, 50]) {
+      expect(() => verifyOuReceipt(acct(MK, full.subarray(0, n)), MK), `len ${n}`).toThrow(/BadData/);
+    }
+    // the full 51-byte account still verifies (the boundary is one byte away)
+    expect(verifyOuReceipt(acct(MK, full), MK).over).toBe(true);
+  });
 });

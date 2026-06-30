@@ -94,6 +94,20 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     expect(res!.resolution).toBe("YES");
   });
 
+  it("no-clock-trust: the settle resolution is identical under a mutated injected clock (only verifiedAtMs moves)", async () => {
+    const run = async (now: number) => {
+      const f = new PropMarketFactory(new MemoryTransport());
+      const m = await f.onGoal(goal(17588395n, 23, 1, 0));
+      const r = new LiveResolver(f, hookReturning("TX"), fetcherReturning(synthOu(m.id.bytes, true)), { now: () => now });
+      return (await r.settle(m, goal(17588395n, 67, 2, 0)))!;
+    };
+    const a = await run(111);
+    const b = await run(999_999);
+    expect(a.resolution).toBe(b.resolution); // pure function of the receipt bytes, NOT the clock
+    expect(a.verifiedAtMs).toBe(111);
+    expect(b.verifiedAtMs).toBe(999_999);
+  });
+
   it("a LINE market fail-closes on a WRONG-line receipt (WrongLine), not a silent mis-resolve", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.spawnTotalGoals(17588395n, 2.5, [1.9, 1.9]); // expects lineQ 10

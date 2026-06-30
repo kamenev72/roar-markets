@@ -70,6 +70,14 @@ describe("PROPCAST BTTS secondary primitive", () => {
     expect(() => verifyBttsReceipt(acct(OTHER, synthBtts(OTHER, 1n, true)), MK)).toThrow(/WrongPda/);
   });
 
+  it("BadData on truncation: a too-short BTTS account fail-closes (yes@48 needs len>48)", () => {
+    const full = synthBtts(MK, 17588395n, true); // 59 bytes, valid
+    for (const n of [5, 40, 48]) { // <8, id-only, exactly BTTS_YES_OFFSET (yes byte missing) → BadData
+      expect(() => verifyBttsReceipt(acct(MK, full.subarray(0, n)), MK), `len ${n}`).toThrow(/BadData/);
+    }
+    expect(verifyBttsReceipt(acct(MK, full), MK).yes).toBe(true);
+  });
+
   it("the BTTS primitive is trustlessly settleable and goal-key only", () => {
     const p = bttsPrimitive([1.9, 1.95]);
     expect(p.kind).toBe(PrimitiveKind.BttsYes);

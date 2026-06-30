@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "cleanroom": "bash scripts/check_cleanroom.sh",
     "cleanroom:selftest": "bash scripts/cleanroom_selftest.sh",
-    "doc-drift": "bash scripts/check_doc_drift.sh"
+    "doc-drift": "bash scripts/check_doc_drift.sh",
+    "xss-guard": "bash scripts/check_no_xss_sinks.sh"
   },
   "devDependencies": {
     "@solana/web3.js": "^1.98.4",

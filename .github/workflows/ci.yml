@@ -24,6 +24,8 @@ jobs:
         run: bash scripts/cleanroom_selftest.sh
       - name: doc-drift gate (no stale-progress; deployed ids pinned)
         run: bash scripts/check_doc_drift.sh
+      - name: XSS-sink guard (UI renders only React-escaped values)
+        run: bash scripts/check_no_xss_sinks.sh
       - name: ui build (the fan re-verify path — root tsconfig excludes ui/)
         run: npm --prefix ui ci && npm --prefix ui run build
       - name: ui dependency audit (advisory — build-only, non-blocking)
