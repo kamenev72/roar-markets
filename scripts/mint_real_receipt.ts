@@ -20,7 +20,6 @@ import { deriveMarketId, marketIdHex, PrimitiveKind } from "../src/factory/marke
 const KICKOFF_ORACLE_PROGRAM_ID = new PublicKey("34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw");
 const ixDisc = (name: string) => createHash("sha256").update("global:" + name).digest().subarray(0, 8);
 
-const VSD = JSON.parse(fs.readFileSync(process.env.VSD_TOTAL_PATH as string, "utf8"));
 const FIXTURE = BigInt(process.env.FIXTURE_ID ?? "17588395");
 const LINE_Q = Number(process.env.LINE_Q ?? "10"); // 2.5 × 4
 const OVER = (process.env.OVER ?? "false") === "true"; // the proof is Under 2.5 (total < 3)
@@ -31,6 +30,19 @@ const admin = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(fs.readFileSync(p
 const conn = new Connection(process.env.RPC_URL ?? "https://api.devnet.solana.com", "confirmed");
 const [config] = PublicKey.findProgramAddressSync([Buffer.from("config")], KICKOFF_ORACLE_PROGRAM_ID);
 const [receipt] = PublicKey.findProgramAddressSync([Buffer.from("ou_bound"), marketId], KICKOFF_ORACLE_PROGRAM_ID);
+
+// SEC-DAEMON-02: idempotency PRE-CHECK — if the receipt already exists at the kickoff_oracle owner this market
+// is already settled; skip (print the PDA so the daemon still marks it fired) — NO re-send, NO "account already
+// in use" hard error, NO devnet SOL burn. Runs BEFORE reading the proof so the skip needs no fresh VSD.
+const existing = await conn.getAccountInfo(receipt, { commitment: "confirmed", dataSlice: { offset: 0, length: 51 } });
+if (existing && existing.owner.equals(KICKOFF_ORACLE_PROGRAM_ID)) {
+  console.log("market_id:", marketIdHex(id));
+  console.log("receipt PDA:", receipt.toBase58());
+  console.log("✅ already minted (idempotent skip) — receipt exists at the kickoff_oracle owner, no re-send");
+  process.exit(0);
+}
+
+const VSD = JSON.parse(fs.readFileSync(process.env.VSD_TOTAL_PATH as string, "utf8"));
 const vsd = Buffer.from(VSD.validateStatDataHex, "hex");
 
 const fix = Buffer.alloc(8); fix.writeBigInt64LE(FIXTURE);
@@ -48,6 +60,12 @@ const ix = new TransactionInstruction({
   data,
 });
 const tx = new Transaction().add(ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 })).add(ix);
+// SEC-DAEMON-02: bound send/confirm by lastValidBlockHeight — once the blockhash expires the tx is dropped, NOT
+// silently rebroadcast, so a flaked confirm cannot become a second settle (the daemon retries idempotently above).
+const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
+tx.recentBlockhash = blockhash;
+tx.lastValidBlockHeight = lastValidBlockHeight;
+tx.feePayer = admin.publicKey;
 const sig = await sendAndConfirmTransaction(conn, tx, [admin], { commitment: "confirmed" });
 console.log("market_id:", marketIdHex(id));
 console.log("receipt PDA:", receipt.toBase58());
