@@ -11,7 +11,7 @@ import { PropMarketFactory, type SpawnedMarket } from "../factory/factory.js";
 import { marketIdHex } from "../factory/market_id.js";
 import type { ScoreEvent } from "../factory/primitives.js";
 import { ouReceiptPda } from "../onchain/receipt.js";
-import { resolveFromReceiptOrVoid, type OnchainAccount, type PropResolution } from "../onchain/settle_consumer.js";
+import { resolveFromReceipt, resolveOuLineFromReceipt, type OnchainAccount, type PropResolution } from "../onchain/settle_consumer.js";
 
 /** A goal/whistle frame from the live feed. */
 export type GoalFrame = ScoreEvent;
@@ -74,7 +74,14 @@ export class LiveResolver {
     const pda = ouReceiptPda(market.id.bytes);
     const fetched = await this.fetcher.fetchOu(pda);
     const acct: OnchainAccount | null = fetched ? { pubkey: pda, owner: fetched.owner, data: fetched.data } : null;
-    const resolution = resolveFromReceiptOrVoid(acct, market.id.bytes); // VOID iff the receipt is absent
+    // VOID iff the receipt is absent; a LINE market (OuTotalGoals) MUST bind its line_q (fail-closed WrongLine on a
+    // wrong-line receipt) — route it through resolveOuLineFromReceipt, NOT the line-unbound path.
+    const resolution: PropResolution =
+      acct === null
+        ? "VOID"
+        : market.lineQ !== undefined
+          ? resolveOuLineFromReceipt(acct, market.id.bytes, market.lineQ)
+          : resolveFromReceipt(acct, market.id.bytes);
 
     this.factory.markResolved(marketIdHex(market.id));
     const r: ResolvedMarket = {

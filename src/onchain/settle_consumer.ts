@@ -11,6 +11,7 @@ import {
   FIXTURE_ID_OFFSET,
   KICKOFF_ORACLE_PROGRAM_ID,
   LINE_Q_OFFSET,
+  MARKET_ID_OFFSET,
   OU_BOUND_RECEIPT_DISCRIMINATOR,
   OVER_OFFSET,
   ouReceiptPda,
@@ -52,6 +53,10 @@ export function verifyOuReceipt(acct: OnchainAccount, expectedMarketId: Uint8Arr
   if (acct.data.length < 8) throw new ReceiptGateError("BadData");
   if (!bytesEqual(acct.data.subarray(0, 8), OU_BOUND_RECEIPT_DISCRIMINATOR)) throw new ReceiptGateError("WrongDiscriminator");
   if (!acct.pubkey.equals(ouReceiptPda(expectedMarketId))) throw new ReceiptGateError("WrongPda");
+  // Self-contained binding: the EMBEDDED market_id@8 must equal the expected id (not just the caller-supplied
+  // pubkey — closes the tautological pubkey check on the re-derived-PDA path; data length<40 fails closed).
+  if (acct.data.length < MARKET_ID_OFFSET + 32) throw new ReceiptGateError("BadData");
+  if (!bytesEqual(acct.data.subarray(MARKET_ID_OFFSET, MARKET_ID_OFFSET + 32), expectedMarketId)) throw new ReceiptGateError("WrongPda");
   if (acct.data.length <= OVER_OFFSET) throw new ReceiptGateError("BadData");
   const dv = new DataView(acct.data.buffer, acct.data.byteOffset, acct.data.byteLength);
   return {
@@ -120,6 +125,9 @@ export function verifyBttsReceipt(acct: OnchainAccount, expectedMarketId: Uint8A
   if (acct.data.length < 8) throw new ReceiptGateError("BadData");
   if (!bytesEqual(acct.data.subarray(0, 8), BTTS_BOUND_RECEIPT_DISCRIMINATOR)) throw new ReceiptGateError("WrongDiscriminator");
   if (!acct.pubkey.equals(bttsReceiptPda(expectedMarketId))) throw new ReceiptGateError("WrongPda");
+  // Self-contained binding: the EMBEDDED market_id@8 must equal the expected id (same defense as the OU gate).
+  if (acct.data.length < MARKET_ID_OFFSET + 32) throw new ReceiptGateError("BadData");
+  if (!bytesEqual(acct.data.subarray(MARKET_ID_OFFSET, MARKET_ID_OFFSET + 32), expectedMarketId)) throw new ReceiptGateError("WrongPda");
   if (acct.data.length <= BTTS_YES_OFFSET) throw new ReceiptGateError("BadData");
   const dv = new DataView(acct.data.buffer, acct.data.byteOffset, acct.data.byteLength);
   return { fixtureId: dv.getBigInt64(FIXTURE_ID_OFFSET, true), yes: acct.data[BTTS_YES_OFFSET] !== 0 };

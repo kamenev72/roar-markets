@@ -85,4 +85,12 @@ describe("PROPCAST settle-consumer (OuBoundReceipt 3-step gate)", () => {
     // a valid receipt for OTHER (at ouReceiptPda(OTHER)) passed when we expect MK -> PDA mismatch.
     expect(() => verifyOuReceipt(acct(OTHER, synthOu(OTHER, 1n, 10, true)), MK)).toThrow(/WrongPda/);
   });
+
+  it("self-contained gate: rejects a receipt at the RIGHT PDA carrying a DIFFERENT embedded market_id@8", () => {
+    const OTHER = new Uint8Array(32).fill(0xb2);
+    // pubkey = ouReceiptPda(MK) (the expected PDA, so the pubkey step passes) but the bytes embed OTHER's id@8.
+    // Before the self-contained check this was silently accepted on the re-derived-PDA path; now it fail-closes.
+    const acctAtMkPdaButOtherData = acct(MK, synthOu(OTHER, 1n, 10, true), KICKOFF_ORACLE_PROGRAM_ID, ouReceiptPda(MK));
+    expect(() => verifyOuReceipt(acctAtMkPdaButOtherData, MK)).toThrow(/WrongPda/);
+  });
 });
