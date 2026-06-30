@@ -4,6 +4,7 @@
 // emitted ONLY as a labeled proxy (no on-chain proof attests goal ORDER), never as a trustless market in v1.
 
 import { binaryProb } from "../signal/devig.js";
+import { lineToLineQ } from "../onchain/receipt.js";
 import { PrimitiveKind } from "./market_id.js";
 
 /**
@@ -77,6 +78,10 @@ export interface PropPrimitive {
   fairYes: number;
   /** true => trustlessly settleable in v1 (goal-total via settle_ou_bound); false => labeled proxy only. */
   trustlessSettleV1: boolean;
+  /** O/U total-goals half-line (e.g. 2.5) — set for the OuTotalGoals variant only (UI display). */
+  line?: number;
+  /** the on-chain `line_q` integer bound at settle (`lineToLineQ(line)`) — OuTotalGoals only. */
+  lineQ?: number;
 }
 
 /** v1 PRIMARY primitive from a goal event: "will there be another goal" (O/U), de-vigged seed. */
@@ -102,5 +107,24 @@ export function bttsPrimitive(bttsOdds: [number, number]): PropPrimitive {
     question: "Both teams to score?",
     fairYes,
     trustlessSettleV1: true,
+  };
+}
+
+/**
+ * BREADTH primitive: an O/U total-goals market at an explicit half-line (1.5 / 2.5 / 3.5). Goal-key only (the
+ * same objective stat the rail validates — it does NOT widen the honesty surface past goal grain), trustlessly
+ * settleable via the SAME `settle_ou_bound` rail as "another goal", but BOUND to its line: the market carries
+ * `lineQ = lineToLineQ(line)` so the settle-consumer (`verifyOuReceiptForLine`) fail-closes a wrong-line
+ * receipt. `odds` are [OVER, UNDER] decimals → de-vigged to the seed fair YES (Over).
+ */
+export function totalGoalsPrimitive(line: number, odds: [number, number]): PropPrimitive {
+  const fairYes = binaryProb(odds, 0); // index 0 = OVER the line
+  return {
+    kind: PrimitiveKind.OuTotalGoals,
+    question: `Over/Under ${line} total goals?`,
+    fairYes,
+    trustlessSettleV1: true,
+    line,
+    lineQ: lineToLineQ(line),
   };
 }

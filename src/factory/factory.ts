@@ -10,7 +10,7 @@ import { SCALE, SIDE_ASK, SIDE_BID } from "../venue/client.js";
 import type { VenueTransport } from "../loop/transport.js";
 import { bootstrapLadder, type BootstrapConfig } from "../signal/bootstrap.js";
 import { deriveMarketId, marketIdHex, type MarketId } from "./market_id.js";
-import { anotherGoalPrimitive, type PropPrimitive, type ScoreEvent } from "./primitives.js";
+import { anotherGoalPrimitive, totalGoalsPrimitive, type PropPrimitive, type ScoreEvent } from "./primitives.js";
 
 const SCALE_N = Number(SCALE);
 
@@ -25,6 +25,10 @@ export interface SpawnedMarket {
   venueU64: bigint;
   primitive: PropPrimitive;
   seededLevels: number;
+  /** O/U total-goals half-line (display) — OuTotalGoals markets only. */
+  line?: number;
+  /** the on-chain `line_q` bound at settle (`verifyOuReceiptForLine`) — OuTotalGoals markets only. */
+  lineQ?: number;
 }
 
 export interface FactoryConfig {
@@ -111,9 +115,29 @@ export class PropMarketFactory {
       await this.transport.postOrder(id.u64, SIDE_ASK, probToU32(lvl.askPrice), BigInt(Math.round(lvl.size)));
     }
 
-    const m: SpawnedMarket = { id, venueU64: id.u64, primitive: prim, seededLevels: ladder.length };
+    const m: SpawnedMarket = { id, venueU64: id.u64, primitive: prim, seededLevels: ladder.length, line: prim.line, lineQ: prim.lineQ };
     this.markets.set(marketIdHex(id), m);
     return m;
+  }
+
+  /**
+   * BREADTH: spawn + seed a trustless O/U total-goals micro-market at an explicit half-line (1.5/2.5/3.5) —
+   * IDEMPOTENT per (fixture, line). Distinct lines are distinct markets (the dedup signature carries the line),
+   * while a re-delivered same-line frame returns the already-spawned market unchanged. Reuses the SAME private
+   * spawn (init venue + de-vigged ladder) and the SAME per-key lock as `onGoal` — no forked spawn path. The
+   * market records `lineQ` so the settle path binds it (`verifyOuReceiptForLine`, fail-closed on a wrong line).
+   */
+  async spawnTotalGoals(fixtureId: bigint, line: number, odds: [number, number]): Promise<SpawnedMarket> {
+    const prim = totalGoalsPrimitive(line, odds);
+    const sig = `${fixtureId}:${prim.kind}:line${prim.lineQ}`;
+    return this.withKeyLock(sig, async () => {
+      const existing = this.spawnedSig.get(sig);
+      if (existing) return existing;
+      const m = await this.spawn(fixtureId, prim);
+      this.spawnedSig.set(sig, m);
+      this.meta.set(marketIdHex(m.id), { spawnedAtMs: this.now(), sig, resolved: false });
+      return m;
+    });
   }
 
   /** All live micro-markets (the fan board source). */
