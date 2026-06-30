@@ -94,3 +94,23 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   `scoreEventFromLiveFrame` (bridges a real frame → the factory's `ScoreEvent`, resolving home/away via
   `Participant1IsHome`). `test/live_frame.test.ts` 4/4 (the which-side mapping + its away-flip + the in-play
   guard); build + 92/92 green. The synthetic W1 replay path is unchanged; the live bridge is additive.
+
+2026-06-30  **W4 — fan-experience polish + breadth (Track-C deepening).** v1 was already submittable; W4 adds
+  breadth + trust-depth, all reuse, no net-new program.
+- **CP1 — line_q-bound OU consumer.** `verifyOuReceiptForLine` reads the receipt's `line_q`@48 and binds it to
+  the market's declared line — a wrong-line receipt fail-closes (`WrongLine`), the precondition for >1 O/U line
+  (without it a single receipt would resolve every line the same way, the multi-line fail-open). `line_q =
+  round(line × 4)` pinned to the real W2c receipt (Under 2.5 = line_q 10). `VerifiedOu` gains `lineQ`.
+- **CP2 — total-goals O/U line-variant primitive.** `totalGoalsPrimitive(line, odds)` + `factory.spawnTotalGoals`
+  auto-spawn O/U 1.5/2.5/3.5 as distinct, line-bound, trustlessly-settleable markets (goal-key only — no
+  honesty-surface widening), reusing the same spawn + per-key lock. `test/total_goals.test.ts`.
+- **CP3 — UI trust-deepening.** The re-verify panels (REAL on-chain card + the SIMULATED walkthrough) render a
+  RAW gate-trace (decoded owner / discriminator / PDA / `line_q` / `over` bytes) via the SAME gate fn (no second
+  verifier) + an honest EvidenceLabel badge (LIVE·VERIFIED vs SIMULATED·DEMONSTRATED); a compact auto-spawned
+  total-goals line strip shows the breadth. ui build green.
+- **CP4 — coverage + positioning + take harness.** per-primitive `byPrimitive` coverage in the metrics (no
+  $-PnL, enforced), a judge-facing comparison matrix in README (categories, not rival code), an EvidenceLabel
+  taxonomy in CLAIMS, and `scripts/demo.sh` (one-command repeatable take: gate-green print + the on-chain
+  re-verify, RPC key masked).
+- Gate at each CP: test ∧ typecheck ∧ cleanroom ∧ doc-drift (+ ui build for CP3). Final suite **99/99**.
+  Operator handoff unchanged: record + host the demo video, then flip the repo public before 2026-07-19.

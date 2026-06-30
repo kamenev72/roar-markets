@@ -21,6 +21,25 @@ they **do not exist** on Polymarket/Kalshi today — there is no status quo to b
   a trustless settlement + credential-free Merkle re-verify rail. PROPCAST CONSUMES those deployed programs;
   it adds the per-prop market **factory** and the consumer surface.
 
+## How it compares
+
+The differentiator is the COMBINATION, not any single axis (on-chain markets,
+parlays, and in-game markets already exist — Azuro / Overtime / SX / Polymarket
+Combos). PROPCAST is the only fan venue that auto-spawns per-goal micro-markets
+AND settles them trustlessly against the provider's own Merkle-anchored score at
+zero per-market oracle cost, re-verifiable by the fan with no key.
+
+| Capability | PROPCAST | Polymarket / Kalshi | Generic on-chain venues |
+|---|:---:|:---:|:---:|
+| Auto-spawns a per-goal micro-market live | ✅ | ❌ (coarse whole-match only) | ❌ (curated lists) |
+| Trustless objective-Merkle settle (no token-vote oracle) | ✅ | ❌ | ⚠️ varies |
+| In-browser credential-free Merkle re-verify (no API key) | ✅ | ❌ | ❌ |
+| Zero per-market oracle cost (economic at $50–500 turnover) | ✅ | ❌ (oracle cost ≫ turnover) | ❌ |
+| Goal-grain (O/U another-goal · total-goals 1.5/2.5/3.5 · BTTS) | ✅ | ❌ | ⚠️ coarse |
+
+Honest scope: the matrix names market CATEGORIES, not any rival's code; every
+PROPCAST ✅ is backed by a test or a devnet hash (see `CLAIMS.md`).
+
 ## Status
 
 **W1 + W2 complete; W3 packages the submission.** The auto-spawn factory, the `market_id[32]` integration

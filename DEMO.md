@@ -29,7 +29,23 @@ browser. Show these are real on a Solana explorer (devnet):
 
 Outcome read on-chain: `over=false → NO` (Under 2.5), fixture 17588395.
 
+## Breadth (the goal-grain market spread)
+
+Beyond "another goal", the factory auto-spawns **O/U total-goals** lines
+(1.5 / 2.5 / 3.5) — each goal-key only, each LINE-BOUND: the settle-consumer reads
+the receipt's `line_q` and fail-closes a wrong-line receipt, so every line settles
+independently and trustlessly. BTTS ("both teams to score") is the secondary
+goal-key primitive. All shown on the fan board with their de-vigged seeds.
+
 ## Run it locally (for the recording)
+
+```bash
+bash scripts/demo.sh        # one command: gate-green print + the on-chain re-verify (RPC key masked)
+# then, in a second terminal, open the fan board:
+npm --prefix ui install && npm --prefix ui run dev
+```
+
+Or step by step:
 
 ```bash
 npm install

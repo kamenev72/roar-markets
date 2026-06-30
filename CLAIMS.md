@@ -4,6 +4,20 @@ Every public assertion PROPCAST makes, tagged. Tags: **VERIFIED-LIVE** (proven o
 **REPRODUCIBLE** (deterministic locally — run the gate), **DESIGN** (architecture intent, not yet proven
 live), **EXTERNAL** (a third-party fact), **NOT-CLAIMED** (an explicit non-claim, to pre-empt over-reading).
 
+## Evidence labels (rail × strength)
+
+The fan UI tags every re-verify card with an honest **EvidenceLabel = rail × strength** so a viewer can never
+mistake a walkthrough for a live settle:
+
+- **rail** — `LIVE` (a real on-chain receipt, read from devnet) · `PARTIAL` (some steps live, some simulated) ·
+  `SIMULATED` (a shape-exact synthetic receipt for the interactive walkthrough).
+- **strength** — `VERIFIED` (the 3-step gate returned true on the shown bytes) · `DEMONSTRATED` (the same gate
+  runs, on a synthetic receipt).
+
+The top on-chain card is the ONLY `LIVE · VERIFIED` surface; the interactive walkthrough is `SIMULATED ·
+DEMONSTRATED`. Both render the RAW gate-trace (decoded owner / discriminator / PDA / `line_q` / `over` bytes)
+so the trust claim is checkable, not a bare green tick.
+
 ## What is proven
 
 - **VERIFIED-LIVE** — a real `OuBoundReceipt` was minted on Solana devnet via `kickoff_oracle::settle_ou_bound`,
@@ -24,6 +38,12 @@ live), **EXTERNAL** (a third-party fact), **NOT-CLAIMED** (an explicit non-claim
   `BttsBoundReceipt` layout (`yes`@48, the `["btts_bound", market_id]` PDA, the on-chain discriminator) and is
   fail-closed + offset-pinned by `test/btts.test.ts`. Not yet minted live for a PROPCAST market_id (DESIGN for
   the live mint); the OU primary is the proven (VERIFIED-LIVE) path.
+- **REPRODUCIBLE** — the goal-grain BREADTH: an O/U total-goals line-variant primitive (1.5 / 2.5 / 3.5),
+  goal-key only, settling via the SAME `settle_ou_bound` rail but BOUND to its line — the consumer reads the
+  receipt's `line_q`@48 and fail-closes a wrong-line receipt (`WrongLine`), so a 2.5 receipt can never resolve a
+  1.5 market. The `line_q = round(line × 4)` quantization is pinned to the real W2c receipt (Under 2.5 =
+  line_q 10). `test/total_goals.test.ts` + `test/settle_consumer.test.ts`. The per-line LIVE mint is DESIGN
+  (rail/proof-gated, like BTTS); the line-binding + spawn are REPRODUCIBLE under the gate.
 
 ## What is design / pending
 

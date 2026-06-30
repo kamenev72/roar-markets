@@ -52,6 +52,21 @@ describe("PROPCAST quality/coverage metrics (no $-PnL)", () => {
     expect(m.seedVsRealizedMarkout).toBeCloseTo(0, 10); // (+0.5 - 0.5)/2; VOID & open excluded
   });
 
+  it("byPrimitive: per-kind spawn breakdown (breadth coverage), dimensionless counts", () => {
+    const recs = [
+      rec({ marketId: "g1", primitiveKind: 0 }), // OuAnotherGoal
+      rec({ marketId: "g2", primitiveKind: 0 }), // OuAnotherGoal
+      rec({ marketId: "t1", primitiveKind: 4 }), // OuTotalGoals
+      rec({ marketId: "t2", primitiveKind: 4 }), // OuTotalGoals
+      rec({ marketId: "t3", primitiveKind: 4 }), // OuTotalGoals
+      rec({ marketId: "b1", primitiveKind: 3 }), // BttsYes
+      rec({ marketId: "x1" }), //                   no kind -> bucket -1
+    ];
+    const m = aggregateQuality(recs, 7);
+    expect(m.byPrimitive).toEqual({ 0: 2, 4: 3, 3: 1, [-1]: 1 });
+    expect(m.marketsSpawned).toBe(7);
+  });
+
   it("HONESTY GUARD: no metric field names a dollar / pnl / profit quantity", () => {
     const m = aggregateQuality([rec({ marketId: "a", resolution: "YES", settledAtMs: 2000 })], 1);
     const banned = /pnl|profit|usd|usdc|dollar|\$|cash|earnings|revenue/i;

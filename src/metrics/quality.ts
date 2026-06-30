@@ -19,6 +19,8 @@ export interface MarketQualityRecord {
   seedFairYes: number;
   /** the realized outcome; undefined = still open. VOID is excluded from calibration. */
   resolution?: PropResolution;
+  /** the goal-primitive kind (PrimitiveKind int) — for the per-primitive coverage breakdown. */
+  primitiveKind?: number;
 }
 
 /** Coverage + quality aggregate. EVERY field is dimensionless / a count / a probability / ms — NEVER a $. */
@@ -38,6 +40,9 @@ export interface QualityMetrics {
   /** mean signed calibration markout over SETTLED markets: mean(realized − seedFairYes), realized∈{0,1}.
    *  0 = well-calibrated seed; >0 = seed under-priced YES; <0 = over-priced. A SEED-QUALITY gauge, NOT PnL. */
   seedVsRealizedMarkout: number;
+  /** markets spawned per goal-primitive kind (PrimitiveKind int → count) — the breadth-coverage breakdown.
+   *  A dimensionless COUNT per kind, NEVER a $; markets with no `primitiveKind` are bucketed under -1. */
+  byPrimitive: Record<number, number>;
 }
 
 function median(xs: number[]): number {
@@ -64,6 +69,12 @@ export function aggregateQuality(records: readonly MarketQualityRecord[], goalsS
     .map((r) => r.settledAtMs! - r.goalSeenAtMs);
   const markout = settled.map((r) => (r.resolution === "YES" ? 1 : 0) - r.seedFairYes);
 
+  const byPrimitive: Record<number, number> = {};
+  for (const r of records) {
+    const k = r.primitiveKind ?? -1;
+    byPrimitive[k] = (byPrimitive[k] ?? 0) + 1;
+  }
+
   return {
     marketsSpawned: records.length,
     goalsSeen,
@@ -74,5 +85,6 @@ export function aggregateQuality(records: readonly MarketQualityRecord[], goalsS
     timeToFirstQuoteMsMean: mean(ttfq),
     timeToSettleMsP50: median(ttsettle),
     seedVsRealizedMarkout: mean(markout),
+    byPrimitive,
   };
 }
