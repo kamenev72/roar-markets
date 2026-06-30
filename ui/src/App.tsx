@@ -80,7 +80,9 @@ function RealReceiptCard() {
     setState({ status: "loading" });
     try {
       const conn = new Connection("https://api.devnet.solana.com", "confirmed");
-      const info = await conn.getAccountInfo(pda);
+      // dataSlice bounds the read to the 51-byte receipt (gate max read = over@50) — a hostile RPC can't make
+      // the tab download/copy a huge blob; owner is returned regardless of the slice.
+      const info = await conn.getAccountInfo(pda, { commitment: "confirmed", dataSlice: { offset: 0, length: 51 } });
       const fetched = info ? { owner: info.owner, data: new Uint8Array(info.data) } : null;
       const v = verifyRealReceipt(fetched); // throws if pruned / fail-closed
       // re-read the decoded fields via the SAME authoritative gate (no second verifier) for the raw trace

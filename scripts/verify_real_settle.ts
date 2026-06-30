@@ -11,7 +11,9 @@ const pda = ouReceiptPda(id.bytes);
 console.log("market_id:", marketIdHex(id));
 console.log("receipt PDA:", pda.toBase58());
 const conn = new Connection("https://api.devnet.solana.com", "confirmed");
-const ai = await conn.getAccountInfo(pda);
+// dataSlice bounds the read to the 51-byte receipt (gate's max read is over@50) so a hostile/over-large
+// account can't make us download a huge blob; owner is returned regardless of the slice.
+const ai = await conn.getAccountInfo(pda, { commitment: "confirmed", dataSlice: { offset: 0, length: 51 } });
 if (!ai) { console.error("❌ receipt not found on devnet"); process.exit(1); }
 const acct = { pubkey: pda, owner: ai.owner, data: new Uint8Array(ai.data) };
 const v = verifyOuReceipt(acct, id.bytes); // throws if the 3-step gate fails

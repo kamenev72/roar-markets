@@ -20,3 +20,11 @@ jobs:
         run: npm test
       - name: clean-room gate (no proprietary vocabulary / secrets)
         run: bash scripts/check_cleanroom.sh
+      - name: clean-room selftest (secret-pattern coverage)
+        run: bash scripts/cleanroom_selftest.sh
+      - name: doc-drift gate (no stale-progress; deployed ids pinned)
+        run: bash scripts/check_doc_drift.sh
+      - name: ui build (the fan re-verify path — root tsconfig excludes ui/)
+        run: npm --prefix ui ci && npm --prefix ui run build
+      - name: ui dependency audit (advisory — build-only, non-blocking)
+        run: npm --prefix ui audit --omit=dev || true
