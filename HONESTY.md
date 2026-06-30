@@ -22,3 +22,8 @@ The honesty invariant is the spine of PROPCAST. Every surface — UI, docs, demo
 8. **Novelty is scoped.** Goal grain + objective Merkle settle — NOT "first on-chain / first in-play market".
 9. **Deferrals are labeled, not hidden.** Order-account rent reclaim is a documented post-v1 deferral (the
    lamport stake returns to fans on `claim`); USDC-SPL collateral is deferred (v1 is lamports).
+10. **Trust is bounded, not overstated.** The in-browser re-verify proves the queried RPC reports the right
+    owner / discriminator / PDA / outcome — it is NOT a cryptographic light-client proof, so the UI says
+    "verified against api.devnet.solana.com (one read-only RPC)" and points to the explorer for an independent
+    cross-check, never "no authority". The v1 venue payout has no permissionless / timeout refund (close-path A,
+    single-key) — a labeled residual, latent because v1 holds no fan funds. Full threat model: `SECURITY.md`.

@@ -72,3 +72,18 @@ so the trust claim is checkable, not a bare green tick.
 - **NOT-CLAIMED** — the venue close (claim/payout) in v1 is the venue authority's `resolve()` LABELED
   "trusted-now, proof-gated-target"; the trustless datum is the kickoff receipt, shown + re-verifiable. A
   fully-gated venue-close program is a post-v1 upgrade, not claimed for v1.
+- **NOT-CLAIMED** — the in-browser re-verify is **not** a cryptographic light-client proof: it re-derives the
+  receipt's owner / discriminator / PDA / outcome from a SINGLE read-only RPC (`api.devnet.solana.com`), which
+  is trusted to report them honestly. A hostile / man-in-the-middle RPC could report a fabricated account →
+  cross-check on the block explorer (or a 2nd RPC) for independence. The gate defeats account-confusion /
+  wrong-type / wrong-market / wrong-line vs an HONEST RPC; it is not a substitute for an on-chain SPV proof.
+- **NOT-CLAIMED** — the v1 venue payout has no permissionless or timeout-driven refund (close-path A is a
+  single authority key); VOID is CLASSIFIED (absent receipt) but VOID/refund SETTLEMENT is post-v1. v1 holds
+  no fan funds (read-only UI, in-process venue) so this is a labeled latent residual, not a live fund risk.
+
+## Supply-chain posture (per tree)
+
+- **MEASURED** — `npm audit --omit=dev` on the ROOT package tree = 0 vulnerabilities. The browser-shipped `ui/`
+  tree reports dev-toolchain + transitive advisories that are build-only / tree-shaken (the vulnerable code is
+  not reachable from the read-only fan path); none ship in the fan bundle. `@solana/web3.js` is pinned past the
+  December-2024 backdoor with lockfile integrity. Full posture + threat model: `SECURITY.md`.

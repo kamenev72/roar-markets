@@ -117,7 +117,8 @@ function RealReceiptCard() {
             ✓ OuBoundReceipt discriminator + ["ou_bound", market_id] PDA match<br />
             ✓ outcome (over@50): <b style={{ color: C.text }}>{state.v.resolution === "YES" ? "another goal (YES)" : "no more goals (NO)"}</b> · fixture {String(state.v.fixtureId)}
           </div>
-          <div style={{ marginTop: 10, color: C.ok, fontWeight: 700, fontSize: 13 }}>✓ verified on-chain — the proof decides, no authority, no key</div>
+          <div style={{ marginTop: 10, color: C.ok, fontWeight: 700, fontSize: 13 }}>✓ verified against api.devnet.solana.com (one read-only RPC, no key)</div>
+          <div style={{ marginTop: 4, color: C.dim, fontSize: 11 }}>the receipt's owner · discriminator · PDA · outcome are re-derived here; this single RPC is trusted to report them honestly — cross-check on the explorer for independence.</div>
           <div style={{ marginTop: 10, fontSize: 11, color: C.dim, textTransform: "uppercase", letterSpacing: 1 }}>raw gate-trace (the decoded receipt bytes)</div>
           <GateTrace lines={state.trace} />
           <button onClick={() => void load()} style={{ marginTop: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>↻ re-verify</button>
