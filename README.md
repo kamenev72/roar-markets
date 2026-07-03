@@ -40,6 +40,15 @@ zero per-market oracle cost, re-verifiable by the fan with no key.
 Honest scope: the matrix names market CATEGORIES, not any rival's code; every
 PROPCAST ✅ is backed by a test or a devnet hash (see `CLAIMS.md`).
 
+**Within this hackathon's field (38 public entries, census 2026-07-03, re-scanned every 2 days):** consumer
+rivals ship real polish — live multiplayer leaderboards, animated match centers, native mobile — and several
+are genuinely deployed. Two structural properties remain unique to PROPCAST across all of them: **(1) the
+markets are real on-chain instruments spawned by an on-chain factory per goal-primitive** (elsewhere a
+"market" is a server/DB pick reconciled after the fact), and **(2) the settle is gated BEFORE funds move**
+(the common rival pattern is settle-first-claw-back-later — a real fraud window during the reconcile). The
+engagement layer here (streaks, share-cards, the `?demo=` replay) deliberately sits OUTSIDE the trust core:
+it consumes gate-verified results and never touches verification.
+
 ## Status
 
 **W1 + W2 complete; W3 packages the submission.** The auto-spawn factory, the `market_id[32]` integration

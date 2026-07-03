@@ -5,6 +5,8 @@ import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda
 import { resolveFromReceipt, verifyOuReceipt, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
 import { REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
 import { crossCheckVerdict, gateTraceLines, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel } from "./evidence.js";
+import { applyResult, loadStreak, multiplier, saveStreak, shareText, verdictName } from "./streak.js";
+import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
 
 // A 2nd INDEPENDENT public devnet RPC for the cross-check (keyless; best-effort — the card degrades to
 // single-RPC + explorer if it is unavailable). Independence is the point: agreement of two providers is a
@@ -153,21 +155,48 @@ export function App() {
   const [phase, setPhase] = useState<Phase>("kickoff");
   const [pick, setPick] = useState<Side | null>(null);
   const [result, setResult] = useState<{ outcome: Side; verified: VerifiedOu; won: boolean } | null>(null);
+  // engagement layer — device-local streak (OUTSIDE the trust core; consumes gate results, never verifies).
+  const [streak, setStreak] = useState(() => loadStreak(typeof localStorage === "undefined" ? null : localStorage));
+  const [shared, setShared] = useState(false);
+  // `?demo=<seconds>` — deterministic self-serve replay (judge link); explicit REPLAY badge while active.
+  const demoSecs = useMemo(() => parseDemoParam(typeof window === "undefined" ? "" : window.location.search), []);
 
   const fairYes = useMemo(() => binaryProb(DEMO_LINE, 0), []);
   const receiptPda = useMemo(() => ouReceiptPda(MARKET_ID), []);
   const yesPct = Math.round(fairYes * 1000) / 10;
 
-  function settle() {
+  function settle(pickOverride?: Side) {
     // Demo: a second goal IS scored → the OuBoundReceipt attests `over` (another goal). SYNTHETIC for the
     // demo; the live mint of this exact receipt is rail/proof-gated. The board runs the SAME 3-step gate.
+    const effectivePick = pickOverride ?? pick;
     const data = synthOuReceipt(MARKET_ID, 17588395n, 10, true);
     const acct: OnchainAccount = { pubkey: receiptPda, owner: KICKOFF_ORACLE_PROGRAM_ID, data };
     const outcome = resolveFromReceipt(acct, MARKET_ID); // throws if the gate fails
     const verified = verifyOuReceipt(acct, MARKET_ID);
-    setResult({ outcome, verified, won: pick === outcome });
+    const won = effectivePick === outcome;
+    setResult({ outcome, verified, won });
+    setStreak((s) => {
+      const next = applyResult(s, won);
+      saveStreak(typeof localStorage === "undefined" ? null : localStorage, next);
+      return next;
+    });
+    setShared(false);
     setPhase("resolved");
   }
+
+  // Replay driver: fires the fixed spawn → pick → settle timeline; cleans up on unmount.
+  useEffect(() => {
+    if (demoSecs === null) return;
+    const timers = demoSchedule(demoSecs).map((step) =>
+      setTimeout(() => {
+        if (step.action === "spawn") setPhase("spawned");
+        else if (step.action === "pick_yes") setPick("YES");
+        else settle("YES");
+      }, step.atMs),
+    );
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demoSecs]);
 
   function reset() {
     setPhase("kickoff");
@@ -178,7 +207,15 @@ export function App() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "system-ui, sans-serif", padding: 24 }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <h1 style={{ fontSize: 22, margin: 0 }}>PROPCAST <span style={{ color: C.dim, fontWeight: 400 }}>— live goal-grain micro-markets</span></h1>
+        <h1 style={{ fontSize: 22, margin: 0 }}>
+          PROPCAST <span style={{ color: C.dim, fontWeight: 400 }}>— live goal-grain micro-markets</span>
+          {demoSecs !== null && (
+            <span title={`deterministic self-serve replay (?demo=${demoSecs}) — not live data`} style={{ marginLeft: 10, fontSize: 11, fontWeight: 700, color: "#000", background: C.warn, padding: "3px 8px", borderRadius: 4, verticalAlign: "middle" }}>● REPLAY {demoSecs}s</span>
+          )}
+          {streak.streak > 0 && (
+            <span title={`consecutive correct calls (best ${streak.best}) — display multiplier ×${multiplier(streak.streak).toFixed(1)}`} style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: C.text, background: "#1d3b2a", border: `1px solid ${C.ok}`, padding: "3px 8px", borderRadius: 4, verticalAlign: "middle" }}>🔥 streak {streak.streak} ×{multiplier(streak.streak).toFixed(1)}</span>
+          )}
+        </h1>
         <p style={{ color: C.dim, marginTop: 6, fontSize: 14 }}>
           The in-match micro-market that <b>cannot exist on Polymarket</b> — auto-spawned from an objective
           goal, auto-settled trustlessly from TxODDS's Merkle-anchored score, re-verifiable in your browser.
@@ -256,6 +293,20 @@ export function App() {
               <b> trusted-now, proof-gated-target</b> — the trustless datum is the kickoff receipt shown here.
               No $-PnL — PROPCAST measures market coverage + the trustless receipt, not profit.
             </p>
+            {/* engagement layer: the named verdict + the share artifact (outside the trust core) */}
+            <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <Pill color={result.won ? "#1d3b2a" : "#2a1d0e"}>{verdictName(result.won, streak.streak)}</Pill>
+              {result.won && <span style={{ fontSize: 12, color: C.dim }}>streak {streak.streak} · ×{multiplier(streak.streak).toFixed(1)} (best {streak.best})</span>}
+              <button
+                onClick={() => {
+                  void navigator.clipboard?.writeText(shareText({ won: result.won, pick: pick ?? "YES", question: "Another goal after 1–0 (23')?", streak: streak.streak, receiptRef: receiptPda.toBase58() }));
+                  setShared(true);
+                }}
+                style={{ background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer", fontSize: 12 }}
+              >
+                {shared ? "✓ copied" : "📣 copy share-card"}
+              </button>
+            </div>
             <button onClick={reset} style={{ marginTop: 6, background: C.panel, color: C.text, border: `1px solid ${C.border}`, padding: "8px 14px", borderRadius: 6, cursor: "pointer" }}>↺ next goal</button>
           </div>
         )}
