@@ -34,6 +34,18 @@ export const STAT_KEY_P2 = "2";
 export const STATUS_IN_PLAY = 2;
 
 /**
+ * Soccer full-time StatusIds — the ONLY statuses that authorize a whistle-driven ("no more goals") settle.
+ *   9  Ended                 — regulation full time (our captured live stream's value).
+ *   10 Ended-after-ET        — a KNOCKOUT match decided in extra time.
+ *   13 Ended-after-penalties — a KNOCKOUT match decided on penalties.
+ * A goal-total prop over a World Cup KO fixture must NOT settle at 90' if the match continues into ET; the
+ * final goal count is the post-ET total (the shootout tally is never part of goal-total). This set MUST stay
+ * in lock-step with the kickoff resolver's finality set (a proof minted for a non-final frame would settle
+ * an unfinished total). Anything not listed is fail-closed: an in-play frame settles ONLY via the next goal.
+ */
+export const STATUS_FULL_TIME: ReadonlySet<number> = new Set([9, 10, 13]);
+
+/**
  * A REAL TxLINE in-play scores frame (the captured schema). The which-side is `Participant1IsHome`; goals are
  * `Stats["1"]`/`["2"]` (per-participant, NOT home/away — `Participant1IsHome` disambiguates); `Clock.Seconds`
  * is match time; `StatusId === 2` is in-play. Captured fields beyond these (Action, Possession, …) are extra.
@@ -52,6 +64,16 @@ export interface LiveScoreFrame {
 /** True iff the frame is a live in-play frame (only then does the factory spawn / re-quote). */
 export function isInPlay(f: LiveScoreFrame): boolean {
   return f.StatusId === STATUS_IN_PLAY;
+}
+
+/**
+ * True iff the frame is a genuine full-time (incl. ET / penalties) end-of-match — the fail-closed predicate a
+ * whistle-driven settle MUST honor. An "another goal" prop resolves NO ("no more goals") only when the match
+ * has truly ENDED; keying the whistle off anything else (a paused/HT/interrupted in-play frame) would settle
+ * an unfinished total. The next-goal settle path is unaffected (a goal proves the total regardless of status).
+ */
+export function isFinalised(f: LiveScoreFrame): boolean {
+  return STATUS_FULL_TIME.has(f.StatusId);
 }
 
 /**

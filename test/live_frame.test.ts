@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { isInPlay, scoreEventFromLiveFrame, type LiveScoreFrame } from "../src/factory/primitives.js";
+import { isFinalised, isInPlay, scoreEventFromLiveFrame, STATUS_FULL_TIME, type LiveScoreFrame } from "../src/factory/primitives.js";
 
 // the REAL TxLINE in-play frame captured live by the launchd daemon (2026-06-29) — pins the schema.
 const fixture = JSON.parse(readFileSync(new URL("../fixtures/live_scores_frame.json", import.meta.url), "utf8")) as {
@@ -35,5 +35,25 @@ describe("pinned live TxLINE in-play scores schema", () => {
 
   it("a non-in-play frame (StatusId != 2) is rejected by isInPlay", () => {
     expect(isInPlay({ ...frame, StatusId: 9 })).toBe(false); // full-time
+  });
+});
+
+describe("whistle-driven finality (isFinalised)", () => {
+  it("recognizes regulation (9), extra-time (10) and penalties (13) as full time", () => {
+    for (const id of [9, 10, 13]) expect(isFinalised({ ...frame, StatusId: id })).toBe(true);
+    expect([...STATUS_FULL_TIME].sort((a, b) => a - b)).toEqual([9, 10, 13]);
+  });
+
+  it("does NOT treat an in-play or interrupted frame as full time (fail-closed whistle)", () => {
+    // a whistle settle keyed off any of these would mint a proof over an unfinished total.
+    for (const id of [2, 5, 7, 8, 14, 15, 16, 18]) expect(isFinalised({ ...frame, StatusId: id })).toBe(false);
+    expect(isFinalised(frame)).toBe(false); // the captured live frame is in-play, not final
+  });
+
+  it("stays in lock-step with the kickoff resolver finality set (no ET/penalties drift)", () => {
+    // If the kickoff full-time set ever changes, this mirror must change with it — a proof minted for a
+    // status the kickoff rail would refuse cannot settle a propcast total.
+    expect(STATUS_FULL_TIME.has(10)).toBe(true); // Ended-after-ET (KO)
+    expect(STATUS_FULL_TIME.has(13)).toBe(true); // Ended-after-penalties (KO)
   });
 });

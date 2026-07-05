@@ -20,6 +20,12 @@ export type GoalFrame = ScoreEvent;
  * Builds the TxLINE proof + mints the receipt for a market's settle. Implemented in the operator's PRIVATE
  * spike (it holds the X-Api-Token + the proof builder + the wallet) and INJECTED — the public repo never
  * carries secrets or proof internals. Returns the mint tx signature, or `null` if not yet provably settleable.
+ *
+ * FINALITY CONTRACT (the injected spike MUST honor it): the settle path fires on the NEXT GOAL or the WHISTLE.
+ * A goal proves the total regardless of match status, but a WHISTLE-driven ("no more goals" → NO) settle is
+ * valid ONLY when the frame is a genuine full time — gate it on `isFinalised(frame)` (StatusId {9,10,13}),
+ * fail-closed. Settling on a paused / half-time / interrupted in-play frame would mint a proof over an
+ * unfinished total; for a World Cup KO fixture the final goal count is the post-ET total, never the 90' one.
  */
 export interface SettleHook {
   mint(market: SpawnedMarket, settleEv: GoalFrame): Promise<string | null>;
