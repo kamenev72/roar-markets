@@ -261,7 +261,7 @@ export function App() {
                     </button>
                   ))}
                 </div>
-                <button onClick={settle} disabled={!pick} style={{ marginTop: 12, width: "100%", background: pick ? C.warn : C.border, color: pick ? "#000" : C.dim, border: 0, padding: "10px 0", borderRadius: 8, cursor: pick ? "pointer" : "default", fontWeight: 700 }}>
+                <button onClick={() => settle()} disabled={!pick} style={{ marginTop: 12, width: "100%", background: pick ? C.warn : C.border, color: pick ? "#000" : C.dim, border: 0, padding: "10px 0", borderRadius: 8, cursor: pick ? "pointer" : "default", fontWeight: 700 }}>
                   🔊 Whistle: settle from the kickoff Merkle proof
                 </button>
               </>
