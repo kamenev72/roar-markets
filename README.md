@@ -40,7 +40,7 @@ zero per-market oracle cost, re-verifiable by the fan with no key.
 Honest scope: the matrix names market CATEGORIES, not any rival's code; every
 PROPCAST ✅ is backed by a test or a devnet hash (see `CLAIMS.md`).
 
-**Within this hackathon's field (38 public entries, census 2026-07-03, re-scanned every 2 days):** consumer
+**Within this hackathon's field (43 public entries, census 2026-07-05, re-scanned every 2 days):** consumer
 rivals ship real polish — live multiplayer leaderboards, animated match centers, native mobile — and several
 are genuinely deployed. Two structural properties remain unique to PROPCAST across all of them: **(1) the
 markets are real on-chain instruments spawned by an on-chain factory per goal-primitive** (elsewhere a
