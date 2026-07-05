@@ -82,15 +82,17 @@ export class PropMarketFactory {
 
   /**
    * On a goal event, spawn + seed the v1 PRIMARY "another goal" micro-market — IDEMPOTENT per goal frame.
-   * The free ~60s TxLINE poll can re-deliver the SAME scoring frame ("double-goal-in-tick"); a duplicate frame
-   * MUST NOT double-spawn. We key on the full goal signature (fixture, kind, score, minute): a genuine second
-   * goal advances the score (e.g. 1-0 -> 2-0) so its signature differs and it correctly opens a fresh market
-   * (nonce increments), while an exact re-delivery returns the already-spawned market unchanged. The per-key
-   * lock makes the check-then-spawn atomic even under concurrent re-deliveries.
+   * The free ~60s TxLINE poll can re-deliver the SAME scoring frame; a duplicate frame MUST NOT double-spawn.
+   * We key on the goal signature (fixture, kind, cumulative score) — the score is MONOTONIC, so each goal
+   * advances it (0-0 -> 1-0 -> 1-1) and gets a distinct signature + a fresh market (nonce increments), while a
+   * re-delivery of the same score returns the already-spawned market unchanged. `minute` is deliberately NOT
+   * in the key: the poll re-delivers the same goal with a drifted clock (floor(sec/60) ticks up between polls),
+   * so keying on minute would spawn a DUPLICATE market for the same goal. The per-key lock makes the
+   * check-then-spawn atomic even under concurrent re-deliveries.
    */
   async onGoal(ev: ScoreEvent): Promise<SpawnedMarket> {
     const prim = anotherGoalPrimitive(ev);
-    const sig = `${ev.fixtureId}:${prim.kind}:${ev.homeScore}-${ev.awayScore}:${ev.minute}`;
+    const sig = `${ev.fixtureId}:${prim.kind}:${ev.homeScore}-${ev.awayScore}`;
     return this.withKeyLock(sig, async () => {
       const existing = this.spawnedSig.get(sig);
       if (existing) return existing;

@@ -29,6 +29,16 @@ describe("PROPCAST factory hardening", () => {
     expect(f.listMarkets()).toHaveLength(2);
   });
 
+  it("the SAME goal re-delivered with a drifted clock minute still dedups to ONE market", async () => {
+    // The ~60s poll re-delivers the same 1-0 goal, but the match clock advanced a minute between polls.
+    // The cumulative score is the identity of the goal; minute is NOT in the dedup key, so this is ONE market.
+    const f = new PropMarketFactory(new MemoryTransport());
+    const first = await f.onGoal(goal(5n, 23, 1, 0));
+    const drifted = await f.onGoal(goal(5n, 24, 1, 0)); // same 1-0 goal, clock ticked 23 -> 24
+    expect(marketIdHex(drifted.id)).toBe(marketIdHex(first.id));
+    expect(f.listMarkets()).toHaveLength(1);
+  });
+
   it("orphan-sweep reaps an unresolved market past its TTL and frees re-spawn", async () => {
     let clock = 0;
     const f = new PropMarketFactory(new MemoryTransport(), { ...DEFAULT_FACTORY_CONFIG, now: () => clock });
