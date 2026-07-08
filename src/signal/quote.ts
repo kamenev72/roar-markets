@@ -6,11 +6,12 @@
  * (arXiv:1105.3115), Thm 1–2 + Prop 3. Finite-horizon terminal flatten: Cartea-Jaimungal-Penalva,
  * "Algorithmic and High-Frequency Trading" (2015) Ch.10. De-vig anchor:./devig.
  *
- * Two inventory mechanisms, both leaning to offload a long position (q>0) — a DELIBERATE superposition,
- * not the single-mechanism textbook form:
+ * Two inventory mechanisms, both leaning to offload a long position (q>0) — a DELIBERATE superposition
+ * that is a bounded HEURISTIC design choice, NOT a jointly-derived closed-form optimum (each TERM is
+ * textbook; their SUM is our design, motivated by — not derived from — the two sources below):
  * - GLFT *stationary* skew via the asymmetric distances δ^a/δ^b (the c2·2q term) — horizon-FREE.
  * - Finite-horizon A-S *reservation lean* r = p − h(t)·q keyed to the whistle (Cartea-Jaimungal 2015
- * Ch.10; ), with a BOUNDED rate h(t) = h_floor + (η − h_floor)·(1−(T−t)/T)^κ that interpolates the
+ * Ch.10), with a BOUNDED rate h(t) = h_floor + (η − h_floor)·(1−(T−t)/T)^κ that interpolates the
  * stationary GLFT floor h_floor=γσ² (early) → the terminal flatten rate η (last minutes). A match
  * resolves hard (no post-T liquidity), so inventory urgency GROWS toward T — but BOUNDED by η, not the
  * divergent γσ²/(T−t) it replaces (which blew up + clamped to ε near the whistle). NB: η is the terminal
@@ -18,7 +19,8 @@
  * −(η/2)·q² — NOT −η·q² (whose marginal would be 2η·q).
  *
  * Combined, the mid-quote skews as mid = (bid+ask)/2 = pFair − (h + 2·c2)·q: the A-S lean h AND the GLFT
- * distance skew 2·c2 stack (both offload a long position). At q=0 they vanish (mid = pFair, symmetric
+ * distance skew 2·c2 stack (both offload a long position) — again, the STACK is a design choice, not a
+ * proven joint optimum. At q=0 they vanish (mid = pFair, symmetric
  * distances), which is why the skew slope must be checked at q≠0 (see test/quote.test.ts). σ is the
  * per-EVENT realized vol of the probability path at the feed cadence — h_floor=γσ² and c2∝σ are calibrated
  * to that cadence (a different feed cadence rescales σ, hence the spread).
@@ -121,7 +123,7 @@ export function quote(odds: number[], p: QuoteParams): Quote {
   const { c1, c2 } = glftCoeffs(gamma, sigma, A, k);
 
   // Finite-horizon terminal inventory lean (rate η; equiv. penalty −(η/2)·q²) keyed to the whistle
-  // (Cartea-Jaimungal 2015 Ch.10; ).
+  // (Cartea-Jaimungal 2015 Ch.10).
   // The inventory-skew rate h(t) is BOUNDED and interpolates the stationary GLFT floor early →
   // the terminal flatten η in the last minutes — NO blow-up (the old γσ²/(T−t) diverged at t→T).
   const eta = p.eta ?? 0.02;
