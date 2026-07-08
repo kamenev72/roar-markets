@@ -74,6 +74,11 @@ export class LiveResolver {
    * Returns `null` if the hook reports the event is not yet provable (the daemon retries on the next frame).
    */
   async settle(market: SpawnedMarket, settleEv: GoalFrame): Promise<ResolvedMarket | null> {
+    // Idempotent: a market gets TWO settle triggers (the next goal, then the whistle) — settle only ONCE.
+    // Return the already-recorded resolution instead of re-minting + double-counting in `resolved[]`/metrics.
+    const alreadyResolved = this.resolved.find((r) => r.marketId === marketIdHex(market.id));
+    if (alreadyResolved !== undefined) return alreadyResolved;
+
     const mintTx = await this.hook.mint(market, settleEv);
     if (mintTx === null) return null;
 

@@ -124,4 +124,18 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     const r = new LiveResolver(f, hookReturning("MINT_TX_7"), fetcherReturning(synthOu(m.id.bytes, true, 10)));
     await expect(r.settle(m, goal(17588395n, 67, 2, 0))).rejects.toThrow(/WrongLine/);
   });
+
+  it("settle is idempotent: a second trigger (next-goal then whistle) is a no-op — no double-count, one mint", async () => {
+    const f = new PropMarketFactory(new MemoryTransport());
+    const m = await f.onGoal(goal(17588395n, 23, 1, 0));
+    let mints = 0;
+    const countingHook: SettleHook = { mint: async () => { mints += 1; return `TX_${mints}`; } };
+    const r = new LiveResolver(f, countingHook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)));
+    const first = await r.settle(m, goal(17588395n, 67, 2, 0)); // next-goal trigger
+    const second = await r.settle(m, goal(17588395n, 90, 2, 0)); // whistle trigger on the SAME market
+    expect(first).not.toBeNull();
+    expect(second).toBe(first); // the recorded resolution, not a fresh one
+    expect(r.list()).toHaveLength(1); // NOT double-counted in the evidence layer
+    expect(mints).toBe(1); // the on-chain mint fired exactly ONCE
+  });
 });
