@@ -9,7 +9,7 @@ these.
 | Program | Program id | Role |
 |---|---|---|
 | `kickoff_oracle` | `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw` | the trust root — mints the TxLINE-anchored `OuBoundReceipt` via CPI-gated `settle_ou_bound` |
-| `pitchmaker_book` | `JBK6odPfCTuHp1cb3Yr76PPTdnhpGgQwrZ9oszhSjh3R` | the binary CLOB venue PROPCAST inits + seeds per micro-market |
+| `pitchmaker_book` | `JBK6odPfCTuHp1cb3Yr76PPTdnhpGgQwrZ9oszhSjh3R` | the binary escrow-cross venue (ADR-0003, in the PitchMaker repo) PROPCAST inits + seeds per micro-market |
 | `txoracle` | `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J` | verifies the TxLINE Merkle stat proof (`validate_stat`) |
 
 `daily_scores_roots` PDA (the finalized day root the proof binds to): `CdUmkUdc4XBKeeq7Kq6JxQvnVMNuDA21mp98x4Rs3jHQ`.

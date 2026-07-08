@@ -17,7 +17,7 @@ they **do not exist** on Polymarket/Kalshi today — there is no status quo to b
 - **No $-PnL hero number** — a fan venue is measured on market **quality / coverage**, not profit.
 - **Novelty = grain + objective-Merkle-settle**, not "first on-chain market" / "first in-play" (Azuro /
   Overtime / SX / Totalis / Polymarket Combos exist).
-- Reuses ~70-75% of two shipped assets: a deployed Solana CLOB venue + a TxLINE de-vig/GLFT pricing rail, and
+- Reuses ~70-75% of two shipped assets: a deployed Solana escrow-cross venue + a TxLINE de-vig/GLFT pricing rail, and
   a trustless settlement + credential-free Merkle re-verify rail. PROPCAST CONSUMES those deployed programs;
   it adds the per-prop market **factory** and the consumer surface.
 

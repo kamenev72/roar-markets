@@ -1,6 +1,6 @@
 // Vendored verbatim from the PitchMaker repo (Apache-2.0; public-knowledge market-making math + an IDL-free Solana venue client). See NOTICE.
 // pitchmaker_book venue client — hand-rolled borsh instruction builders + account decoders for the
-// deployed binary CLOB (programs/pitchmaker_book, program id JBK6od…). It is the missing piece that
+// deployed binary escrow-cross venue (programs/pitchmaker_book, program id JBK6od…). It is the missing piece that
 // turns "venue deployed but never traded" into a live on-chain trade: the agent's QUOTE → post_order,
 // RE-QUOTE → cancel_order, FILL → take_order, RESOLVE/PAYOUT → resolve/claim.
 //
