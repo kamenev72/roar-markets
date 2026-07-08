@@ -1,6 +1,6 @@
 # PROPCAST
 
-**The live in-match micro-market that cannot exist on Polymarket** — auto-spawned from an objective goal,
+**The live in-match micro-market at a goal-grain Polymarket's oracle economics can't service** — auto-spawned from an objective goal,
 auto-settled trustlessly against TxODDS's own Merkle-anchored scores, and re-verifiable by the fan in their
 own browser with no API key.
 

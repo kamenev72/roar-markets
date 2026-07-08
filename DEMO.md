@@ -57,7 +57,7 @@ node --import tsx scripts/verify_real_settle.ts                        # the sam
 
 ## Positioning one-liner
 
-"The live in-match micro-market that **cannot exist on Polymarket** — auto-spawned from an objective goal,
+"The live in-match micro-market at a goal-grain **Polymarket's oracle economics can't service** — auto-spawned from an objective goal,
 auto-settled trustlessly, re-verifiable by the fan in their own browser with no key."
 
 Deployed program ids + the full reproduce: `README.md`, `docs/TXLINE_USAGE.md`, `evidence/real_onchain_settle.md`.

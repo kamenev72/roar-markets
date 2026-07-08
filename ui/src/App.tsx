@@ -217,8 +217,8 @@ export function App() {
           )}
         </h1>
         <p style={{ color: C.dim, marginTop: 6, fontSize: 14 }}>
-          The in-match micro-market that <b>cannot exist on Polymarket</b> — auto-spawned from an objective
-          goal, auto-settled trustlessly from TxODDS's Merkle-anchored score, re-verifiable in your browser.
+          The in-match micro-market at a goal-grain <b>Polymarket's oracle economics can't service</b> — auto-spawned
+          from an objective goal, auto-settled trustlessly from TxODDS's Merkle-anchored score, re-verifiable in your browser.
         </p>
 
         {/* the REAL on-chain re-verify (the climax — not a mock) */}
