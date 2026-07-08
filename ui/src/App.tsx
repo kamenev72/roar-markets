@@ -12,7 +12,10 @@ import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
 // single-RPC + explorer if it is unavailable). Independence is the point: agreement of two providers is a
 // much stronger "the proof decides" than one provider's word.
 const PRIMARY_RPC = "https://api.devnet.solana.com";
-const SECOND_RPC = "https://rpc.ankr.com/solana_devnet";
+// Independent keyless devnet RPCs for the cross-read, tried in order. (Ankr + Helius now gate `getAccountInfo`
+// behind an API key; Triton's `devnet.rpcpool.com` serves it keyless.) Best-effort — if EVERY entry fails the
+// card degrades to a single-RPC + explorer label, never a false "cross-confirmed".
+const SECOND_RPCS = ["https://devnet.rpcpool.com"];
 
 // de-vigged OVER seeds for the breadth strip — the auto-spawned total-goals lines (SIMULATED display).
 const TOTAL_GOALS_LINES: { line: number; odds: [number, number] }[] = [
@@ -103,10 +106,12 @@ function RealReceiptCard() {
       // SEC-RPC-01: cross-read the SAME receipt from a 2nd INDEPENDENT RPC and compare the decoded fields.
       // Best-effort: any error / not-found / verify-fail ⇒ secondary=null ⇒ honest single-RPC label (no false green).
       let secondary = null as ReturnType<typeof verifyOuReceipt> | null;
-      try {
-        const info2 = await new Connection(SECOND_RPC, "confirmed").getAccountInfo(pda, slice);
-        secondary = info2 ? verifyOuReceipt({ pubkey: pda, owner: info2.owner, data: new Uint8Array(info2.data) }, marketId) : null;
-      } catch { secondary = null; }
+      for (const rpc of SECOND_RPCS) {
+        try {
+          const info2 = await new Connection(rpc, "confirmed").getAccountInfo(pda, slice);
+          if (info2) { secondary = verifyOuReceipt({ pubkey: pda, owner: info2.owner, data: new Uint8Array(info2.data) }, marketId); break; }
+        } catch { /* try the next independent RPC; if all fail, secondary stays null → honest single-RPC label */ }
+      }
       const verdict = crossCheckVerdict(verified, secondary);
       setState({ status: "ok", v, trace, verdict });
     } catch (e) {
@@ -141,7 +146,7 @@ function RealReceiptCard() {
           <div style={{ marginTop: 10, color: state.verdict.label.rail === "PARTIAL" ? C.warn : C.ok, fontWeight: 700, fontSize: 13 }}>
             {state.verdict.label.rail === "PARTIAL" ? "⚠ cross-check FAILED" : "✓ verified, no key"} — {state.verdict.note}
           </div>
-          <div style={{ marginTop: 4, color: C.dim, fontSize: 11 }}>owner · discriminator · PDA · outcome are re-derived in your browser from the RPC's bytes; an RPC could lie, so we cross-read a 2nd independent RPC (above) and you can re-check on the <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.accent }}>explorer</a>.</div>
+          <div style={{ marginTop: 4, color: C.dim, fontSize: 11 }}>owner · discriminator · PDA · outcome are re-derived in your browser from the RPC's bytes; an RPC could lie, so we ATTEMPT a 2nd independent RPC cross-read (the badge above says whether it confirmed) and you can re-check on the <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.accent }}>explorer</a>.</div>
           <div style={{ marginTop: 10, fontSize: 11, color: C.dim, textTransform: "uppercase", letterSpacing: 1 }}>raw gate-trace (the decoded receipt bytes)</div>
           <GateTrace lines={state.trace} />
           <button onClick={() => void load()} style={{ marginTop: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>↻ re-verify</button>
