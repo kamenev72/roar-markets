@@ -39,7 +39,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("a goal then a settle trigger: mint + on-chain re-verify (Over → YES) is recorded", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.onGoal(goal(17588395n, 23, 1, 0));
-    const r = new LiveResolver(f, hookReturning("MINT_TX_1"), fetcherReturning(synthOu(m.id.bytes, true)), { now: () => 123 });
+    const r = new LiveResolver(f, hookReturning("MINT_TX_1"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)), { now: () => 123 });
     const res = await r.settle(m, goal(17588395n, 67, 2, 0));
     expect(res).not.toBeNull();
     expect(res!.resolution).toBe("YES");
@@ -52,7 +52,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("whistle with no more goals (Under → NO) resolves NO", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.onGoal(goal(7n, 10, 1, 0));
-    const r = new LiveResolver(f, hookReturning("MINT_TX_2"), fetcherReturning(synthOu(m.id.bytes, false)));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_2"), fetcherReturning(synthOu(m.id.bytes, false, m.lineQ!)));
     const res = await r.settle(m, goal(7n, 90, 1, 0));
     expect(res!.resolution).toBe("NO");
   });
@@ -76,7 +76,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("idempotent on a re-delivered goal frame (one market) and marks resolved (sweep-safe)", async () => {
     const f = new PropMarketFactory(new MemoryTransport(), { bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 }, confidence: 0, now: () => 0 });
     const a = await f.onGoal(goal(9n, 30, 1, 0));
-    const r = new LiveResolver(f, hookReturning("MINT_TX_4"), fetcherReturning(synthOu(a.id.bytes, true)));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_4"), fetcherReturning(synthOu(a.id.bytes, true, a.lineQ!)));
     const b = await r.onGoal(goal(9n, 30, 1, 0)); // duplicate poll re-delivery
     expect(marketIdHex(a.id)).toBe(marketIdHex(b.id));
     expect(f.listMarkets()).toHaveLength(1);
@@ -98,7 +98,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     const run = async (now: number) => {
       const f = new PropMarketFactory(new MemoryTransport());
       const m = await f.onGoal(goal(17588395n, 23, 1, 0));
-      const r = new LiveResolver(f, hookReturning("TX"), fetcherReturning(synthOu(m.id.bytes, true)), { now: () => now });
+      const r = new LiveResolver(f, hookReturning("TX"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)), { now: () => now });
       return (await r.settle(m, goal(17588395n, 67, 2, 0)))!;
     };
     const a = await run(111);
@@ -114,5 +114,14 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     // a receipt minted at line 1.5 (lineQ 6) for THIS market's PDA must NOT resolve the 2.5 market
     const r = new LiveResolver(f, hookReturning("MINT_TX_6"), fetcherReturning(synthOu(m.id.bytes, true, 6)));
     await expect(r.settle(m, goal(17588395n, 80, 3, 0))).rejects.toThrow(/WrongLine/);
+  });
+
+  it("the PRIMARY 'another goal' market is ALSO line-bound: a wrong-line receipt fail-closes (WrongLine)", async () => {
+    const f = new PropMarketFactory(new MemoryTransport());
+    const m = await f.onGoal(goal(17588395n, 23, 1, 0)); // "another goal after 1-0" ⇔ Over 1.5 ⇔ lineQ 6
+    expect(m.lineQ).toBe(6);
+    // a receipt minted at a DIFFERENT line (2.5 = lineQ 10) for THIS market's PDA must NOT silently resolve it
+    const r = new LiveResolver(f, hookReturning("MINT_TX_7"), fetcherReturning(synthOu(m.id.bytes, true, 10)));
+    await expect(r.settle(m, goal(17588395n, 67, 2, 0))).rejects.toThrow(/WrongLine/);
   });
 });

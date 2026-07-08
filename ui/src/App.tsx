@@ -168,8 +168,9 @@ export function App() {
   function settle(pickOverride?: Side) {
     // Demo: a second goal IS scored → the OuBoundReceipt attests `over` (another goal). SYNTHETIC for the
     // demo; the live mint of this exact receipt is rail/proof-gated. The board runs the SAME 3-step gate.
+    // line_q = 6 ("another goal after 1-0" ⇔ Over 1.5 total ⇔ round(1.5×4)); NOT 10 (=2.5), the honest line.
     const effectivePick = pickOverride ?? pick;
-    const data = synthOuReceipt(MARKET_ID, 17588395n, 10, true);
+    const data = synthOuReceipt(MARKET_ID, 17588395n, 6, true);
     const acct: OnchainAccount = { pubkey: receiptPda, owner: KICKOFF_ORACLE_PROGRAM_ID, data };
     const outcome = resolveFromReceipt(acct, MARKET_ID); // throws if the gate fails
     const verified = verifyOuReceipt(acct, MARKET_ID);

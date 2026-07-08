@@ -106,14 +106,25 @@ export interface PropPrimitive {
   lineQ?: number;
 }
 
-/** v1 PRIMARY primitive from a goal event: "will there be another goal" (O/U), de-vigged seed. */
+/**
+ * v1 PRIMARY primitive from a goal event: "will there be another goal" (O/U), de-vigged seed.
+ *
+ * "Another goal after H-A" IS an O/U-total market at the line `(H+A)+0.5`: one more goal makes the total
+ * exceed the current total by a half-goal. So it is BOUND to that line (`lineQ = lineToLineQ(line)`) exactly
+ * like `totalGoalsPrimitive` — the settle-consumer then fail-closes a receipt minted at any OTHER line
+ * (`verifyOuReceiptForLine`, `WrongLine`), instead of the old line-UNBOUND path that read only the `over`
+ * byte and would accept a receipt for a different total. The injected mint MUST attest THIS line_q.
+ */
 export function anotherGoalPrimitive(ev: ScoreEvent): PropPrimitive {
   const fairYes = binaryProb(ev.anotherGoalOdds, 0); // index 0 = YES (another goal)
+  const line = ev.homeScore + ev.awayScore + 0.5; // "another goal after H-A" ⇔ total Over (H+A)+0.5
   return {
     kind: PrimitiveKind.OuAnotherGoal,
     question: `Another goal after ${ev.homeScore}-${ev.awayScore} (${ev.minute}')?`,
     fairYes,
     trustlessSettleV1: true,
+    line,
+    lineQ: lineToLineQ(line),
   };
 }
 

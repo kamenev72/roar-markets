@@ -40,6 +40,15 @@ everything a fan sees is re-derivable from it.
 4. **The v1 venue close-path (A) is the venue authority's `resolve()`** — labeled
    on-screen and in docs as "trusted-now, proof-gated-target". The venue payout is
    **not** claimed trustless; a fully proof-gated venue close is future work (B).
+5. **The fan re-derives the SETTLEMENT COMPUTATION, not the market FRAMING.** What is
+   trustlessly re-checkable is the OUTCOME rule — `over @ line_q` vs the Merkle-attested
+   goal total carried on the receipt. The market's FRAMING (the base score it was spawned
+   at, e.g. "another goal after 1-0" ⇒ line 1.5) comes from the off-chain TxLINE SSE feed,
+   a STATED trusted input: a lied base score would mis-frame the market (wrong `line_q`)
+   but is NOT itself proof-bound. The honest claim is "re-check OUR settlement", never
+   "re-check the score we framed the market at". The `line_q` binding (§3.1) is what makes
+   the settlement re-check meaningful — a receipt minted at any other line fail-closes
+   (`WrongLine`), so the outcome the fan re-derives is the one bound to THIS market's line.
 
 ## 4. Attack-surface map
 
