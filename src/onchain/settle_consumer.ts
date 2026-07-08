@@ -70,7 +70,7 @@ export function verifyOuReceipt(acct: OnchainAccount, expectedMarketId: Uint8Arr
  * The OU gate PLUS a binding of the receipt's `line_q`@48 to the market's DECLARED line. A receipt minted for
  * a DIFFERENT total-goals line (e.g. a 2.5 receipt) can NEVER resolve a market declared at another line (e.g.
  * 1.5) — it fail-closes with `WrongLine`. Without this binding a single shared receipt account would silently
- * resolve every line market the same way (the multi-line fail-open §5.1 warns about); with it, each line is
+ * resolve every line market the same way (the multi-line fail-open SECURITY.md warns about); with it, each line is
  * independently and trustlessly bound. `expectedLineQ` is the integer `lineToLineQ(line)` recorded at spawn.
  */
 export function verifyOuReceiptForLine(acct: OnchainAccount, expectedMarketId: Uint8Array, expectedLineQ: number): VerifiedOu {

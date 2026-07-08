@@ -2,7 +2,7 @@
 // pitchmaker_book venue client — hand-rolled borsh instruction builders + account decoders for the
 // deployed binary CLOB (programs/pitchmaker_book, program id JBK6od…). It is the missing piece that
 // turns "venue deployed but never traded" into a live on-chain trade: the agent's QUOTE → post_order,
-// RE-QUOTE → cancel_order, FILL → take_order, RESOLVE/PAYOUT → resolve/claim (master plan §4.2).
+// RE-QUOTE → cancel_order, FILL → take_order, RESOLVE/PAYOUT → resolve/claim.
 //
 // Mirrors the kickoff-oracle resolver's approach: no @coral-xyz/anchor, no IDL — just the 8-byte
 // Anchor discriminator (./discriminator) + packed little-endian borsh (./borsh). The instruction

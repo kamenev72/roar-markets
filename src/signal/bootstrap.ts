@@ -1,5 +1,5 @@
 // Vendored verbatim from the PitchMaker repo (Apache-2.0; public-knowledge market-making math + an IDL-free Solana venue client). See NOTICE.
-// Cold-start liquidity ladder (master plan §14-P-M3, §0). A day-1 WC market has no history and no
+// Cold-start liquidity ladder. A day-1 WC market has no history and no
 // liquidity → no traders → no liquidity (the cold-start tax). PitchMaker SEEDS it: a depth ladder of
 // two-sided liquidity centred on the de-vigged consensus fair, with a CONSERVATIVE spread when the market
 // is cold (no flow ⇒ more uncertainty) that TIGHTENS to the warm GLFT spread as the market is traded.

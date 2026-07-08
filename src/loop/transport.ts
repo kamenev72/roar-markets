@@ -1,8 +1,8 @@
 // Vendored verbatim from the PitchMaker repo (Apache-2.0; public-knowledge market-making math + an IDL-free Solana venue client). See NOTICE.
 // VenueTransport — the EXECUTION actor's chain boundary. The autonomous loop (loop.ts) speaks only
 // this interface, so the same agent loop drives an in-process bankrun ledger (deterministic tests)
-// and a live devnet RPC (the real round-trip) with zero loop changes — the master plan's chain-
-// agnostic QuoteTransport seam (§2.1/§2.2). It owns the three signing identities a two-party venue
+// and a live devnet RPC (the real round-trip) with zero loop changes — a chain-
+// agnostic QuoteTransport seam. It owns the three signing identities a two-party venue
 // needs: the venue `authority`, the `maker` (the agent), and the scripted counterparty `taker`.
 
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";

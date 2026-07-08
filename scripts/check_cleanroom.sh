@@ -9,7 +9,8 @@ cd "$(dirname "$0")/.."
 PATTERNS=(
   'pmem' 'PM_bot' 'rtk' '\[COPY-' '\[STRATEGY-' '\[INFRA-' '\[CROSS-' 'finding:' 'PLAN-[0-9]'
   '\[checkpoint' '\[CP[0-9]' '\[W[0-9]' 'V[0-9]+[a-z]?-H[0-9]' '\bCF[0-9]+\b'
-  '[0-9]+-lens' '[0-9]+ agents' 'council v[0-9]' 'COMMITTED[- ]PARALLEL'
+  '[0-9]+-lens' '[0-9]+ agents' 'council v[0-9]' '\bcouncil\b' 'COMMITTED[- ]PARALLEL'
+  '\bP-[LMH][0-9]' '§[0-9]+-P' '\(review \)' 'master plan §'
   'BEGIN .*PRIVATE KEY' '0x[0-9a-fA-F]{64}' 'Bearer eyJ' 'POLYGONSCAN' 'DASHBOARD_'
   'api-key=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}'
   # Solana keypair byte-array (id.json / Keypair.fromSecretKey(Array)) — 50+ comma-separated 1-3 digit ints.
@@ -32,7 +33,7 @@ done
 
 # Scan COMMIT MESSAGES too (a public repo exposes git history): plan-ids, checkpoint tags, AI co-author
 # trailers must not ride in. Unpushed range vs origin/main; pass --full for the whole history (pre-flip check).
-MSG_PATTERNS=('PLAN-[0-9]' '\[checkpoint' '\[CP[0-9]' '\[W[0-9]' 'Co-Authored-By' '[0-9]+ agents' 'COMMITTED[- ]PARALLEL')
+MSG_PATTERNS=('PLAN-[0-9]' '\[checkpoint' '\[CP[0-9]' '\[W[0-9]' 'Co-Authored-By' '[0-9]+ agents' 'COMMITTED[- ]PARALLEL' '\bcouncil\b' '\bP-[LMH][0-9]')
 if [ "${1:-}" = "--full" ]; then RANGE=""; else
   if git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then RANGE="origin/main..HEAD"; else RANGE="-30"; fi
 fi
