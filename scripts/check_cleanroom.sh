@@ -8,6 +8,8 @@ cd "$(dirname "$0")/.."
 # Secret-shape patterns below use only POSIX ERE (no \s / \d) so they run identically on macOS BSD grep and CI GNU grep.
 PATTERNS=(
   'pmem' 'PM_bot' 'rtk' '\[COPY-' '\[STRATEGY-' '\[INFRA-' '\[CROSS-' 'finding:' 'PLAN-[0-9]'
+  '\[checkpoint' '\[CP[0-9]' '\[W[0-9]' 'V[0-9]+[a-z]?-H[0-9]' '\bCF[0-9]+\b'
+  '[0-9]+-lens' '[0-9]+ agents' 'council v[0-9]' 'COMMITTED[- ]PARALLEL'
   'BEGIN .*PRIVATE KEY' '0x[0-9a-fA-F]{64}' 'Bearer eyJ' 'POLYGONSCAN' 'DASHBOARD_'
   'api-key=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}'
   # Solana keypair byte-array (id.json / Keypair.fromSecretKey(Array)) — 50+ comma-separated 1-3 digit ints.
@@ -27,5 +29,20 @@ for p in "${PATTERNS[@]}"; do
   HITS=$(printf '%s\n' $FILES | xargs grep -nIE "$p" 2>/dev/null || true)
   if [ -n "$HITS" ]; then echo "❌ clean-room violation (pattern: $p):"; echo "$HITS"; FAIL=1; fi
 done
-if [ "$FAIL" -eq 0 ]; then echo "✅ clean-room gate passed (no proprietary vocabulary or secrets in tracked files)."; fi
+
+# Scan COMMIT MESSAGES too (a public repo exposes git history): plan-ids, checkpoint tags, AI co-author
+# trailers must not ride in. Unpushed range vs origin/main; pass --full for the whole history (pre-flip check).
+MSG_PATTERNS=('PLAN-[0-9]' '\[checkpoint' '\[CP[0-9]' '\[W[0-9]' 'Co-Authored-By' '[0-9]+ agents' 'COMMITTED[- ]PARALLEL')
+if [ "${1:-}" = "--full" ]; then RANGE=""; else
+  if git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then RANGE="origin/main..HEAD"; else RANGE="-30"; fi
+fi
+MSGS=$(git log $RANGE --format='%H%n%B' 2>/dev/null || true)
+for p in "${MSG_PATTERNS[@]}"; do
+  if printf '%s' "$MSGS" | grep -qiE "$p"; then
+    echo "❌ clean-room violation (commit message pattern: $p) in ${RANGE:-full history}:"
+    printf '%s' "$MSGS" | grep -inE "$p" | head; FAIL=1
+  fi
+done
+
+if [ "$FAIL" -eq 0 ]; then echo "✅ clean-room gate passed (no proprietary vocabulary or secrets in tracked files or commit messages)."; fi
 exit $FAIL

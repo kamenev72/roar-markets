@@ -130,7 +130,7 @@ describe("quote (GLFT)", () => {
   });
 });
 
-describe("GLFT bounded terminal penalty (P-H4)", () => {
+describe("GLFT bounded terminal penalty ", () => {
   const hFloor = 2 * 0.05 ** 2; // base γσ² = 0.005
 
   it("h is BOUNDED by η at every t (no divergence) — fixes the old γσ²/(T−t) blow-up", () => {
@@ -161,7 +161,7 @@ describe("GLFT bounded terminal penalty (P-H4)", () => {
     expect(k4.h).toBeLessThan(k2.h);
   });
 
-  // Pins the DELIBERATE superposition the doc-string describes (§16 KERNEL-MATH-CLOSEOUT): inventory is
+  // Pins the DELIBERATE superposition the doc-string describes: inventory is
   // leaned by TWO stacking mechanisms — the A-S reservation lean h·q AND the GLFT distance skew 2·c2·q —
   // so the combined mid-skew slope is −(h+2·c2). At q=0 both vanish, which is why the slope is checked at q≠0.
   it("pins the two inventory mechanisms at q≠0: the A-S lean (h·q) + the GLFT distance skew (2·c2·q) stack", () => {
@@ -173,7 +173,7 @@ describe("GLFT bounded terminal penalty (P-H4)", () => {
     // 2) the GLFT asymmetric-distance skew: mid − r = −2·c2·q
     expect(close(mid - Q.reservation, -2 * Q.c2 * q)).toBe(true);
     // 3) the COMBINED mid-skew slope: mid − pFair = −(h + 2·c2)·q (the two mechanisms stack — NOT the
-    //    single-mechanism textbook GLFT, which carries the skew entirely in the distances)
+    // single-mechanism textbook GLFT, which carries the skew entirely in the distances)
     expect(close(mid - Q.pFair, -(Q.h + 2 * Q.c2) * q)).toBe(true);
     // 4) at q=0 both mechanisms vanish: mid = pFair, symmetric bid/ask distances
     const Q0 = quote(OU, base({ q: 0 }));

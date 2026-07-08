@@ -4,18 +4,18 @@
  *
  * Closed form: Guéant, Lehalle & Fernández-Tapia (2013) "Dealing with the Inventory Risk"
  * (arXiv:1105.3115), Thm 1–2 + Prop 3. Finite-horizon terminal flatten: Cartea-Jaimungal-Penalva,
- * "Algorithmic and High-Frequency Trading" (2015) Ch.10. De-vig anchor: ./devig.
+ * "Algorithmic and High-Frequency Trading" (2015) Ch.10. De-vig anchor:./devig.
  *
  * Two inventory mechanisms, both leaning to offload a long position (q>0) — a DELIBERATE superposition,
  * not the single-mechanism textbook form:
- *  - GLFT *stationary* skew via the asymmetric distances δ^a/δ^b (the c2·2q term) — horizon-FREE.
- *  - Finite-horizon A-S *reservation lean* r = p − h(t)·q keyed to the whistle (Cartea-Jaimungal 2015
- *    Ch.10; P-H4), with a BOUNDED rate h(t) = h_floor + (η − h_floor)·(1−(T−t)/T)^κ that interpolates the
- *    stationary GLFT floor h_floor=γσ² (early) → the terminal flatten rate η (last minutes). A match
- *    resolves hard (no post-T liquidity), so inventory urgency GROWS toward T — but BOUNDED by η, not the
- *    divergent γσ²/(T−t) it replaces (which blew up + clamped to ε near the whistle). NB: η is the terminal
- *    LEAN-RATE (the reservation shifts by η·q at the whistle), i.e. an equivalent value-function penalty
- *    −(η/2)·q² — NOT −η·q² (whose marginal would be 2η·q).
+ * - GLFT *stationary* skew via the asymmetric distances δ^a/δ^b (the c2·2q term) — horizon-FREE.
+ * - Finite-horizon A-S *reservation lean* r = p − h(t)·q keyed to the whistle (Cartea-Jaimungal 2015
+ * Ch.10; ), with a BOUNDED rate h(t) = h_floor + (η − h_floor)·(1−(T−t)/T)^κ that interpolates the
+ * stationary GLFT floor h_floor=γσ² (early) → the terminal flatten rate η (last minutes). A match
+ * resolves hard (no post-T liquidity), so inventory urgency GROWS toward T — but BOUNDED by η, not the
+ * divergent γσ²/(T−t) it replaces (which blew up + clamped to ε near the whistle). NB: η is the terminal
+ * LEAN-RATE (the reservation shifts by η·q at the whistle), i.e. an equivalent value-function penalty
+ * −(η/2)·q² — NOT −η·q² (whose marginal would be 2η·q).
  *
  * Combined, the mid-quote skews as mid = (bid+ask)/2 = pFair − (h + 2·c2)·q: the A-S lean h AND the GLFT
  * distance skew 2·c2 stack (both offload a long position). At q=0 they vanish (mid = pFair, symmetric
@@ -51,7 +51,7 @@ export interface QuoteParams {
   tick?: number;
   /** boundary epsilon (default 1e-9). */
   eps?: number;
-  /** terminal inventory LEAN-RATE keyed to the whistle (P-H4): the BOUNDED reservation-flatten rate the
+  /** terminal inventory LEAN-RATE keyed to the whistle : the BOUNDED reservation-flatten rate the
    * lean grows toward at t→T (the reservation shifts by η·q at the whistle; equiv. penalty −(η/2)·q²).
    * Default 0.02; clamped up to the stationary floor γσ². */
   eta?: number;
@@ -121,7 +121,7 @@ export function quote(odds: number[], p: QuoteParams): Quote {
   const { c1, c2 } = glftCoeffs(gamma, sigma, A, k);
 
   // Finite-horizon terminal inventory lean (rate η; equiv. penalty −(η/2)·q²) keyed to the whistle
-  // (Cartea-Jaimungal 2015 Ch.10; P-H4).
+  // (Cartea-Jaimungal 2015 Ch.10; ).
   // The inventory-skew rate h(t) is BOUNDED and interpolates the stationary GLFT floor early →
   // the terminal flatten η in the last minutes — NO blow-up (the old γσ²/(T−t) diverged at t→T).
   const eta = p.eta ?? 0.02;
