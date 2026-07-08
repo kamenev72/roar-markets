@@ -48,8 +48,8 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   tx + the live scores-schema pin (the launchd daemon auto-captures that during a live WC match).
 
 2026-06-29  **W2c — REAL on-chain settle (not synthetic).** The deferred live mint is DONE on devnet:
-- A fresh TxLINE composite total-proof (P1+P2, op=Add) **verified live** via `txoracle:validate_stat`
-  (tx `5k69yoyn…`), then a **real `OuBoundReceipt` minted** via `kickoff_oracle:settle_ou_bound`'s
+- A fresh TxLINE composite total-proof (P1+P2, op=Add) **verified live** via `txoracle::validate_stat`
+  (tx `5k69yoyn…`), then a **real `OuBoundReceipt` minted** via `kickoff_oracle::settle_ou_bound`'s
   CPI-gated `validate_stat` (tx `4CzqNgSp…` → receipt `39vT6hs7…` at market_id `532843…` =
   `deriveMarketId(17588395, OuAnotherGoal, 0)`), and **PROPCAST's settle-consumer 3-step gate verified it
   on-chain** (`over=false fixtureId=17588395 → NO`). `scripts/mint_real_receipt.ts` (producer) +
