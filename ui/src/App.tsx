@@ -223,8 +223,8 @@ export function App() {
           )}
         </h1>
         <p style={{ color: C.dim, marginTop: 6, fontSize: 14 }}>
-          The in-match micro-market at a goal-grain <b>Polymarket's oracle economics can't service</b> — auto-spawned
-          from an objective goal, auto-settled trustlessly from TxODDS's Merkle-anchored score, re-verifiable in your browser.
+          The in-play micro-market <b>the fan settles themselves</b> — re-compute the Merkle-anchored settlement in your
+          own browser, no key, no trusted oracle — auto-spawned from an objective goal, at a goal-grain Polymarket can't service.
         </p>
 
         {/* the REAL on-chain re-verify (the climax — not a mock) */}
