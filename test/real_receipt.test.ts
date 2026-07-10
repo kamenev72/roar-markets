@@ -55,4 +55,11 @@ describe("REAL on-chain receipt (phase 2c pin + in-browser re-verify)", () => {
     const foreign: FetchedAccount = { owner: SYSTEM, data: realShapedData(false) };
     expect(() => verifyRealReceipt(foreign)).toThrow(ReceiptGateError);
   });
+
+  it("PC-04: the in-browser re-verify is LINE-BOUND — a receipt at a wrong line_q fail-closes (WrongLine)", () => {
+    const d = realShapedData(false);
+    new DataView(d.buffer, d.byteOffset).setInt16(48, 6, true); // line_q 6 (=1.5) instead of the real 10 (=2.5)
+    const fetched: FetchedAccount = { owner: KICKOFF_ORACLE_PROGRAM_ID, data: d };
+    expect(() => verifyRealReceipt(fetched)).toThrow(/WrongLine/); // SECURITY §3.5 "bound to THIS market's line" now literally true
+  });
 });

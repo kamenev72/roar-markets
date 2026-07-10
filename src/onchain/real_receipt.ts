@@ -6,7 +6,7 @@
 
 import { PublicKey } from "@solana/web3.js";
 import { ouReceiptPda } from "./receipt.js";
-import { verifyOuReceipt, type OnchainAccount } from "./settle_consumer.js";
+import { verifyOuReceiptForLine, type OnchainAccount } from "./settle_consumer.js";
 
 /** market_id of the phase 2c real settle: deriveMarketId(17588395, OuAnotherGoal, 0). */
 export const REAL_MARKET_ID_HEX = "532843d51b34f1140e08daf6570ee49204e65c670abf9b043bb37c7b5b452dc1";
@@ -14,6 +14,10 @@ export const REAL_MARKET_ID_HEX = "532843d51b34f1140e08daf6570ee49204e65c670abf9
 export const REAL_RECEIPT_PDA = "39vT6hs7hmqcQ3oaQ3AgCMJrdX2dz5973hhoffVQiX6n";
 /** the anchored fixture the proof settled. */
 export const REAL_FIXTURE_ID = 17588395n;
+/** PC-04: the receipt's on-chain `line_q` (decoded live = 10). Binding the flagship in-browser re-verify to
+ *  it (via `verifyOuReceiptForLine`) makes SECURITY §3.5's "the fan re-derives the outcome bound to THIS
+ *  market's line" literally TRUE — a receipt at any other line fail-closes (`WrongLine`), not a silent pass. */
+export const REAL_LINE_Q = 10;
 
 /** Browser-safe hex → 32-byte id (no Node Buffer, so the UI bundle stays clean). */
 export function marketIdFromHex(h: string): Uint8Array {
@@ -47,6 +51,6 @@ export function verifyRealReceipt(fetched: FetchedAccount | null, marketIdHex = 
   const pda = ouReceiptPda(marketId);
   if (fetched === null) throw new Error(`receipt ${pda.toBase58()} not found on devnet (devnet prunes ~30 days — re-mint to refresh)`);
   const acct: OnchainAccount = { pubkey: pda, owner: fetched.owner, data: fetched.data };
-  const v = verifyOuReceipt(acct, marketId);
+  const v = verifyOuReceiptForLine(acct, marketId, REAL_LINE_Q); // PC-04: LINE-bound, not just owner/disc/PDA
   return { resolution: v.over ? "YES" : "NO", fixtureId: v.fixtureId, pda };
 }
