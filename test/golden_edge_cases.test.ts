@@ -1,4 +1,4 @@
-// PROPCAST golden edge-case battery (W3). Settle-lifecycle correctness over the REAL
+// PROPCAST golden edge-case battery (phase 3). Settle-lifecycle correctness over the REAL
 // settle-consumer + factory seams: abandoned -> VOID, VAR-disallowed goal, own-goal proxy, double-goal-in-tick.
 // Synthetic fixtures only (no live rail). Each case exercises the actual code path it claims to cover.
 

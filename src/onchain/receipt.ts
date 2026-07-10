@@ -23,7 +23,7 @@ export const OVER_OFFSET = 50;
 // ---------- line_q quantization (the half-line ↔ on-chain integer) ----------
 //
 // `line_q:i16` encodes the O/U total-goals half-line as an integer at quarter-line resolution:
-// line_q = round(line × 4). Pinned to the real W2c devnet receipt, minted "Under 2.5" (line_q = 10 = 2.5×4;
+// line_q = round(line × 4). Pinned to the real phase 2c devnet receipt, minted "Under 2.5" (line_q = 10 = 2.5×4;
 // see the settle-consumer test that decodes that layout). A wrong constant only mis-LABELS the human line on
 // the board — it never affects the SETTLE binding, which compares raw `line_q` integers (see
 // `verifyOuReceiptForLine`). So multi-line correctness is quantization-agnostic; only the display is pinned.

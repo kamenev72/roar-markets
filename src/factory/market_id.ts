@@ -2,7 +2,7 @@
 //
 // One deterministic derivation produces BOTH forms a micro-market needs:
 //   - bytes  : the 32-byte id = SHA-256(domain || fixtureId_le64 || kind_u8 || nonce_le32). This is the form
-//              the trustless settle binds to (the kickoff bound-receipt PDA seed, used in W2) and the fan
+//              the trustless settle binds to (the kickoff bound-receipt PDA seed, used in phase 2) and the fan
 //              re-verify key.
 //   - u64    : the pitchmaker_book venue id = little-endian decode of bytes[0..8]. The venue PDA is
 //              findProgramAddress(["venue", u64_le], program) — so bytes[0..8] == u64 bridges the two forms.
@@ -27,7 +27,7 @@ export enum PrimitiveKind {
 }
 
 export interface MarketId {
-  /** 32-byte id — the kickoff bound-receipt PDA seed form (settle, W2) + the fan re-verify key. */
+  /** 32-byte id — the kickoff bound-receipt PDA seed form (settle, phase 2) + the fan re-verify key. */
   bytes: Uint8Array;
   /** the pitchmaker_book venue marketId (u64) — little-endian decode of bytes[0..8]. */
   u64: bigint;

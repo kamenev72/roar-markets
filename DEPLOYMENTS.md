@@ -1,6 +1,6 @@
 # DEPLOYMENTS — Solana devnet
 
-The deployed programs PROPCAST consumes, the `market_id` scheme, and the proven W2c settle artifacts. PROPCAST
+The deployed programs PROPCAST consumes, the `market_id` scheme, and the proven phase 2c settle artifacts. PROPCAST
 itself is a TypeScript consumer + fan UI — it deploys no program of its own (no-duplicate-mechanism); it CALLS
 these.
 

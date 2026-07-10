@@ -1,4 +1,4 @@
-// The pinned REAL on-chain OuBoundReceipt (minted W2c on devnet) + a pure verify over a fetched account.
+// The pinned REAL on-chain OuBoundReceipt (minted phase 2c on devnet) + a pure verify over a fetched account.
 //
 // This is the demo CLIMAX: a REAL kickoff_oracle receipt that PROPCAST's own 3-step gate re-verifies in the
 // fan's browser with NO API key. The fetch (getAccountInfo) is I/O and lives in the caller (the UI / a script);
@@ -8,7 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 import { ouReceiptPda } from "./receipt.js";
 import { verifyOuReceipt, type OnchainAccount } from "./settle_consumer.js";
 
-/** market_id of the W2c real settle: deriveMarketId(17588395, OuAnotherGoal, 0). */
+/** market_id of the phase 2c real settle: deriveMarketId(17588395, OuAnotherGoal, 0). */
 export const REAL_MARKET_ID_HEX = "532843d51b34f1140e08daf6570ee49204e65c670abf9b043bb37c7b5b452dc1";
 /** the on-chain receipt PDA (owner = kickoff_oracle) — pinned to the live devnet account. */
 export const REAL_RECEIPT_PDA = "39vT6hs7hmqcQ3oaQ3AgCMJrdX2dz5973hhoffVQiX6n";

@@ -1,10 +1,10 @@
 # DEMO — the ≤5-min walkthrough
 
-**Video:** _(operator pastes the hosted unlisted URL here before the public repo flip)_
+**Video:** _(link lands before submission)_
 
 The recorded demo IS the MVP. It leads with the DETERMINISTIC fixture (a live `serviceLevelId=1` ~60s run is
 an optional second beat, gated on a live WC match). Devnet prunes confirmed txs ~30 days, so it is recorded
-against the still-resolvable W2c hashes.
+against the still-resolvable phase 2c hashes.
 
 ## The spine (what the demo shows)
 

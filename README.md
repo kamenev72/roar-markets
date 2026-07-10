@@ -51,7 +51,7 @@ it consumes gate-verified results and never touches verification.
 
 ## Status
 
-**W1 + W2 complete; W3 packages the submission.** The auto-spawn factory, the `market_id[32]` integration
+**Complete end-to-end.** The auto-spawn factory, the `market_id[32]` integration
 contract, the on-chain settle-consumer (a 3-step fail-closed gate over a kickoff `OuBoundReceipt`), and the
 fan UI all ship. The trustless settle is proven end-to-end on Solana devnet: a live TxLINE Merkle goal-total
 proof → a real `OuBoundReceipt` minted via `kickoff_oracle`'s CPI-gated `settle_ou_bound` → PROPCAST's own

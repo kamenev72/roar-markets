@@ -46,7 +46,7 @@ describe("PROPCAST settle-consumer (OuBoundReceipt 3-step gate)", () => {
     expect(resolveFromReceipt(acct(MK, synthOu(MK, 17588395n, 10, false)), MK)).toBe("NO");
   });
 
-  it("pins the line_q quantization to the real W2c receipt: Under 2.5 <-> line_q 10 (x4)", () => {
+  it("pins the line_q quantization to the real phase 2c receipt: Under 2.5 <-> line_q 10 (x4)", () => {
     expect(lineToLineQ(2.5)).toBe(10);
     expect(lineQToLine(10)).toBe(2.5);
     // the other v1 total-goals lines

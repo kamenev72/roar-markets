@@ -1,4 +1,4 @@
-// The pinned REAL on-chain receipt (W2c) — the PDA derivation is locked against the live devnet account, and
+// The pinned REAL on-chain receipt (phase 2c) — the PDA derivation is locked against the live devnet account, and
 // the shared 3-step gate re-verifies it. If anyone breaks ouReceiptPda(), the PDA pin fails loudly.
 
 import { describe, it, expect } from "vitest";
@@ -28,7 +28,7 @@ function realShapedData(over: boolean): Uint8Array {
   return d;
 }
 
-describe("REAL on-chain receipt (W2c pin + in-browser re-verify)", () => {
+describe("REAL on-chain receipt (phase 2c pin + in-browser re-verify)", () => {
   it("market_id hex decodes to 32 bytes and round-trips", () => {
     const b = marketIdFromHex(REAL_MARKET_ID_HEX);
     expect(b).toHaveLength(32);

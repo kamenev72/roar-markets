@@ -8,7 +8,7 @@ import { lineToLineQ } from "../onchain/receipt.js";
 import { PrimitiveKind } from "./market_id.js";
 
 /**
- * The factory's normalized scoring event. W1 replays these from a fixture / MemoryTransport; a REAL live
+ * The factory's normalized scoring event. phase 1 replays these from a fixture / MemoryTransport; a REAL live
  * TxLINE frame is bridged into one by `scoreEventFromLiveFrame` (the in-play schema is now PINNED from a live
  * capture — see `LiveScoreFrame` + `fixtures/live_scores_frame.json`).
  */

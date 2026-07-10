@@ -4,25 +4,25 @@ Dated build journal for the auto-spawned, trustlessly-settled goal-grain micro-p
 
 ---
 
-2026-06-28  **W1 — repo scaffold + factory spine (synthetic, MemoryTransport).**
+2026-06-28  **phase 1 — repo scaffold + factory spine (synthetic, MemoryTransport).**
 - **CP1 scaffold** — TS + vitest toolchain, the clean-room CI gate (no proprietary vocabulary / secrets),
   Apache-2.0 + NOTICE; private repo created.
 - **CP2 vendored the pure pricing + venue modules** — de-vig, GLFT `quote`, the cold-start bootstrap ladder,
   the IDL-free `pitchmaker_book` venue client, and the in-process `MemoryTransport` — verbatim with
-  attribution, proven in-repo (39/39). The TxLINE live-ingest modules defer to W2 (the W1 spine is synthetic).
+  attribution, proven in-repo (39/39). The TxLINE live-ingest modules defer to phase 2 (the phase 1 spine is synthetic).
 - **CP3 the `market_id[32]` contract** — `SHA-256(domain || fixtureId || kind || nonce)`; `bytes[0..8]`
   (little-endian) == the `u64` the venue PDA seeds on, so one derivation bridges the venue id (now) and the
-  bound-receipt PDA seed (W2). Collision-free over a grid + a venue-PDA cross-check (the frozen seam).
+  bound-receipt PDA seed (phase 2). Collision-free over a grid + a venue-PDA cross-check (the frozen seam).
 - **CP4 the `PropMarketFactory` spine** — `onGoal` → derive a `market_id` → `init_venue` → post the de-vigged
   two-sided seed ladder over `MemoryTransport`; "will there be another goal" (O/U) is the v1 PRIMARY
-  (trustlessly settleable via the kickoff `settle_ou_bound` rail in W2); next-goal-which-side is a labeled
+  (trustlessly settleable via the kickoff `settle_ou_bound` rail in phase 2); next-goal-which-side is a labeled
   proxy only (no on-chain proof of goal order). 47/47 tests, build + clean-room green.
 
-**Deferred to W2/W3:** the live in-play scores schema pin (needs a live TxLINE rail + a real scoring frame),
+**Deferred to a later phase:** the live in-play scores schema pin (needs a live TxLINE rail + a real scoring frame),
 the on-chain settle path (mint + consume the kickoff bound receipt), and the fan UI. Honesty: goal-grain
 only; event-granularity settle (not per-second); the factory reports coverage/quality, never a $-PnL.
 
-2026-06-29  **W2a — on-chain settle-consumer (the trust gate, rail/proof-independent).**
+2026-06-29  **phase 2a — on-chain settle-consumer (the trust gate, rail/proof-independent).**
 - `src/onchain/receipt.ts` + `src/onchain/settle_consumer.ts` — `verifyOuReceipt` runs the p2p_pool
   three-step fail-closed gate over a kickoff `OuBoundReceipt` (owner == kickoff_oracle / the OU discriminator
   / the `["ou_bound", market_id]` PDA), then reads `over`@**50** (NOT @48 — `line_q:i16` occupies 48..50) +
@@ -35,8 +35,8 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   TxLINE rail is now live (subscribe + X-Api-Token); a background watcher auto-captures the in-play scores
   schema during the next live WC match.
 
-2026-06-29  **W2b — fan Goal-Markets board (the Track-C consumer surface).**
-- `ui/` — a vite React app (mirrors the kickoff explorer) that runs the W1 de-vig seed + the W2a
+2026-06-29  **phase 2b — fan Goal-Markets board (the Track-C consumer surface).**
+- `ui/` — a vite React app (mirrors the kickoff explorer) that runs the phase 1 de-vig seed + the phase 2a
   settle-consumer IN THE BROWSER: ⚽ a goal spawns the "another goal" micro-market (seeded from the de-vigged
   consensus YES%, keyed by the `market_id`), the fan picks YES/NO, the whistle settles it from a (clearly
   SYNTHETIC) `OuBoundReceipt` through the identical 3-step gate (`verifyOuReceipt` → owner / OU disc /
@@ -47,7 +47,7 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   gated); no $-PnL; goal-grain only; event-granularity settle. Deferred: the live mint + the real venue-resolve
   tx + the live scores-schema pin (the launchd daemon auto-captures that during a live WC match).
 
-2026-06-29  **W2c — REAL on-chain settle (not synthetic).** The deferred live mint is DONE on devnet:
+2026-06-29  **phase 2c — REAL on-chain settle (not synthetic).** The deferred live mint is DONE on devnet:
 - A fresh TxLINE composite total-proof (P1+P2, op=Add) **verified live** via `txoracle::validate_stat`
   (tx `5k69yoyn…`), then a **real `OuBoundReceipt` minted** via `kickoff_oracle::settle_ou_bound`'s
   CPI-gated `validate_stat` (tx `4CzqNgSp…` → receipt `39vT6hs7…` at market_id `532843…` =
@@ -60,7 +60,7 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   snapshot fails). No $-PnL. The live in-play (`Participant`) schema pin still needs a live match (the
   `com.propcast.scores-capture` launchd daemon auto-captures it).
 
-2026-06-29  **W3 — finish + ship (primitives-harden-demo-docs).** The submittable v1:
+2026-06-29  **phase 3 — finish + ship (primitives-harden-demo-docs).** The submittable v1:
 - **Golden edge-case battery** (`test/golden_edge_cases.test.ts`): abandoned→VOID (`resolveFromReceiptOrVoid`:
   absent receipt = VOID, distinct from the fail-closed throw), VAR-disallowed (the consumer reads only the
   FINAL receipt's `over`, never a provisional state), own-goal (the OU primitive is attribution-agnostic;
@@ -85,7 +85,7 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   fail-closed + offset-pinned by `test/btts.test.ts` (6). Live mint for a PROPCAST market_id is DESIGN.
   Remaining if-time: the live ~60s match beat (gated on a live WC match + the private proof-build).
 
-2026-06-29  **W2 schema PINNED — risk #1 CLOSED (the daemon caught a live match).** The
+2026-06-29  **phase 2 schema PINNED — risk #1 CLOSED (the daemon caught a live match).** The
   `com.propcast.scores-capture` launchd daemon AUTONOMOUSLY captured a real in-play frame at 17:08Z
   (Brazil-Japan, the R32 window) — the #1 cross-project unknown (the in-play `Participant`/which-side schema,
   never seen live) is now KNOWN. Pinned: `fixtures/live_scores_frame.json` (a real captured frame) +
@@ -93,14 +93,14 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   goals = `Stats["1"]`/`["2"]` per-participant, `Clock.Seconds`, `StatusId===2` in-play) + `isInPlay` +
   `scoreEventFromLiveFrame` (bridges a real frame → the factory's `ScoreEvent`, resolving home/away via
   `Participant1IsHome`). `test/live_frame.test.ts` 4/4 (the which-side mapping + its away-flip + the in-play
-  guard); build + 92/92 green. The synthetic W1 replay path is unchanged; the live bridge is additive.
+  guard); build + 92/92 green. The synthetic phase 1 replay path is unchanged; the live bridge is additive.
 
-2026-06-30  **W4 — fan-experience polish + breadth (Track-C deepening).** v1 was already submittable; W4 adds
+2026-06-30  **phase 4 — fan-experience polish + breadth (Track-C deepening).** v1 was already submittable; phase 4 adds
   breadth + trust-depth, all reuse, no net-new program.
 - **CP1 — line_q-bound OU consumer.** `verifyOuReceiptForLine` reads the receipt's `line_q`@48 and binds it to
   the market's declared line — a wrong-line receipt fail-closes (`WrongLine`), the precondition for >1 O/U line
   (without it a single receipt would resolve every line the same way, the multi-line fail-open). `line_q =
-  round(line × 4)` pinned to the real W2c receipt (Under 2.5 = line_q 10). `VerifiedOu` gains `lineQ`.
+  round(line × 4)` pinned to the real phase 2c receipt (Under 2.5 = line_q 10). `VerifiedOu` gains `lineQ`.
 - **CP2 — total-goals O/U line-variant primitive.** `totalGoalsPrimitive(line, odds)` + `factory.spawnTotalGoals`
   auto-spawn O/U 1.5/2.5/3.5 as distinct, line-bound, trustlessly-settleable markets (goal-key only — no
   honesty-surface widening), reusing the same spawn + per-key lock. `test/total_goals.test.ts`.

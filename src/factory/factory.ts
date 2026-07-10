@@ -1,9 +1,9 @@
 // PROPCAST PropMarketFactory — the auto-spawn multiplexer. On each goal-derived primitive it derives a
 // collision-free market_id, inits a fresh pitchmaker_book micro-venue, and posts the de-vigged two-sided
-// seed ladder, registering the market for the fan board + the (W2) auto-settle path.
+// seed ladder, registering the market for the fan board + the (phase 2) auto-settle path.
 //
-// W1: synthetic fixture + an in-process MemoryTransport (no chain, no RPC). The on-chain settle path
-// (mint + consume the kickoff bound receipt), the live TxLINE feed, and the fan UI arrive in W2/W3. The
+// phase 1: synthetic fixture + an in-process MemoryTransport (no chain, no RPC). The on-chain settle path
+// (mint + consume the kickoff bound receipt), the live TxLINE feed, and the fan UI arrive in a later phase. The
 // factory reports market QUALITY/coverage (markets spawned, levels seeded) — never a $-PnL.
 
 import { SCALE, SIDE_ASK, SIDE_BID } from "../venue/client.js";

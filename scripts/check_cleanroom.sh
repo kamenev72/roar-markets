@@ -10,7 +10,8 @@ PATTERNS=(
   'pmem' 'PM_bot' 'rtk' '\[COPY-' '\[STRATEGY-' '\[INFRA-' '\[CROSS-' 'finding:' 'PLAN-[0-9]'
   '\[checkpoint' '\[CP[0-9]' '\[W[0-9]' 'V[0-9]+[a-z]?-H[0-9]' '\bCF[0-9]+\b'
   '[0-9]+-lens' '[0-9]+ agents' 'council v[0-9]' '\bcouncil\b' 'COMMITTED[- ]PARALLEL'
-  '\bP-[LMH][0-9]' '§[0-9]+-P' '\(review \)' 'master plan §'
+  '\bP-[LMH][0-9]' '§[0-9]+-P' '\(review \)' '[Mm]aster plan'
+  '[0-9]+-agent' 'review rank [0-9]' 'operator (rule|planning|directed|gated|authorized)' '\+H[0-9]' '\bW[1-9]\b'
   'BEGIN .*PRIVATE KEY' '0x[0-9a-fA-F]{64}' 'Bearer eyJ' 'POLYGONSCAN' 'DASHBOARD_'
   'api-key=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}'
   # Solana keypair byte-array (id.json / Keypair.fromSecretKey(Array)) — 50+ comma-separated 1-3 digit ints.

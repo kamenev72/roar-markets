@@ -1,4 +1,4 @@
-// PROPCAST factory hardening (W3): per-key lock (race-free dedup + no cross-market starvation) + orphan-sweep.
+// PROPCAST factory hardening (phase 3): per-key lock (race-free dedup + no cross-market starvation) + orphan-sweep.
 
 import { describe, it, expect } from "vitest";
 import { MemoryTransport } from "../src/loop/memory_transport.js";

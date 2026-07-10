@@ -41,7 +41,7 @@ so the trust claim is checkable, not a bare green tick.
 - **REPRODUCIBLE** — the goal-grain BREADTH: an O/U total-goals line-variant primitive (1.5 / 2.5 / 3.5),
   goal-key only, settling via the SAME `settle_ou_bound` rail but BOUND to its line — the consumer reads the
   receipt's `line_q`@48 and fail-closes a wrong-line receipt (`WrongLine`), so a 2.5 receipt can never resolve a
-  1.5 market. The `line_q = round(line × 4)` quantization is pinned to the real W2c receipt (Under 2.5 =
+  1.5 market. The `line_q = round(line × 4)` quantization is pinned to the real phase 2c receipt (Under 2.5 =
   line_q 10). `test/total_goals.test.ts` + `test/settle_consumer.test.ts`. The per-line LIVE mint is DESIGN
   (rail/proof-gated, like BTTS); the line-binding + spawn are REPRODUCIBLE under the gate.
 

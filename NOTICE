@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (see LICENSE).
 
 Built for the TxODDS World Cup Hackathon. It is anchored to TxLINE's de-vigged
 consensus line (TxODDS data), spawns binary YES/NO goal-grain micro-markets on
-its own Solana CLOB venue, and settles them trustlessly against TxODDS's
+its own Solana binary escrow-cross venue, and settles them trustlessly against TxODDS's
 Merkle-anchored scores.
 
 Clean-room provenance: all pricing math derives from PUBLIC sources only —
