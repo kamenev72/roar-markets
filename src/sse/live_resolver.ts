@@ -74,36 +74,57 @@ export class LiveResolver {
    * Returns `null` if the hook reports the event is not yet provable (the daemon retries on the next frame).
    */
   async settle(market: SpawnedMarket, settleEv: GoalFrame): Promise<ResolvedMarket | null> {
-    // Idempotent: a market gets TWO settle triggers (the next goal, then the whistle) — settle only ONCE.
-    // Return the already-recorded resolution instead of re-minting + double-counting in `resolved[]`/metrics.
-    const alreadyResolved = this.resolved.find((r) => r.marketId === marketIdHex(market.id));
-    if (alreadyResolved !== undefined) return alreadyResolved;
+    // PC-09: serialize per market so two concurrent triggers (next-goal + whistle delivered in one poll
+    // batch / Promise.all) cannot both pass the idempotency check before either records — one mint, one row.
+    const idHex = marketIdHex(market.id);
+    return this.withMarketLock(idHex, async () => {
+      // Idempotent: a market gets TWO settle triggers (the next goal, then the whistle) — settle only ONCE.
+      const alreadyResolved = this.resolved.find((r) => r.marketId === idHex);
+      if (alreadyResolved !== undefined) return alreadyResolved;
 
-    const mintTx = await this.hook.mint(market, settleEv);
-    if (mintTx === null) return null;
+      const mintTx = await this.hook.mint(market, settleEv);
+      if (mintTx === null) return null; // not yet provable → the daemon retries next frame
 
-    const pda = ouReceiptPda(market.id.bytes);
-    const fetched = await this.fetcher.fetchOu(pda);
-    const acct: OnchainAccount | null = fetched ? { pubkey: pda, owner: fetched.owner, data: fetched.data } : null;
-    // VOID iff the receipt is absent; a LINE market (OuTotalGoals) MUST bind its line_q (fail-closed WrongLine on a
-    // wrong-line receipt) — route it through resolveOuLineFromReceipt, NOT the line-unbound path.
-    const resolution: PropResolution =
-      acct === null
-        ? "VOID"
-        : market.lineQ !== undefined
+      const pda = ouReceiptPda(market.id.bytes);
+      const fetched = await this.fetcher.fetchOu(pda);
+      // PC-01: a mint SUCCEEDED (mintTx !== null) but the read lags (fetched === null) is a TRANSIENT RPC
+      // sync race, NOT an abandoned market — return null (retry next frame), never a sticky VOID that the
+      // idempotency check would then freeze forever while the real YES/NO receipt lands a moment later. VOID
+      // for a genuinely abandoned match comes from the sweep-TTL path (no mint ever succeeds), not from here.
+      if (fetched === null) return null;
+      const acct: OnchainAccount = { pubkey: pda, owner: fetched.owner, data: fetched.data };
+
+      // A LINE market (lineQ set — incl. the primary "another goal", primitives.ts) MUST bind its line_q:
+      // resolveOuLineFromReceipt fail-closes (throws WrongLine) on a receipt minted at any OTHER line. A
+      // persistent WrongLine is a MINT-SIDE error (the injected mint attested the wrong line_q) and is
+      // surfaced loudly by design, not silently retried.
+      const resolution: PropResolution =
+        market.lineQ !== undefined
           ? resolveOuLineFromReceipt(acct, market.id.bytes, market.lineQ)
           : resolveFromReceipt(acct, market.id.bytes);
 
-    this.factory.markResolved(marketIdHex(market.id));
-    const r: ResolvedMarket = {
-      marketId: marketIdHex(market.id),
-      fixtureId: settleEv.fixtureId,
-      mintTx,
-      resolution,
-      verifiedAtMs: this.now(),
-    };
-    this.resolved.push(r);
-    return r;
+      this.factory.markResolved(idHex);
+      const r: ResolvedMarket = { marketId: idHex, fixtureId: settleEv.fixtureId, mintTx, resolution, verifiedAtMs: this.now() };
+      this.resolved.push(r);
+      return r;
+    });
+  }
+
+  // PC-09: per-market tail-lock (same shape as the factory's) — distinct markets settle concurrently, same-key
+  // calls queue so the idempotency check + record are atomic.
+  private readonly tails = new Map<string, Promise<unknown>>();
+  private async withMarketLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const prev = this.tails.get(key) ?? Promise.resolve();
+    let release!: () => void;
+    const mine = new Promise<void>((r) => (release = r));
+    this.tails.set(key, mine);
+    await prev;
+    try {
+      return await fn();
+    } finally {
+      release();
+      if (this.tails.get(key) === mine) this.tails.delete(key);
+    }
   }
 
   /** The captured evidence (the demo's tx-sig + resolution log). */

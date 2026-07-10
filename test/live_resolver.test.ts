@@ -65,12 +65,15 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     expect(r.list()).toHaveLength(0);
   });
 
-  it("an absent receipt (minted-but-not-found / abandoned) resolves VOID, never a fabricated YES/NO", async () => {
+  it("PC-01: a mint-sig-then-not-found read RETRIES (null), never a sticky VOID from an RPC sync lag", async () => {
+    // A mint SUCCEEDED (a sig) but the fetch lagged (null) is a transient RPC race, not an abandoned match:
+    // the resolver returns null so the daemon retries next frame, instead of recording a VOID that the
+    // idempotency check would then freeze forever while the real YES/NO receipt lands a moment later.
     const f = new PropMarketFactory(new MemoryTransport());
     const r = new LiveResolver(f, hookReturning("MINT_TX_3"), fetcherReturning(null));
     const m = await r.onGoal(goal(7n, 10, 1, 0));
-    const res = await r.settle(m, goal(7n, 90, 1, 0));
-    expect(res!.resolution).toBe("VOID");
+    expect(await r.settle(m, goal(7n, 90, 1, 0))).toBeNull(); // retry, NOT VOID
+    expect(r.list()).toHaveLength(0); // nothing recorded — a later frame with the real receipt can still resolve it
   });
 
   it("idempotent on a re-delivered goal frame (one market) and marks resolved (sweep-safe)", async () => {
@@ -137,5 +140,17 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     expect(second).toBe(first); // the recorded resolution, not a fresh one
     expect(r.list()).toHaveLength(1); // NOT double-counted in the evidence layer
     expect(mints).toBe(1); // the on-chain mint fired exactly ONCE
+  });
+
+  it("PC-09: two concurrent settle triggers (Promise.all) mint ONCE and record ONE row (no TOCTOU double-count)", async () => {
+    const f = new PropMarketFactory(new MemoryTransport());
+    const m = await f.onGoal(goal(17588395n, 23, 1, 0));
+    let mints = 0;
+    const hook: SettleHook = { mint: async () => { mints += 1; await Promise.resolve(); return `TX_${mints}`; } };
+    const r = new LiveResolver(f, hook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)));
+    const [a, b] = await Promise.all([r.settle(m, goal(17588395n, 67, 2, 0)), r.settle(m, goal(17588395n, 90, 2, 0))]);
+    expect(mints).toBe(1);
+    expect(r.list()).toHaveLength(1);
+    expect(a).toBe(b);
   });
 });

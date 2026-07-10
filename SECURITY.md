@@ -94,6 +94,15 @@ everything a fan sees is re-derivable from it.
   outside the work tree.
 - Dev-toolchain advisories reachable only by a developer running the dev server on a
   hostile network — never the shipped fan bundle.
+- **Daemon-restart market_id reuse (PC-02, named gap)**: the factory derives each
+  market's nonce from an IN-MEMORY per-(fixture,kind) counter, so a daemon restart
+  mid-match resets it and can re-derive an already-used market_id — whose old on-chain
+  receipt then mis-resolves (same line) or `WrongLine`-poisons (different line) the new
+  market. The fix is a nonce derived from the market's bound line (restart-stable), but
+  that changes market_id derivation and so must land WITH a re-mint of the pinned real
+  receipt (`REAL_MARKET_ID`); it is deferred to that re-mint window to keep the flagship
+  credential-free re-verify intact. Mitigated today by a single long-lived daemon
+  process (no mid-match restart in the demo path).
 
 ## 7. Scope & non-claims
 

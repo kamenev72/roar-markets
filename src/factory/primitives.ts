@@ -81,8 +81,17 @@ export function isFinalised(f: LiveScoreFrame): boolean {
  * per-participant goal stats (`Stats["1"]`/`["2"]`). This is the pinned which-side mapping (risk #1 closed).
  */
 export function scoreEventFromLiveFrame(f: LiveScoreFrame, anotherGoalOdds: [number, number]): ScoreEvent {
-  const p1 = f.Stats?.[STAT_KEY_P1] ?? 0;
-  const p2 = f.Stats?.[STAT_KEY_P2] ?? 0;
+  // PC-10: a live TxLINE frame is UNVALIDATED JSON at the trust boundary — coerce + fail-closed on a
+  // non-integer / negative / absurd goal count so a garbage Stats value can't poison the dedup signature,
+  // the market label, or `line`/`lineQ` (which must fit i16 on-chain). A malformed frame throws; the daemon's
+  // per-frame guard skips it rather than spawning a garbage market.
+  const coerce = (v: unknown): number => {
+    const n = Number(v ?? 0);
+    if (!Number.isInteger(n) || n < 0 || n > 50) throw new Error(`invalid goal count in live frame: ${String(v)}`);
+    return n;
+  };
+  const p1 = coerce(f.Stats?.[STAT_KEY_P1]);
+  const p2 = coerce(f.Stats?.[STAT_KEY_P2]);
   return {
     fixtureId: BigInt(f.FixtureId),
     minute: Math.floor((f.Clock?.Seconds ?? 0) / 60),

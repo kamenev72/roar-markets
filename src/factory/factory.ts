@@ -46,10 +46,10 @@ export const DEFAULT_FACTORY_CONFIG: FactoryConfig = {
 
 export class PropMarketFactory {
   private readonly markets = new Map<string, SpawnedMarket>();
-  private readonly nonce = new Map<string, number>(); // per (fixtureId, kind) instance counter
   private readonly spawnedSig = new Map<string, SpawnedMarket>(); // per goal-frame signature (idempotency)
   // sweep/lock metadata kept OUT of the public SpawnedMarket shape (zero churn for the board/UI).
   private readonly meta = new Map<string, { spawnedAtMs: number; sig: string; resolved: boolean }>();
+  private readonly nonce = new Map<string, number>(); // per (fixtureId, kind) instance counter (PC-02: see spawn)
   private readonly tails = new Map<string, Promise<void>>(); // per-signature mutex tails
 
   constructor(
@@ -104,10 +104,14 @@ export class PropMarketFactory {
   }
 
   private async spawn(fixtureId: bigint, prim: PropPrimitive): Promise<SpawnedMarket> {
+    // PC-02 (NAMED gap, SECURITY §7): the nonce is an in-memory per-(fixture,kind) counter, so a daemon
+    // restart mid-match resets it and can re-derive an already-used market_id. A deterministic nonce (from the
+    // bound line) is the fix, but it changes market_id derivation — which requires re-minting the pinned real
+    // receipt (REAL_MARKET_ID = deriveMarketId(fixture, OuAnotherGoal, 0)) in the SAME window. Deferred to the
+    // re-mint window so the flagship credential-free re-verify pin stays intact until then.
     const nkey = `${fixtureId}:${prim.kind}`;
     const nonce = this.nonce.get(nkey) ?? 0;
     this.nonce.set(nkey, nonce + 1);
-
     const id = deriveMarketId(fixtureId, prim.kind, nonce);
     await this.transport.initVenue(id.u64);
 

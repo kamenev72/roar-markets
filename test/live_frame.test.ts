@@ -56,4 +56,11 @@ describe("whistle-driven finality (isFinalised)", () => {
     expect(STATUS_FULL_TIME.has(10)).toBe(true); // Ended-after-ET (KO)
     expect(STATUS_FULL_TIME.has(13)).toBe(true); // Ended-after-penalties (KO)
   });
+
+  it("PC-10: a malformed Stats value fails closed (never spawns a garbage market from unvalidated JSON)", () => {
+    const bad: LiveScoreFrame = { FixtureId: 1, Participant1IsHome: true, Participant1Id: 1, Participant2Id: 2, StatusId: 2, Stats: { "1": "x" as unknown as number, "2": 0 } };
+    expect(() => scoreEventFromLiveFrame(bad, [1.9, 1.9])).toThrow(/invalid goal count/);
+    const negative: LiveScoreFrame = { ...bad, Stats: { "1": -1, "2": 0 } };
+    expect(() => scoreEventFromLiveFrame(negative, [1.9, 1.9])).toThrow(/invalid goal count/);
+  });
 });
