@@ -4,7 +4,7 @@ import { binaryProb } from "../../src/signal/devig.js";
 import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../src/onchain/receipt.js";
 import { resolveFromReceipt, verifyOuReceipt, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
 import { REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
-import { crossCheckVerdict, gateTraceLines, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel } from "./evidence.js";
+import { badgeLabelFor, crossCheckVerdict, gateTraceLines, isVerifiedLive, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel } from "./evidence.js";
 import { applyResult, loadStreak, multiplier, saveStreak, shareText, verdictName } from "./streak.js";
 import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
 
@@ -59,9 +59,11 @@ function Pill({ children, color }: { children: React.ReactNode; color: string })
 
 /** Honest evidence badge: green for the LIVE on-chain card, amber for a SIMULATED walkthrough card. */
 function EvidenceBadge({ label }: { label: EvidenceLabel }) {
-  const live = label.rail === "LIVE";
+  // PC-UI-01: green ONLY for a confirmed verified-live read — a PENDING/PARTIAL/SIMULATED label is amber,
+  // never a green "VERIFIED" tick over a loading/failed/unverified state.
+  const strong = isVerifiedLive(label);
   return (
-    <span style={{ border: `1px solid ${live ? C.ok : C.warn}`, color: live ? C.ok : C.warn, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: C.mono }}>
+    <span style={{ border: `1px solid ${strong ? C.ok : C.warn}`, color: strong ? C.ok : C.warn, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: C.mono }}>
       {labelText(label)}
     </span>
   );
@@ -125,7 +127,7 @@ function RealReceiptCard() {
     <div style={{ marginTop: 16, background: "#0e1f17", border: `1px solid ${C.ok}`, borderRadius: 10, padding: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ color: C.ok, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>● REAL · on-chain · devnet</div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><EvidenceBadge label={state.status === "ok" ? state.verdict.label : LABEL_LIVE} /><Pill color={C.ok}>not a mock</Pill></div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><EvidenceBadge label={badgeLabelFor(state.status, state.status === "ok" ? state.verdict.label : LABEL_LIVE)} />{state.status === "ok" && <Pill color={C.ok}>not a mock</Pill>}</div>
       </div>
       <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>Re-verify a REAL kickoff receipt — in your browser, no key</div>
       {state.status === "loading" && <div style={{ marginTop: 10, color: C.dim, fontSize: 13 }}>fetching the on-chain receipt from devnet…</div>}

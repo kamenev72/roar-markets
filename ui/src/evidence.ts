@@ -9,12 +9,28 @@ import type { VerifiedOu } from "../../src/onchain/settle_consumer.js";
 /** rail: where the receipt came from; strength: how strongly the claim is shown. Honest labeling (see HONESTY.md). */
 export interface EvidenceLabel {
   rail: "LIVE" | "PARTIAL" | "SIMULATED";
-  strength: "VERIFIED" | "DEMONSTRATED";
+  strength: "VERIFIED" | "DEMONSTRATED" | "PENDING";
 }
 
 export const LABEL_LIVE: EvidenceLabel = { rail: "LIVE", strength: "VERIFIED" };
 export const LABEL_SIMULATED: EvidenceLabel = { rail: "SIMULATED", strength: "DEMONSTRATED" };
 export const LABEL_PARTIAL: EvidenceLabel = { rail: "PARTIAL", strength: "DEMONSTRATED" };
+/** PC-UI-01: the neutral pre-result label — the receipt has not (yet) passed the 3-step gate. NEVER green. */
+export const LABEL_PENDING: EvidenceLabel = { rail: "LIVE", strength: "PENDING" };
+
+/** True only for a confirmed, verified LIVE read — the ONLY state that earns the green tick + a strength claim. */
+export function isVerifiedLive(l: EvidenceLabel): boolean {
+  return l.rail === "LIVE" && l.strength === "VERIFIED";
+}
+
+/**
+ * PC-UI-01: the badge label to show for the REAL card given the fetch state. A VERIFIED-strength claim is shown
+ * ONLY on a confirmed `ok` gate result; `loading`/`err` render a neutral PENDING label — never a green
+ * "LIVE · VERIFIED" over an unverified or failed state.
+ */
+export function badgeLabelFor(status: "ok" | "loading" | "err", okLabel: EvidenceLabel): EvidenceLabel {
+  return status === "ok" ? okLabel : LABEL_PENDING;
+}
 
 /** Render an EvidenceLabel as a compact badge string, e.g. "LIVE · VERIFIED". */
 export function labelText(l: EvidenceLabel): string {

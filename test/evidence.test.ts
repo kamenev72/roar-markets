@@ -3,7 +3,7 @@
 // disagreement is PARTIAL (do not trust the green tick).
 
 import { describe, it, expect } from "vitest";
-import { crossCheckVerdict } from "../ui/src/evidence.js";
+import { badgeLabelFor, crossCheckVerdict, isVerifiedLive, LABEL_LIVE, LABEL_PARTIAL } from "../ui/src/evidence.js";
 import type { VerifiedOu } from "../src/onchain/settle_consumer.js";
 
 const v = (over: boolean, fixtureId: bigint, lineQ: number): VerifiedOu => ({ over, fixtureId, lineQ });
@@ -33,5 +33,21 @@ describe("crossCheckVerdict (2nd-RPC honesty verdict)", () => {
 
   it("disagree on the fixtureId → PARTIAL", () => {
     expect(crossCheckVerdict(v(true, 17588395n, 10), v(true, 999n, 10)).label.rail).toBe("PARTIAL");
+  });
+});
+
+describe("PC-UI-01: the badge never claims VERIFIED strength outside a confirmed 'ok' gate result", () => {
+  it("loading / err ⇒ a neutral PENDING label — NOT a green verified tick", () => {
+    for (const status of ["loading", "err"] as const) {
+      const l = badgeLabelFor(status, LABEL_LIVE);
+      expect(l.strength).toBe("PENDING");
+      expect(isVerifiedLive(l)).toBe(false); // the badge renders amber, not the green VERIFIED tick
+    }
+  });
+  it("ok ⇒ the gate's own verdict label passes through (the only state that can be VERIFIED-green)", () => {
+    expect(badgeLabelFor("ok", LABEL_LIVE)).toBe(LABEL_LIVE);
+    expect(isVerifiedLive(badgeLabelFor("ok", LABEL_LIVE))).toBe(true);
+    // a PARTIAL verdict (RPC disagreement) even on 'ok' is NOT green
+    expect(isVerifiedLive(badgeLabelFor("ok", LABEL_PARTIAL))).toBe(false);
   });
 });
