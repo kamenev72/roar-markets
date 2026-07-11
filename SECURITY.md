@@ -112,6 +112,14 @@ everything a fan sees is re-derivable from it.
 - No real-money PnL; goal-grain only; event-granularity (~60s) settle, not per-second.
 - The in-browser re-verify proves provenance as reported by one RPC, not absolute
   truth — cross-check on the explorer for independence.
+- **VAR-reversal / stale-frame gap (named-open, PC-12):** a market spawns and settles
+  against the goal count attested at settle time. If a goal is later DISALLOWED by VAR
+  after the receipt is minted, the settlement is correct *per the proof it was bound to*
+  but stale *per the final match state* — the settle-consumer has no re-org / correction
+  path in v1. Goal-grain settle waits for the ~60s-delayed final-status frame (which
+  reduces, but does not eliminate, an in-window reversal); a proof-supersession /
+  dispute-window correction is the named pre-production hardening, mirroring the
+  kickoff-oracle dispute layer this repo consumes.
 
 ## 8. Reporting a vulnerability
 

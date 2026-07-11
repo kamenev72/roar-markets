@@ -6,7 +6,7 @@ One command, hermetic, no credentials:
 npm install && npm run judge-demo
 ```
 
-It runs (~10s, deterministic): `build` (tsc) → `test` (126 tests) → `cleanroom` → `doc-drift` → `xss-guard`.
+It runs (~10s, deterministic): `build` (tsc) → `test` (128 tests) → `cleanroom` → `doc-drift` → `xss-guard`.
 The factory auto-spawns per-goal micro-markets, the 3-step fail-closed settle-consumer gate re-verifies an
 on-chain `OuBoundReceipt`, and the fan UI all pass.
 
@@ -27,7 +27,7 @@ node --import tsx scripts/verify_real_settle.ts
 
 ## What to look for
 
-- `Tests 126 passed` — the factory + line-bound settle-consumer + the in-browser re-verify.
+- `Tests 128 passed` — the factory + line-bound settle-consumer + the in-browser re-verify.
 - The REAL card resolving `over=false → NO` (Under 2.5) on fixture 17588395 — a proven on-chain artifact
   (`kickoff_oracle`-minted receipt, PDA `39vT6hs7…`), re-verified with zero credentials.
 

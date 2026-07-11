@@ -14,3 +14,10 @@ Guéant-Lehalle-Fernández-Tapia (GLFT) market-making. The on-chain venue and th
 settlement/dispute layer are CONSUMED as deployed programs; PROPCAST adds the
 per-prop market factory and the consumer surface, not a new venue or oracle. No
 proprietary third-party code is included.
+
+Vendored / adapted from: nothing is copied verbatim. The on-chain account layouts
+this repo reads — the kickoff-oracle OuBoundReceipt and its receipt PDA scheme
+(["ou_bound", market_id]) — are re-derived from the programs' PUBLIC on-chain formats
+and hand-rolled here (src/onchain/), not imported. The Solana web3.js / @solana
+client libraries and vitest are used under their respective open-source licenses (see
+package.json). No code, keys, or data from any closed source are vendored.

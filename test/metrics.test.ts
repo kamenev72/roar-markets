@@ -32,6 +32,13 @@ describe("PROPCAST quality/coverage metrics (no $-PnL)", () => {
     expect(m.seedVsRealizedMarkout).toBeCloseTo(0.4, 10);
   });
 
+  it("PC-08: coverage % is clamped to 100 when markets outnumber goals (pre-goal 0-0 markets spawn too)", () => {
+    // 3 markets spawned, only 1 goal seen (the extras are pre-goal "another goal?" markets) → raw 300% → 100
+    const m = aggregateQuality([rec({ marketId: "a" }), rec({ marketId: "b" }), rec({ marketId: "c" })], 1);
+    expect(m.marketsSpawned).toBe(3);
+    expect(m.goalCoveragePct).toBe(100); // a coverage % never exceeds 100 (was a spurious 300 pre-fix)
+  });
+
   it("coverage < 100% when not every goal spawns a market", () => {
     const m = aggregateQuality([rec({ marketId: "a" }), rec({ marketId: "b" })], 4);
     expect(m.goalCoveragePct).toBe(50);

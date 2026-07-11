@@ -96,6 +96,17 @@ describe("PROPCAST golden edge-cases (settle-lifecycle correctness)", () => {
     });
   });
 
+  // PC-11: the scoreless-match case — at 0-0 the PRIMARY "another goal?" primitive is Over 0.5 total goals,
+  // i.e. line 0.5 → lineQ 2 (a half-line). Pins the canonical spawn so a 0-0 board is never mis-lined.
+  describe("PC-11: anotherGoal primitive at 0-0 pins to line 0.5 / lineQ 2", () => {
+    it("0-0 spawns an Over-0.5 market (line 0.5, lineQ 2)", () => {
+      const prim = anotherGoalPrimitive(goal(7n, 1, 0, 0, [1.9, 1.95]));
+      expect(prim.line).toBe(0.5);
+      expect(prim.lineQ).toBe(2);
+      expect(prim.kind).toBe(PrimitiveKind.OuAnotherGoal);
+    });
+  });
+
   // 4. DOUBLE-GOAL-IN-TICK. The free ~60s poll can re-deliver the SAME goal frame -> a duplicate MUST NOT
   //    double-spawn (idempotent onGoal). A genuine second goal advances the score, so its signature differs
   //    and it correctly opens a fresh collision-free market (nonce increments).

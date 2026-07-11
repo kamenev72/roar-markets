@@ -27,7 +27,7 @@ export interface MarketQualityRecord {
 export interface QualityMetrics {
   marketsSpawned: number;
   goalsSeen: number;
-  /** marketsSpawned / goalsSeen × 100 (0 when no goals seen). */
+  /** coverage %, clamped to [0,100] (markets also spawn pre-goal, so raw marketsSpawned/goalsSeen can exceed 1). */
   goalCoveragePct: number;
   marketsSettled: number;
   marketsVoided: number;
@@ -78,7 +78,10 @@ export function aggregateQuality(records: readonly MarketQualityRecord[], goalsS
   return {
     marketsSpawned: records.length,
     goalsSeen,
-    goalCoveragePct: goalsSeen === 0 ? 0 : (records.length / goalsSeen) * 100,
+    // PC-08: a coverage percentage is bounded at 100. The "another goal" market spawns per score frame —
+    // including the pre-goal 0-0 frame — so raw marketsSpawned can EXCEED goalsSeen; clamp so the reported
+    // coverage never reads above 100% (a >100% "coverage" is a metric artifact, not extra coverage).
+    goalCoveragePct: goalsSeen === 0 ? 0 : Math.min(100, (records.length / goalsSeen) * 100),
     marketsSettled: settled.length,
     marketsVoided: records.filter((r) => r.resolution === "VOID").length,
     timeToFirstQuoteMsP50: median(ttfq),
