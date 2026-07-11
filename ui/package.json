@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "description": "PROPCAST fan Goal-Markets board — spawn a goal-grain micro-market, pick a side, watch it auto-settle trustlessly from a kickoff OuBoundReceipt, re-verify in the browser.",
   "scripts": {
     "dev": "vite",
