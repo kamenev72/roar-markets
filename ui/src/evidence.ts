@@ -46,14 +46,35 @@ export function labelText(l: EvidenceLabel): string {
  *  - they disagree → PARTIAL: do NOT trust the green tick, verify on the explorer (one RPC is lying/lagging).
  * Pure: no I/O — the caller does the two fetches+verifies and passes the decoded results.
  */
-export function crossCheckVerdict(primary: VerifiedOu, secondary: VerifiedOu | null): { label: EvidenceLabel; note: string } {
-  if (secondary === null) {
-    return { label: LABEL_LIVE, note: "single RPC — cross-check on the explorer for independence" };
+/**
+ * The 2nd-RPC read, classified (PC-UI-02): a TRANSPORT failure is benign (single-RPC caveat), but a 2nd RPC
+ * that responds with NO account, or a DIFFERENT/malformed account at the same PDA, is a real DIVERGENCE that
+ * must NOT be swallowed into the benign single-RPC label.
+ */
+export type SecondaryRead =
+  | { kind: "unavailable" } // transport error — the 2nd RPC could not be reached (benign: single-RPC caveat)
+  | { kind: "absent" } // the 2nd RPC responded but has NO account at the PDA (divergence)
+  | { kind: "gate-fail" } // the 2nd RPC returned a DIFFERENT / malformed account that fails the gate (divergence)
+  | { kind: "verified"; v: VerifiedOu }; // the 2nd RPC agrees + gate-passed
+
+export function crossCheckVerdict(primary: VerifiedOu, secondary: SecondaryRead | VerifiedOu | null): { label: EvidenceLabel; note: string } {
+  // back-compat: a bare VerifiedOu | null is treated as the old verified|unavailable pair.
+  const s: SecondaryRead =
+    secondary === null ? { kind: "unavailable" } : "kind" in secondary ? secondary : { kind: "verified", v: secondary };
+  switch (s.kind) {
+    case "unavailable":
+      return { label: LABEL_LIVE, note: "single RPC — the 2nd RPC was unreachable; cross-check on the explorer" };
+    case "absent":
+      return { label: LABEL_PARTIAL, note: "the 2nd RPC has NO account at this PDA — DIVERGENCE; verify on the explorer" };
+    case "gate-fail":
+      return { label: LABEL_PARTIAL, note: "the 2nd RPC returned a different/invalid account — DIVERGENCE; verify on the explorer" };
+    case "verified": {
+      const agree = primary.over === s.v.over && primary.fixtureId === s.v.fixtureId && primary.lineQ === s.v.lineQ;
+      return agree
+        ? { label: LABEL_LIVE, note: "cross-confirmed on 2 independent RPCs" }
+        : { label: LABEL_PARTIAL, note: "RPCs DISAGREE — do not trust this read; verify on the explorer" };
+    }
   }
-  const agree = primary.over === secondary.over && primary.fixtureId === secondary.fixtureId && primary.lineQ === secondary.lineQ;
-  return agree
-    ? { label: LABEL_LIVE, note: "cross-confirmed on 2 independent RPCs" }
-    : { label: LABEL_PARTIAL, note: "RPCs DISAGREE — do not trust this read; verify on the explorer" };
 }
 
 const short = (s: string, n = 12): string => (s.length > n ? `${s.slice(0, n)}…` : s);

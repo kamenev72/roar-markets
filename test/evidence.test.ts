@@ -51,3 +51,24 @@ describe("PC-UI-01: the badge never claims VERIFIED strength outside a confirmed
     expect(isVerifiedLive(badgeLabelFor("ok", LABEL_PARTIAL))).toBe(false);
   });
 });
+
+describe("PC-UI-02: the 2nd-RPC read is classified 3-way (a divergence is not a benign single-RPC)", () => {
+  const p = v(true, 17588395n, 10);
+  it("transport-unavailable → LIVE single-RPC caveat", () => {
+    expect(crossCheckVerdict(p, { kind: "unavailable" }).label.rail).toBe("LIVE");
+  });
+  it("2nd RPC has NO account (absent) → PARTIAL divergence", () => {
+    const r = crossCheckVerdict(p, { kind: "absent" });
+    expect(r.label.rail).toBe("PARTIAL");
+    expect(r.note).toMatch(/DIVERGENCE/);
+  });
+  it("2nd RPC returns a different/invalid account (gate-fail) → PARTIAL divergence", () => {
+    expect(crossCheckVerdict(p, { kind: "gate-fail" }).label.rail).toBe("PARTIAL");
+  });
+  it("2nd RPC verified + agrees → LIVE cross-confirmed", () => {
+    expect(crossCheckVerdict(p, { kind: "verified", v: v(true, 17588395n, 10) }).label.rail).toBe("LIVE");
+  });
+  it("2nd RPC verified + disagrees → PARTIAL", () => {
+    expect(crossCheckVerdict(p, { kind: "verified", v: v(false, 17588395n, 10) }).label.rail).toBe("PARTIAL");
+  });
+});

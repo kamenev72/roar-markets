@@ -4,7 +4,7 @@ import { binaryProb } from "../../src/signal/devig.js";
 import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../src/onchain/receipt.js";
 import { resolveFromReceipt, verifyOuReceipt, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
 import { REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
-import { badgeLabelFor, crossCheckVerdict, gateTraceLines, isVerifiedLive, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel } from "./evidence.js";
+import { badgeLabelFor, crossCheckVerdict, gateTraceLines, isVerifiedLive, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel, type SecondaryRead } from "./evidence.js";
 import { applyResult, loadStreak, multiplier, saveStreak, shareText, verdictName } from "./streak.js";
 import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
 
@@ -16,6 +16,12 @@ const PRIMARY_RPC = "https://api.devnet.solana.com";
 // behind an API key; Triton's `devnet.rpcpool.com` serves it keyless.) Best-effort — if EVERY entry fails the
 // card degrades to a single-RPC + explorer label, never a false "cross-confirmed".
 const SECOND_RPCS = ["https://devnet.rpcpool.com"];
+const RPC_TIMEOUT_MS = 8000;
+
+/** PC-UI-04: reject a hung RPC read after `ms` so the demo climax degrades to an error+retry, never a freeze. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error(`RPC timeout after ${ms}ms — verify on the explorer instead`)), ms))]);
+}
 
 // de-vigged OVER seeds for the breadth strip — the auto-spawned total-goals lines (SIMULATED display).
 const TOTAL_GOALS_LINES: { line: number; odds: [number, number] }[] = [
@@ -99,20 +105,26 @@ function RealReceiptCard() {
       const slice = { commitment: "confirmed" as const, dataSlice: { offset: 0, length: 51 } };
       // dataSlice bounds the read to the 51-byte receipt (gate max read = over@50) — a hostile RPC can't make
       // the tab download/copy a huge blob; owner is returned regardless of the slice.
-      const info = await new Connection(PRIMARY_RPC, "confirmed").getAccountInfo(pda, slice);
+      // PC-UI-04: bound the read so a hung RPC becomes an error+retry, not a frozen demo climax.
+      const info = await withTimeout(new Connection(PRIMARY_RPC, "confirmed").getAccountInfo(pda, slice), RPC_TIMEOUT_MS);
       const fetched = info ? { owner: info.owner, data: new Uint8Array(info.data) } : null;
       const v = verifyRealReceipt(fetched); // throws if pruned / fail-closed
       // re-read the decoded fields via the SAME authoritative gate (no second verifier) for the raw trace
       const verified = verifyOuReceipt({ pubkey: pda, owner: fetched!.owner, data: fetched!.data }, marketId);
       const trace = gateTraceLines({ owner: fetched!.owner, pda, verified });
-      // SEC-RPC-01: cross-read the SAME receipt from a 2nd INDEPENDENT RPC and compare the decoded fields.
-      // Best-effort: any error / not-found / verify-fail ⇒ secondary=null ⇒ honest single-RPC label (no false green).
-      let secondary = null as ReturnType<typeof verifyOuReceipt> | null;
+      // SEC-RPC-01 / PC-UI-02: cross-read the SAME receipt from a 2nd INDEPENDENT RPC and CLASSIFY the read —
+      // a transport failure is benign (single-RPC caveat), but a 2nd RPC that has NO account or a different
+      // account at this PDA is a real DIVERGENCE (PARTIAL), not a benign single-RPC read.
+      let secondary: SecondaryRead = { kind: "unavailable" };
       for (const rpc of SECOND_RPCS) {
         try {
-          const info2 = await new Connection(rpc, "confirmed").getAccountInfo(pda, slice);
-          if (info2) { secondary = verifyOuReceipt({ pubkey: pda, owner: info2.owner, data: new Uint8Array(info2.data) }, marketId); break; }
-        } catch { /* try the next independent RPC; if all fail, secondary stays null → honest single-RPC label */ }
+          const info2 = await withTimeout(new Connection(rpc, "confirmed").getAccountInfo(pda, slice), RPC_TIMEOUT_MS);
+          if (info2 === null) { secondary = { kind: "absent" }; break; } // responded, but no account here → divergence
+          try {
+            secondary = { kind: "verified", v: verifyOuReceipt({ pubkey: pda, owner: info2.owner, data: new Uint8Array(info2.data) }, marketId) };
+          } catch { secondary = { kind: "gate-fail" }; } // returned a different/invalid account → divergence
+          break;
+        } catch { /* transport error → try the next independent RPC; stays 'unavailable' if all fail */ }
       }
       const verdict = crossCheckVerdict(verified, secondary);
       setState({ status: "ok", v, trace, verdict });
@@ -133,8 +145,13 @@ function RealReceiptCard() {
       {state.status === "loading" && <div style={{ marginTop: 10, color: C.dim, fontSize: 13 }}>fetching the on-chain receipt from devnet…</div>}
       {state.status === "err" && (
         <div style={{ marginTop: 10, color: C.warn, fontSize: 12, fontFamily: C.mono }}>
-          ⚠ {state.msg}
-          <button onClick={() => void load()} style={{ marginLeft: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>↻ retry</button>
+          ⚠ live RPC unreachable: {state.msg}
+          <div style={{ marginTop: 6, color: C.dim }}>
+            the receipt IS on devnet — re-verify it directly:{" "}
+            <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.text }}>open the account on the explorer ↗</a>{" "}
+            (owner = kickoff_oracle, PDA {pda.toBase58().slice(0, 8)}…).
+            <button onClick={() => void load()} style={{ marginLeft: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>↻ retry</button>
+          </div>
         </div>
       )}
       {state.status === "ok" && (

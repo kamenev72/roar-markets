@@ -73,9 +73,11 @@ so the trust claim is checkable, not a bare green tick.
   "trusted-now, proof-gated-target"; the trustless datum is the kickoff receipt, shown + re-verifiable. A
   fully-gated venue-close program is a post-v1 upgrade, not claimed for v1.
 - **NOT-CLAIMED** — the in-browser re-verify is **not** a cryptographic light-client proof: it re-derives the
-  receipt's owner / discriminator / PDA / outcome from a SINGLE read-only RPC (`api.devnet.solana.com`), which
-  is trusted to report them honestly. A hostile / man-in-the-middle RPC could report a fabricated account →
-  cross-check on the block explorer (or a 2nd RPC) for independence. The gate defeats account-confusion /
+  receipt's owner / discriminator / PDA / line_q / outcome from the primary RPC AND cross-reads it from a 2nd
+  independent keyless RPC, but both are trusted to report honestly. The UI labels the strength: cross-confirmed
+  on 2 RPCs only when they agree; single-RPC (caveat) when the 2nd is unreachable; PARTIAL-divergence when the
+  2nd has no/other account. A hostile / man-in-the-middle RPC (or two colluding) could still report a fabricated
+  account → cross-check on the block explorer for full independence. The gate defeats account-confusion /
   wrong-type / wrong-market / wrong-line vs an HONEST RPC; it is not a substitute for an on-chain SPV proof.
 - **NOT-CLAIMED** — the v1 venue payout has no permissionless or timeout-driven refund (close-path A is a
   single authority key); VOID is CLASSIFIED (absent receipt) but VOID/refund SETTLEMENT is post-v1. v1 holds
