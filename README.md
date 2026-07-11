@@ -40,15 +40,19 @@ zero per-market oracle cost, re-verifiable by the fan with no key.
 Honest scope: the matrix names market CATEGORIES, not any rival's code; every
 PROPCAST ✅ is backed by a test or a devnet hash (see `CLAIMS.md`).
 
-**Within this hackathon's field (43 public entries, census 2026-07-05, re-scanned every 2 days):** consumer
-rivals ship real polish — live multiplayer leaderboards, animated match centers, native mobile — and several
-are genuinely deployed. Two structural properties remain unique to PROPCAST across all of them: **(1) each market's SETTLEMENT is an
-on-chain instrument** — a `kickoff_oracle`-minted `OuBoundReceipt`, proven on devnet and re-verifiable
-credential-free (the per-goal factory + venue run against the deployed `pitchmaker_book` `.so` in a
-deterministic in-process ledger — bankrun — with a live devnet venue-init a labeled DESIGN target per
-SECURITY §1; the PROVEN on-chain artifact is the settle receipt, not a live venue-init tx), where elsewhere a
-"market" is a server/DB pick reconciled after the fact, and **(2) the settle is gated BEFORE funds move**
-(the common rival pattern is settle-first-claw-back-later — a real fraud window during the reconcile). The
+**Within this hackathon's field (re-census 2026-07-11):** several entries (predict.day, finalwhistle,
+proofmarket) now ship the GENERIC "the fan re-verifies the score client-side" idea, so that alone is no longer
+a differentiator — and a near name-twin `nayrbryanGaming/proofcast` exists (a DIFFERENT mechanism: an
+analyst-accuracy commit-reveal bond, not an O/U receipt consumer). What stays specific to PROPCAST is the
+**LINE-BOUND, fail-closed settle-consumer over a REAL cross-repo `kickoff_oracle` receipt**: **(1) each
+market's SETTLEMENT is an on-chain instrument** — a `kickoff_oracle`-minted `OuBoundReceipt`, proven on devnet
+and re-verifiable credential-free, and the 3-step gate binds `line_q` (`verifyOuReceiptForLine` / `WrongLine`),
+so a receipt at the wrong O/U line fail-closes in the browser (the per-goal factory + venue run against the
+deployed `pitchmaker_book` `.so` in a deterministic in-process ledger — bankrun — with a live devnet venue-init
+a labeled DESIGN target per SECURITY §1; the PROVEN on-chain artifact is the settle receipt, not a live
+venue-init tx), where elsewhere a "market" is a server/DB pick reconciled after the fact, and **(2) the settle
+is gated BEFORE funds move** (the common rival pattern is settle-first-claw-back-later — a real fraud window
+during the reconcile). The
 engagement layer here (streaks, share-cards, the `?demo=` replay) deliberately sits OUTSIDE the trust core:
 it consumes gate-verified results and never touches verification.
 

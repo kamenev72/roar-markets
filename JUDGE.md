@@ -18,8 +18,11 @@ npm --prefix ui install && npm --prefix ui run dev
 
 Open the app → the top **REAL · on-chain · devnet** card fetches the live `OuBoundReceipt` and
 **re-computes the settlement in your own browser** — no wallet connect, no API key, no trusted oracle to take
-on faith. That is the one unclaimed property: **the fan settles the market THEMSELVES.** The same 3-step gate,
-in the terminal:
+on faith. Client-side re-verify is not unique (several entries let a fan re-check a score); the SPECIFIC,
+defensible property here is **a LINE-BOUND, fail-closed settle-consumer over a REAL cross-repo `kickoff_oracle`
+receipt** — the 3-step gate re-derives owner + `OuBoundReceipt` discriminator + the `["ou_bound", market_id]`
+PDA AND binds `line_q` (`verifyOuReceiptForLine` / `WrongLine`), so a receipt at the wrong O/U line **fail-closes
+in the browser**, not just "the fan re-reads a number". The same 3-step gate, in the terminal:
 
 ```bash
 node --import tsx scripts/verify_real_settle.ts
