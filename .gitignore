@@ -18,3 +18,9 @@ wc_devnet*.json
 *key.json
 keys/
 *creds*.json
+
+# Rust / OS / editor (a lost newline once folded these into a comment — see the guard)
+target/
+.DS_Store
+.idea/
+.vscode/

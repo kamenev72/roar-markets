@@ -46,5 +46,16 @@ for p in "${MSG_PATTERNS[@]}"; do
   fi
 done
 
+# The .gitignore secrets backstop must actually WORK, not merely look right. A lost newline once folded `.env`
+# and `target/` into the tail of a COMMENT line — the file still read plausibly, but git ignored neither, so
+# the last net between a stray `git add` and a committed key was silently gone. Assert the BEHAVIOUR
+# (`git check-ignore`), never the file's text.
+for pat in .env "target/" .DS_Store; do
+  if ! git check-ignore -q "$pat" 2>/dev/null; then
+    echo "❌ clean-room: .gitignore does not actually ignore '$pat' — the secrets backstop is disarmed (folded/lost newline?)"
+    FAIL=1
+  fi
+done
+
 if [ "$FAIL" -eq 0 ]; then echo "✅ clean-room gate passed (no proprietary vocabulary or secrets in tracked files or commit messages)."; fi
 exit $FAIL
