@@ -9,11 +9,16 @@
 //   the signer keypair at ~/.config/solana/wc_devnet3.json.
 //
 // IMPORTANT (the load-bearing layout fix): the current settle_ou_bound signature is
-//   (market_id[32], fixture_id:i64, line_q:i16, over:bool, validate_stat_ix_data:Vec<u8>)
-// — the fixture_id field is REQUIRED (added by the trustless-gate hardening). Omitting it shifts the proof
-// bytes and the txoracle Merkle verify fails (custom program error 0x66).
+//   (market_id[32], fixture_id:i64, line_q:i16, over:bool, validate_stat_ix_data:Vec<u8>, min_final_ts:i64)
+// Every field is REQUIRED and ORDER-SENSITIVE. Dropping `fixture_id` shifts the proof bytes and the txoracle
+// Merkle verify fails (0x66); dropping the TRAILING `min_final_ts` makes Anchor reject the whole instruction
+// (error 102, InstructionDidNotDeserialize) — this mint silently carried that bug until 2026-07-12. Keep this
+// in step with kickoff's own client (`app/src/program.ts`, `.i64(minFinalTs)` last).
+// `min_final_ts = 0` is the documented finality-UNBOUND sentinel; set MIN_FINAL_TS to the fixture's expected
+// full-time unix seconds to also bind finality (the proof's attested window must then be at or after it).
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction, ComputeBudgetProgram, SystemProgram, sendAndConfirmTransaction } from "@solana/web3.js";
 import * as fs from "fs";
+import { settleOuBoundIxData } from "../src/onchain/settle_ou_bound.js";
 import { createHash } from "crypto";
 import { deriveMarketId, marketIdHex, PrimitiveKind } from "../src/factory/market_id.js";
 
@@ -45,11 +50,16 @@ if (existing && existing.owner.equals(KICKOFF_ORACLE_PROGRAM_ID)) {
 const VSD = JSON.parse(fs.readFileSync(process.env.VSD_TOTAL_PATH as string, "utf8"));
 const vsd = Buffer.from(VSD.validateStatDataHex, "hex");
 
-const fix = Buffer.alloc(8); fix.writeBigInt64LE(FIXTURE);
-const lq = Buffer.alloc(2); lq.writeInt16LE(LINE_Q);
-const vlen = Buffer.alloc(4); vlen.writeUInt32LE(vsd.length);
-// disc + market_id(32) + fixture_id(i64) + line_q(i16) + over(u8) + vec_len(u32) + vsd
-const data = Buffer.concat([ixDisc("settle_ou_bound"), marketId, fix, lq, Buffer.from([OVER ? 1 : 0]), vlen, vsd]);
+// The ix-data layout has ONE owner (src/onchain/settle_ou_bound.ts), pinned by a test — inlining it here is
+// exactly how it drifted out of step with kickoff and broke every mint.
+const data = settleOuBoundIxData({
+  marketId,
+  fixtureId: FIXTURE,
+  lineQ: LINE_Q,
+  over: OVER,
+  validateStatIxData: vsd,
+  minFinalTs: BigInt(process.env.MIN_FINAL_TS ?? "0"),
+});
 const meta = (pk: PublicKey, s = false, w = false) => ({ pubkey: pk, isSigner: s, isWritable: w });
 const ix = new TransactionInstruction({
   programId: KICKOFF_ORACLE_PROGRAM_ID,
