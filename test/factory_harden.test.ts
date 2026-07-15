@@ -55,10 +55,17 @@ describe("PROPCAST factory hardening", () => {
     let clock = 0;
     const f = new PropMarketFactory(new MemoryTransport(), { ...DEFAULT_FACTORY_CONFIG, now: () => clock });
     const m = await f.onGoal(goal(2n, 10, 0, 0));
-    f.markResolved(marketIdHex(m.id));
+    const lease = f.beginSettlement(marketIdHex(m.id));
+    expect(lease).toBeDefined();
+    expect(f.finishSettlement(marketIdHex(m.id), lease!.token)).toBe(true);
     clock = 1_000_000;
     expect(f.sweep(1000)).toBe(0);
     expect(f.listMarkets()).toHaveLength(1);
+  });
+
+  it("exposes no tokenless mark-resolved bypass around the settlement lease", () => {
+    const f = new PropMarketFactory(new MemoryTransport());
+    expect((f as unknown as { markResolved?: unknown }).markResolved).toBeUndefined();
   });
 
   it("sweep leaves a still-young unresolved market alone", async () => {

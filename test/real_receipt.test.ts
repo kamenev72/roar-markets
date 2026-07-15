@@ -1,5 +1,5 @@
 // The pinned REAL on-chain receipt (phase 2c) — the PDA derivation is locked against the live devnet account, and
-// the shared 3-step gate re-verifies it. If anyone breaks ouReceiptPda(), the PDA pin fails loudly.
+// the shared market/fixture/line gate re-verifies it. If anyone breaks ouReceiptPda(), the PDA pin fails loudly.
 
 import { describe, it, expect } from "vitest";
 import { PublicKey } from "@solana/web3.js";
@@ -61,5 +61,11 @@ describe("REAL on-chain receipt (phase 2c pin + in-browser re-verify)", () => {
     new DataView(d.buffer, d.byteOffset).setInt16(48, 6, true); // line_q 6 (=1.5) instead of the real 10 (=2.5)
     const fetched: FetchedAccount = { owner: KICKOFF_ORACLE_PROGRAM_ID, data: d };
     expect(() => verifyRealReceipt(fetched)).toThrow(/WrongLine/); // SECURITY §3.5 "bound to THIS market's line" now literally true
+  });
+
+  it("rejects a genuine-shaped real receipt with the wrong embedded fixture", () => {
+    const d = realShapedData(false);
+    new DataView(d.buffer, d.byteOffset).setBigInt64(40, REAL_FIXTURE_ID + 1n, true);
+    expect(() => verifyRealReceipt({ owner: KICKOFF_ORACLE_PROGRAM_ID, data: d })).toThrow(/WrongFixture/);
   });
 });

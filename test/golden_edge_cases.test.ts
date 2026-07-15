@@ -1,13 +1,12 @@
 // PROPCAST golden edge-case battery (phase 3). Settle-lifecycle correctness over the REAL
-// settle-consumer + factory seams: abandoned -> VOID, VAR-disallowed goal, own-goal proxy, double-goal-in-tick.
+// settle-consumer + factory seams: absent receipt, caller-selected final bytes, own-goal proxy, double-goal-in-tick.
 // Synthetic fixtures only (no live rail). Each case exercises the actual code path it claims to cover.
 
 import { describe, it, expect } from "vitest";
 import { PublicKey } from "@solana/web3.js";
 import {
   ReceiptGateError,
-  resolveFromReceipt,
-  resolveFromReceiptOrVoid,
+  verifyOuReceiptForMarket,
   type OnchainAccount,
 } from "../src/onchain/settle_consumer.js";
 import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../src/onchain/receipt.js";
@@ -42,39 +41,33 @@ const goal = (fixtureId: bigint, minute: number, h: number, a: number, odds: [nu
 });
 
 describe("PROPCAST golden edge-cases (settle-lifecycle correctness)", () => {
-  // 1. ABANDONED -> VOID. A match abandoned mid-play never gets a final goal-total settle receipt, so there is
-  //    no account at the market PDA -> the market VOIDs (stakes returned). VOID is distinct from a fail-closed
-  //    throw (which guards a malicious/wrong account, NOT a legitimately-absent one).
-  describe("abandoned -> VOID", () => {
-    it("an absent receipt (no settle minted) resolves VOID, not YES/NO and not a throw", () => {
-      expect(resolveFromReceiptOrVoid(null, MK)).toBe("VOID");
+  // 1. ABSENT RECEIPT. Outcome APIs require a present receipt with a complete immutable binding. The factory
+  //    sweep owns no-receipt expiry; v1 does not claim an on-chain refund/VOID settlement rail.
+  describe("abandoned -> no fixture-unbound resolver", () => {
+    it("a present receipt must carry a complete market binding before its outcome can be read", () => {
+      expect(verifyOuReceiptForMarket(acct(MK, synthOu(MK, 17588395n, 10, true)), { marketId: MK, fixtureId: 17588395n, lineQ: 10 }).over).toBe(true);
     });
-    it("a present, valid receipt still resolves normally (VOID is ONLY the absent case)", () => {
-      expect(resolveFromReceiptOrVoid(acct(MK, synthOu(MK, 17588395n, 10, true)), MK)).toBe("YES");
-      expect(resolveFromReceiptOrVoid(acct(MK, synthOu(MK, 17588395n, 10, false)), MK)).toBe("NO");
-    });
-    it("a malicious/wrong-owner account is a THROW, never silently VOID (fail-closed, not fail-open)", () => {
+    it("a malicious/wrong-owner account is a THROW, never a fabricated outcome", () => {
       const foreign = acct(MK, synthOu(MK, 1n, 10, true), SYSTEM);
-      expect(() => resolveFromReceiptOrVoid(foreign, MK)).toThrow(ReceiptGateError);
+      expect(() => verifyOuReceiptForMarket(foreign, { marketId: MK, fixtureId: 1n, lineQ: 10 })).toThrow(ReceiptGateError);
     });
   });
 
-  // 2. VAR-DISALLOWED GOAL. The settle binds the FINAL cumulative total. A provisional goal later reversed by
-  //    VAR must NOT collapse the "another goal" market to YES — the consumer reads ONLY the final minted
-  //    receipt's `over` byte and holds no provisional state of its own.
-  describe("VAR-disallowed goal binds the FINAL total", () => {
-    it("a reversed goal (final receipt over=false) resolves NO, never the provisional YES", () => {
+  // 2. CALLER-SELECTED FINAL BYTES. The public consumer is deliberately stateless: it cannot decide finality;
+  //    the injected mint hook must supply the finalized receipt. These tests prove only that the consumer never
+  //    carries a prior provisional value across reads.
+  describe("receipt reads are stateless; finality remains an injected-hook responsibility", () => {
+    it("the supplied corrected receipt resolves NO even after a prior provisional read", () => {
       const provisional = acct(MK, synthOu(MK, 17588395n, 10, true)); // the disallowed goal had it crossing -> YES
       const final = acct(MK, synthOu(MK, 17588395n, 10, false)); // after VAR: total did NOT cross -> NO
-      // The provisional state would have said YES; the FINAL proven receipt is the only thing the consumer
-      // trusts, so the market correctly resolves NO.
-      expect(resolveFromReceipt(provisional, MK)).toBe("YES");
-      expect(resolveFromReceipt(final, MK)).toBe("NO");
+      // The provisional bytes say YES; independently supplied corrected bytes say NO.
+      expect(verifyOuReceiptForMarket(provisional, { marketId: MK, fixtureId: 17588395n, lineQ: 10 }).over).toBe(true);
+      expect(verifyOuReceiptForMarket(final, { marketId: MK, fixtureId: 17588395n, lineQ: 10 }).over).toBe(false);
     });
-    it("resolution is a pure function of the final receipt bytes (stateless across re-reads)", () => {
+    it("resolution is a pure function of the supplied receipt bytes (stateless across re-reads)", () => {
       const final = acct(MK, synthOu(MK, 17588395n, 10, false));
-      expect(resolveFromReceipt(final, MK)).toBe("NO");
-      expect(resolveFromReceipt(final, MK)).toBe("NO"); // re-reading never drifts to a provisional value
+      expect(verifyOuReceiptForMarket(final, { marketId: MK, fixtureId: 17588395n, lineQ: 10 }).over).toBe(false);
+      expect(verifyOuReceiptForMarket(final, { marketId: MK, fixtureId: 17588395n, lineQ: 10 }).over).toBe(false); // re-reading never drifts to a provisional value
     });
   });
 

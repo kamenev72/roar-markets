@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { binaryProb } from "../../src/signal/devig.js";
 import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../src/onchain/receipt.js";
-import { resolveFromReceipt, verifyOuReceipt, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
-import { REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
+import { verifyOuReceiptForMarket, type OnchainAccount, type VerifiedOu } from "../../src/onchain/settle_consumer.js";
+import { REAL_FIXTURE_ID, REAL_LINE_Q, REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../src/onchain/real_receipt.js";
 import { badgeLabelFor, crossCheckVerdict, gateTraceLines, isVerifiedLive, labelText, LABEL_LIVE, LABEL_SIMULATED, type EvidenceLabel, type SecondaryRead } from "./evidence.js";
 import { applyResult, loadStreak, multiplier, saveStreak, shareText, verdictName } from "./streak.js";
 import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
@@ -37,7 +37,7 @@ const C = {
 };
 
 // A fixed demo market id for the board (the real factory derives it via market_id.ts, which uses node:crypto
-// and so is not imported into the browser bundle — the board uses a constant and the SAME 3-step settle gate).
+// and so is not imported into the browser bundle — the board uses a constant and the SAME fixture-bound gate).
 const MARKET_ID = new Uint8Array(32).fill(0xc0);
 // Demo consensus odds for "will there be another goal" [YES, NO] → the de-vigged fair YES seed.
 const DEMO_LINE: [number, number] = [1.85, 1.95];
@@ -75,7 +75,7 @@ function EvidenceBadge({ label }: { label: EvidenceLabel }) {
   );
 }
 
-/** The RAW gate-trace — the decoded receipt bytes the 3-step gate matched, shown so a fan can read them. */
+/** The RAW gate-trace — the decoded receipt bytes the complete binding gate matched, shown so a fan can read them. */
 function GateTrace({ lines }: { lines: string[] }) {
   return (
     <pre style={{ marginTop: 10, marginBottom: 0, background: "#0a0f15", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 12px", fontSize: 11.5, color: C.dim, fontFamily: C.mono, lineHeight: 1.7, overflowX: "auto", whiteSpace: "pre" }}>
@@ -91,7 +91,7 @@ type RealState =
 
 /**
  * The demo CLIMAX — a REAL kickoff_oracle OuBoundReceipt minted on devnet, fetched read-only and re-verified
- * in THIS browser through the SAME 3-step gate, with no API key and no wallet. Distinct REAL styling vs the
+ * in THIS browser through the SAME market/fixture/line gate, with no API key and no wallet. Distinct REAL styling vs the
  * SIMULATED interactive cards below.
  */
 function RealReceiptCard() {
@@ -110,8 +110,8 @@ function RealReceiptCard() {
       const fetched = info ? { owner: info.owner, data: new Uint8Array(info.data) } : null;
       const v = verifyRealReceipt(fetched); // throws if pruned / fail-closed
       // re-read the decoded fields via the SAME authoritative gate (no second verifier) for the raw trace
-      const verified = verifyOuReceipt({ pubkey: pda, owner: fetched!.owner, data: fetched!.data }, marketId);
-      const trace = gateTraceLines({ owner: fetched!.owner, pda, verified });
+      const verified = verifyOuReceiptForMarket({ pubkey: pda, owner: fetched!.owner, data: fetched!.data }, { marketId, fixtureId: REAL_FIXTURE_ID, lineQ: REAL_LINE_Q });
+      const trace = gateTraceLines({ owner: fetched!.owner, pda, verified, lineBound: true });
       // SEC-RPC-01 / PC-UI-02: cross-read the SAME receipt from a 2nd INDEPENDENT RPC and CLASSIFY the read —
       // a transport failure is benign (single-RPC caveat), but a 2nd RPC that has NO account or a different
       // account at this PDA is a real DIVERGENCE (PARTIAL), not a benign single-RPC read.
@@ -121,7 +121,7 @@ function RealReceiptCard() {
           const info2 = await withTimeout(new Connection(rpc, "confirmed").getAccountInfo(pda, slice), RPC_TIMEOUT_MS);
           if (info2 === null) { secondary = { kind: "absent" }; break; } // responded, but no account here → divergence
           try {
-            secondary = { kind: "verified", v: verifyOuReceipt({ pubkey: pda, owner: info2.owner, data: new Uint8Array(info2.data) }, marketId) };
+            secondary = { kind: "verified", v: verifyOuReceiptForMarket({ pubkey: pda, owner: info2.owner, data: new Uint8Array(info2.data) }, { marketId, fixtureId: REAL_FIXTURE_ID, lineQ: REAL_LINE_Q }) };
           } catch { secondary = { kind: "gate-fail" }; } // returned a different/invalid account → divergence
           break;
         } catch { /* transport error → try the next independent RPC; stays 'unavailable' if all fail */ }
@@ -159,13 +159,13 @@ function RealReceiptCard() {
           <div style={{ marginTop: 10, fontSize: 12, color: C.dim, fontFamily: C.mono, lineHeight: 1.7 }}>
             ✓ fetched account {pda.toBase58().slice(0, 12)}… <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.accent }}>(explorer)</a><br />
             ✓ owned by kickoff_oracle ({KICKOFF_ORACLE_PROGRAM_ID.toBase58().slice(0, 8)}…)<br />
-            ✓ OuBoundReceipt discriminator + ["ou_bound", market_id] PDA match<br />
+            ✓ OuBoundReceipt type + PDA + embedded market + fixture + line match<br />
             ✓ outcome (over@50): <b style={{ color: C.text }}>{state.v.resolution === "YES" ? "another goal (YES)" : "no more goals (NO)"}</b> · fixture {String(state.v.fixtureId)}
           </div>
           <div style={{ marginTop: 10, color: state.verdict.label.rail === "PARTIAL" ? C.warn : C.ok, fontWeight: 700, fontSize: 13 }}>
             {state.verdict.label.rail === "PARTIAL" ? "⚠ cross-check FAILED" : "✓ verified, no key"} — {state.verdict.note}
           </div>
-          <div style={{ marginTop: 4, color: C.dim, fontSize: 11 }}>owner · discriminator · PDA · outcome are re-derived in your browser from the RPC's bytes; an RPC could lie, so we ATTEMPT a 2nd independent RPC cross-read (the badge above says whether it confirmed) and you can re-check on the <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.accent }}>explorer</a>.</div>
+          <div style={{ marginTop: 4, color: C.dim, fontSize: 11 }}>owner · discriminator · PDA · embedded market · fixture · line · outcome are re-derived in your browser from the RPC's bytes; an RPC could lie, so we ATTEMPT a 2nd independent RPC cross-read (the badge above says whether it confirmed) and you can re-check on the <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.accent }}>explorer</a>.</div>
           <div style={{ marginTop: 10, fontSize: 11, color: C.dim, textTransform: "uppercase", letterSpacing: 1 }}>raw gate-trace (the decoded receipt bytes)</div>
           <GateTrace lines={state.trace} />
           <button onClick={() => void load()} style={{ marginTop: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>↻ re-verify</button>
@@ -191,13 +191,13 @@ export function App() {
 
   function settle(pickOverride?: Side) {
     // Demo: a second goal IS scored → the OuBoundReceipt attests `over` (another goal). SYNTHETIC for the
-    // demo; the live mint of this exact receipt is rail/proof-gated. The board runs the SAME 3-step gate.
+    // demo; the live mint of this exact receipt is rail/proof-gated. The board runs the SAME full-binding gate.
     // line_q = 6 ("another goal after 1-0" ⇔ Over 1.5 total ⇔ round(1.5×4)); NOT 10 (=2.5), the honest line.
     const effectivePick = pickOverride ?? pick;
     const data = synthOuReceipt(MARKET_ID, 17588395n, 6, true);
     const acct: OnchainAccount = { pubkey: receiptPda, owner: KICKOFF_ORACLE_PROGRAM_ID, data };
-    const outcome = resolveFromReceipt(acct, MARKET_ID); // throws if the gate fails
-    const verified = verifyOuReceipt(acct, MARKET_ID);
+    const verified = verifyOuReceiptForMarket(acct, { marketId: MARKET_ID, fixtureId: 17588395n, lineQ: 6 });
+    const outcome: Side = verified.over ? "YES" : "NO";
     const won = effectivePick === outcome;
     setResult({ outcome, verified, won });
     setStreak((s) => {
@@ -309,11 +309,11 @@ export function App() {
                 ✓ account == ["ou_bound", market_id] PDA<br />
                 ✓ outcome read at byte 50 (over), fixture_id {String(result.verified.fixtureId)} @40
               </div>
-              <GateTrace lines={gateTraceLines({ owner: KICKOFF_ORACLE_PROGRAM_ID, pda: receiptPda, verified: result.verified })} />
+              <GateTrace lines={gateTraceLines({ owner: KICKOFF_ORACLE_PROGRAM_ID, pda: receiptPda, verified: result.verified, lineBound: true })} />
             </div>
             <p style={{ color: C.dim, fontSize: 11, marginTop: 12 }}>
               This card is <b>SIMULATED</b> for the walkthrough (the live mint of a real OuBoundReceipt for THIS
-              market is rail/proof-gated) — it runs the identical 3-step gate (<code>verifyOuReceipt</code>). The
+              market is rail/proof-gated) — it runs the identical fixture-bound gate (<code>verifyOuReceiptForMarket</code>). The
               <b> REAL on-chain instance is the green card at the top</b>. Venue close (claim/payout) is labeled
               <b> trusted-now, proof-gated-target</b> — the trustless datum is the kickoff receipt shown here.
               No $-PnL — PROPCAST measures market coverage + the trustless receipt, not profit.

@@ -1,6 +1,6 @@
 // PROPCAST live-match auto-resolver — the clean, testable orchestration core for the no-human-in-the-loop
 // demo: detect a goal → auto-spawn the micro-market → (at the settle trigger: the next goal or the whistle)
-// mint the TxLINE-proven receipt → re-verify it on-chain through PROPCAST's own 3-step gate → record evidence.
+// mint the TxLINE-proven receipt → re-verify it through PROPCAST's complete market/fixture/line gate → record evidence.
 //
 // EVENT granularity (a goal / whistle), NEVER per-second. Idempotent (the factory dedups a re-delivered frame).
 // NO secrets here: the live scores feed, the TxLINE proof build, the mint, and the RPC read are all INJECTED
@@ -11,7 +11,7 @@ import { PropMarketFactory, type SpawnedMarket } from "../factory/factory.js";
 import { marketIdHex } from "../factory/market_id.js";
 import type { ScoreEvent } from "../factory/primitives.js";
 import { ouReceiptPda } from "../onchain/receipt.js";
-import { resolveFromReceipt, resolveOuLineFromReceipt, type OnchainAccount, type PropResolution } from "../onchain/settle_consumer.js";
+import { ReceiptGateError, verifyOuReceiptForMarket, type OnchainAccount, type VerifiedResolution } from "../onchain/settle_consumer.js";
 
 /** A goal/whistle frame from the live feed. */
 export type GoalFrame = ScoreEvent;
@@ -32,17 +32,18 @@ export interface SettleHook {
 }
 
 /** Reads the on-chain OU receipt account at a PDA (a thin devnet `getAccountInfo` wrapper). Injected so the
- *  orchestrator is testable with no live RPC. `null` = not found (pruned / never minted → VOID). */
+ *  orchestrator is testable with no live RPC. `null` is a retry/no-receipt result; lifecycle expiry is owned
+ *  by the factory sweep, and any future refund/VOID settlement is a separate venue concern. */
 export interface ReceiptFetcher {
   fetchOu(pda: PublicKey): Promise<{ owner: PublicKey; data: Uint8Array } | null>;
 }
 
 export interface ResolvedMarket {
-  marketId: string;
-  fixtureId: bigint;
-  mintTx: string;
-  resolution: PropResolution;
-  verifiedAtMs: number;
+  readonly marketId: string;
+  readonly fixtureId: bigint;
+  readonly mintTx: string;
+  readonly resolution: VerifiedResolution;
+  readonly verifiedAtMs: number;
 }
 
 export interface LiveResolverOpts {
@@ -78,35 +79,48 @@ export class LiveResolver {
     // batch / Promise.all) cannot both pass the idempotency check before either records — one mint, one row.
     const idHex = marketIdHex(market.id);
     return this.withMarketLock(idHex, async () => {
+      // Never trust a structurally compatible caller object as the settlement binding. Recover the immutable
+      // market registered by this factory and use it for every hook/PDA/receipt decision.
+      const boundMarket = this.factory.get(idHex);
+      if (boundMarket === undefined) throw new ReceiptGateError("BadData");
+      if (market.fixtureId !== boundMarket.fixtureId) throw new ReceiptGateError("WrongFixture");
+      if (market.lineQ !== boundMarket.lineQ) throw new ReceiptGateError("WrongLine");
+      if (market.venueU64 !== boundMarket.venueU64) throw new ReceiptGateError("BadData");
+      if (settleEv.fixtureId !== boundMarket.fixtureId) throw new ReceiptGateError("WrongFixture");
+
       // Idempotent: a market gets TWO settle triggers (the next goal, then the whistle) — settle only ONCE.
       const alreadyResolved = this.resolved.find((r) => r.marketId === idHex);
       if (alreadyResolved !== undefined) return alreadyResolved;
 
-      const mintTx = await this.hook.mint(market, settleEv);
-      if (mintTx === null) return null; // not yet provable → the daemon retries next frame
+      const lease = this.factory.beginSettlement(idHex);
+      if (lease === undefined || lease.market !== boundMarket) throw new ReceiptGateError("BadData");
+      const leasedMarket = lease.market;
+      let committed = false;
+      try {
+        const mintTx = await this.hook.mint(leasedMarket, settleEv);
+        if (mintTx === null) return null; // not yet provable → the daemon retries next frame
 
-      const pda = ouReceiptPda(market.id.bytes);
-      const fetched = await this.fetcher.fetchOu(pda);
-      // PC-01: a mint SUCCEEDED (mintTx !== null) but the read lags (fetched === null) is a TRANSIENT RPC
-      // sync race, NOT an abandoned market — return null (retry next frame), never a sticky VOID that the
-      // idempotency check would then freeze forever while the real YES/NO receipt lands a moment later. VOID
-      // for a genuinely abandoned match comes from the sweep-TTL path (no mint ever succeeds), not from here.
-      if (fetched === null) return null;
-      const acct: OnchainAccount = { pubkey: pda, owner: fetched.owner, data: fetched.data };
+        const pda = ouReceiptPda(leasedMarket.id.bytes);
+        const fetched = await this.fetcher.fetchOu(pda);
+        // PC-01: a mint SUCCEEDED (mintTx !== null) but the read lags (fetched === null) is a TRANSIENT RPC
+        // sync race, NOT an abandoned market — return null (retry next frame), never a sticky VOID that the
+        // idempotency check would then freeze forever while the real YES/NO receipt lands a moment later. VOID
+        // for a genuinely abandoned match comes from the sweep-TTL path (no mint ever succeeds), not from here.
+        if (fetched === null) return null;
+        const acct: OnchainAccount = { pubkey: pda, owner: fetched.owner, data: fetched.data };
 
-      // A LINE market (lineQ set — incl. the primary "another goal", primitives.ts) MUST bind its line_q:
-      // resolveOuLineFromReceipt fail-closes (throws WrongLine) on a receipt minted at any OTHER line. A
-      // persistent WrongLine is a MINT-SIDE error (the injected mint attested the wrong line_q) and is
-      // surfaced loudly by design, not silently retried.
-      const resolution: PropResolution =
-        market.lineQ !== undefined
-          ? resolveOuLineFromReceipt(acct, market.id.bytes, market.lineQ)
-          : resolveFromReceipt(acct, market.id.bytes);
-
-      this.factory.markResolved(idHex);
-      const r: ResolvedMarket = { marketId: idHex, fixtureId: settleEv.fixtureId, mintTx, resolution, verifiedAtMs: this.now() };
-      this.resolved.push(r);
-      return r;
+        if (leasedMarket.lineQ === undefined) throw new ReceiptGateError("BadData");
+        const verified = verifyOuReceiptForMarket(acct, { marketId: leasedMarket.id.bytes, fixtureId: leasedMarket.fixtureId, lineQ: leasedMarket.lineQ });
+        const resolution: VerifiedResolution = verified.over ? "YES" : "NO";
+        // Construct every fallible field before committing factory state; no await occurs between commit + row.
+        const r: ResolvedMarket = Object.freeze({ marketId: idHex, fixtureId: verified.fixtureId, mintTx, resolution, verifiedAtMs: this.now() });
+        if (!this.factory.finishSettlement(idHex, lease.token)) throw new ReceiptGateError("BadData");
+        committed = true;
+        this.resolved.push(r);
+        return r;
+      } finally {
+        if (!committed) this.factory.abortSettlement(idHex, lease.token);
+      }
     });
   }
 

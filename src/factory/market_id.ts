@@ -22,7 +22,7 @@ export enum PrimitiveKind {
   /** "both teams to score" — the SECONDARY goal-key primitive, trustlessly settleable via settle_btts_bound. */
   BttsYes = 3,
   /** O/U total-goals at an explicit half-line (1.5/2.5/3.5) — goal-key only, trustlessly settleable via the
-   *  same settle_ou_bound rail; the market's line_q is bound at settle (see verifyOuReceiptForLine). */
+   *  same settle_ou_bound rail; the market's line_q is bound at settle (see verifyOuReceiptForMarket). */
   OuTotalGoals = 4,
 }
 

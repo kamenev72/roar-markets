@@ -3,7 +3,10 @@
 // side-effect-free: identical records ⇒ identical metrics; all timestamps are passed in (no clock / RNG /
 // global reads), mirroring the pricing kernel's purity discipline.
 
-import type { PropResolution } from "../onchain/settle_consumer.js";
+import type { VerifiedResolution } from "../onchain/settle_consumer.js";
+
+/** Lifecycle classification owned by metrics; VOID is never derived from a present receipt. */
+export type QualityResolution = VerifiedResolution | "VOID";
 
 /** One micro-market's lifecycle, timestamped by the caller (the resolver/factory supplies the clock). */
 export interface MarketQualityRecord {
@@ -18,7 +21,7 @@ export interface MarketQualityRecord {
   /** the de-vigged seed P(YES) at spawn — the quality-of-seed reference. */
   seedFairYes: number;
   /** the realized outcome; undefined = still open. VOID is excluded from calibration. */
-  resolution?: PropResolution;
+  resolution?: QualityResolution;
   /** the goal-primitive kind (PrimitiveKind int) — for the per-primitive coverage breakdown. */
   primitiveKind?: number;
 }

@@ -121,7 +121,7 @@ export interface PropPrimitive {
  * "Another goal after H-A" IS an O/U-total market at the line `(H+A)+0.5`: one more goal makes the total
  * exceed the current total by a half-goal. So it is BOUND to that line (`lineQ = lineToLineQ(line)`) exactly
  * like `totalGoalsPrimitive` — the settle-consumer then fail-closes a receipt minted at any OTHER line
- * (`verifyOuReceiptForLine`, `WrongLine`), instead of the old line-UNBOUND path that read only the `over`
+ * (`verifyOuReceiptForMarket`, `WrongLine`), instead of the old line-UNBOUND path that read only the `over`
  * byte and would accept a receipt for a different total. The injected mint MUST attest THIS line_q.
  */
 export function anotherGoalPrimitive(ev: ScoreEvent): PropPrimitive {
@@ -156,7 +156,7 @@ export function bttsPrimitive(bttsOdds: [number, number]): PropPrimitive {
  * BREADTH primitive: an O/U total-goals market at an explicit half-line (1.5 / 2.5 / 3.5). Goal-key only (the
  * same objective stat the rail validates — it does NOT widen the honesty surface past goal grain), trustlessly
  * settleable via the SAME `settle_ou_bound` rail as "another goal", but BOUND to its line: the market carries
- * `lineQ = lineToLineQ(line)` so the settle-consumer (`verifyOuReceiptForLine`) fail-closes a wrong-line
+ * `lineQ = lineToLineQ(line)` so the settle-consumer (`verifyOuReceiptForMarket`) fail-closes a wrong-line
  * receipt. `odds` are [OVER, UNDER] decimals → de-vigged to the seed fair YES (Over).
  */
 export function totalGoalsPrimitive(line: number, odds: [number, number]): PropPrimitive {

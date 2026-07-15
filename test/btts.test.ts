@@ -7,8 +7,7 @@ import { describe, it, expect } from "vitest";
 import { PublicKey } from "@solana/web3.js";
 import {
   ReceiptGateError,
-  resolveBttsFromReceipt,
-  verifyBttsReceipt,
+  verifyBttsReceiptForMarket,
   type OnchainAccount,
 } from "../src/onchain/settle_consumer.js";
 import {
@@ -44,9 +43,8 @@ describe("PROPCAST BTTS secondary primitive", () => {
 
   it("verifies a valid BTTS receipt: yes -> YES, no -> NO, fixture pinned", () => {
     const yes = acct(MK, synthBtts(MK, 17588395n, true));
-    expect(verifyBttsReceipt(yes, MK)).toEqual({ yes: true, fixtureId: 17588395n });
-    expect(resolveBttsFromReceipt(yes, MK)).toBe("YES");
-    expect(resolveBttsFromReceipt(acct(MK, synthBtts(MK, 17588395n, false)), MK)).toBe("NO");
+    expect(verifyBttsReceiptForMarket(yes, { marketId: MK, fixtureId: 17588395n })).toEqual({ yes: true, fixtureId: 17588395n });
+    expect(verifyBttsReceiptForMarket(acct(MK, synthBtts(MK, 17588395n, false)), { marketId: MK, fixtureId: 17588395n }).yes).toBe(false);
   });
 
   it("reads yes at byte 48, NOT 50 (BTTS has no line_q — the per-kind offset is load-bearing)", () => {
@@ -54,7 +52,18 @@ describe("PROPCAST BTTS secondary primitive", () => {
     const d = synthBtts(MK, 1n, true);
     expect(d[48]).toBe(1);
     expect(d[50]).toBe(0);
-    expect(resolveBttsFromReceipt(acct(MK, d), MK)).toBe("YES");
+    expect(verifyBttsReceiptForMarket(acct(MK, d), { marketId: MK, fixtureId: 1n }).yes).toBe(true);
+  });
+
+  it("rejects non-canonical Borsh bool bytes instead of coercing them to YES", () => {
+    for (const raw of [2, 255]) {
+      const malformed = synthBtts(MK, 1n, false);
+      malformed[48] = raw;
+      expect(
+        () => verifyBttsReceiptForMarket(acct(MK, malformed), { marketId: MK, fixtureId: 1n }),
+        `yes byte ${raw}`,
+      ).toThrow(/BadData/);
+    }
   });
 
   it("the BTTS PDA seed differs from OU (same market_id → different receipt account)", () => {
@@ -62,20 +71,24 @@ describe("PROPCAST BTTS secondary primitive", () => {
   });
 
   it("is fail-closed: wrong owner / discriminator / PDA all throw", () => {
-    expect(() => verifyBttsReceipt(acct(MK, synthBtts(MK, 1n, true), SYSTEM), MK)).toThrow(ReceiptGateError);
+    expect(() => verifyBttsReceiptForMarket(acct(MK, synthBtts(MK, 1n, true), SYSTEM), { marketId: MK, fixtureId: 1n })).toThrow(ReceiptGateError);
     const bad = synthBtts(MK, 1n, true);
     bad.set([0, 0, 0, 0, 0, 0, 0, 0], 0);
-    expect(() => verifyBttsReceipt(acct(MK, bad), MK)).toThrow(/WrongDiscriminator/);
+    expect(() => verifyBttsReceiptForMarket(acct(MK, bad), { marketId: MK, fixtureId: 1n })).toThrow(/WrongDiscriminator/);
     const OTHER = new Uint8Array(32).fill(0xc8);
-    expect(() => verifyBttsReceipt(acct(OTHER, synthBtts(OTHER, 1n, true)), MK)).toThrow(/WrongPda/);
+    expect(() => verifyBttsReceiptForMarket(acct(OTHER, synthBtts(OTHER, 1n, true)), { marketId: MK, fixtureId: 1n })).toThrow(/WrongPda/);
   });
 
   it("BadData on truncation: a too-short BTTS account fail-closes (yes@48 needs len>48)", () => {
     const full = synthBtts(MK, 17588395n, true); // 59 bytes, valid
     for (const n of [5, 40, 48]) { // <8, id-only, exactly BTTS_YES_OFFSET (yes byte missing) → BadData
-      expect(() => verifyBttsReceipt(acct(MK, full.subarray(0, n)), MK), `len ${n}`).toThrow(/BadData/);
+      expect(() => verifyBttsReceiptForMarket(acct(MK, full.subarray(0, n)), { marketId: MK, fixtureId: 17588395n }), `len ${n}`).toThrow(/BadData/);
     }
-    expect(verifyBttsReceipt(acct(MK, full), MK).yes).toBe(true);
+    expect(verifyBttsReceiptForMarket(acct(MK, full), { marketId: MK, fixtureId: 17588395n }).yes).toBe(true);
+  });
+
+  it("rejects a correct-PDA BTTS receipt whose fixture belongs to another market", () => {
+    expect(() => verifyBttsReceiptForMarket(acct(MK, synthBtts(MK, 17588395n, true)), { marketId: MK, fixtureId: 7n })).toThrow(/WrongFixture/);
   });
 
   it("the BTTS primitive is trustlessly settleable and goal-key only", () => {

@@ -41,7 +41,7 @@ export interface SpawnedMarket {
   readonly seededLevels: number;
   /** O/U total-goals half-line (display) — OuTotalGoals markets only. */
   readonly line?: number;
-  /** the on-chain `line_q` bound at settle (`verifyOuReceiptForLine`) — OuTotalGoals markets only. */
+  /** the on-chain `line_q` bound at settle (`verifyOuReceiptForMarket`) — OuTotalGoals markets only. */
   readonly lineQ?: number;
 }
 
@@ -53,6 +53,12 @@ export interface FactoryConfig {
   now?: () => number;
 }
 
+/** Opaque capability for one in-flight settlement; only its holder can finish or abort the lease. */
+export interface SettlementLease {
+  readonly market: SpawnedMarket;
+  readonly token: symbol;
+}
+
 export const DEFAULT_FACTORY_CONFIG: FactoryConfig = {
   bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 },
   confidence: 0,
@@ -62,7 +68,7 @@ export class PropMarketFactory {
   private readonly markets = new Map<string, SpawnedMarket>();
   private readonly spawnedSig = new Map<string, SpawnedMarket>(); // per goal-frame signature (idempotency)
   // sweep/lock metadata kept OUT of the public SpawnedMarket shape (zero churn for the board/UI).
-  private readonly meta = new Map<string, { spawnedAtMs: number; sig: string; resolved: boolean }>();
+  private readonly meta = new Map<string, { spawnedAtMs: number; sig: string; resolved: boolean; settlementToken?: symbol }>();
   private readonly nonce = new Map<string, number>(); // per (fixtureId, kind) instance counter (PC-02: see spawn)
   private readonly tails = new Map<string, Promise<void>>(); // per-signature mutex tails
 
@@ -161,7 +167,7 @@ export class PropMarketFactory {
    * IDEMPOTENT per (fixture, line). Distinct lines are distinct markets (the dedup signature carries the line),
    * while a re-delivered same-line frame returns the already-spawned market unchanged. Reuses the SAME private
    * spawn (init venue + de-vigged ladder) and the SAME per-key lock as `onGoal` — no forked spawn path. The
-   * market records `lineQ` so the settle path binds it (`verifyOuReceiptForLine`, fail-closed on a wrong line).
+   * market records `lineQ` so the settle path binds it (`verifyOuReceiptForMarket`, fail-closed on a wrong line).
    */
   async spawnTotalGoals(fixtureId: bigint, line: number, odds: [number, number]): Promise<SpawnedMarket> {
     const prim = totalGoalsPrimitive(line, odds);
@@ -185,10 +191,33 @@ export class PropMarketFactory {
     return this.markets.get(hex);
   }
 
-  /** Mark a market resolved (settled or VOIDed) so the orphan-sweep never reaps it. */
-  markResolved(hex: string): void {
+  /**
+   * Acquire the exclusive synchronous state transition that protects one market across the resolver's async
+   * mint/fetch work. While held, `sweep()` must not reap the market. A second resolver cannot mint the same
+   * market concurrently, and a resolved market cannot be leased again.
+   */
+  beginSettlement(hex: string): SettlementLease | undefined {
+    const market = this.markets.get(hex);
     const mt = this.meta.get(hex);
-    if (mt) mt.resolved = true;
+    if (market === undefined || mt === undefined || mt.resolved || mt.settlementToken !== undefined) return undefined;
+    const token = Symbol(hex);
+    mt.settlementToken = token;
+    return Object.freeze({ market, token });
+  }
+
+  /** Atomically commit a held settlement lease to resolved state. */
+  finishSettlement(hex: string, token: symbol): boolean {
+    const mt = this.meta.get(hex);
+    if (mt === undefined || mt.settlementToken !== token) return false;
+    mt.resolved = true;
+    delete mt.settlementToken;
+    return true;
+  }
+
+  /** Release a held lease after retry/failure without marking the market resolved. */
+  abortSettlement(hex: string, token: symbol): void {
+    const mt = this.meta.get(hex);
+    if (mt?.settlementToken === token) delete mt.settlementToken;
   }
 
   /**
@@ -203,7 +232,7 @@ export class PropMarketFactory {
     const now = this.now();
     let swept = 0;
     for (const [hex, mt] of this.meta) {
-      if (!mt.resolved && now - mt.spawnedAtMs > ttlMs) {
+      if (!mt.resolved && mt.settlementToken === undefined && now - mt.spawnedAtMs > ttlMs) {
         this.markets.delete(hex);
         this.spawnedSig.delete(mt.sig);
         this.meta.delete(hex);

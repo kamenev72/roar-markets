@@ -1,12 +1,12 @@
 // The pinned REAL on-chain OuBoundReceipt (minted phase 2c on devnet) + a pure verify over a fetched account.
 //
-// This is the demo CLIMAX: a REAL kickoff_oracle receipt that PROPCAST's own 3-step gate re-verifies in the
+// This is the demo CLIMAX: a REAL kickoff_oracle receipt that PROPCAST's own fixture-bound gate re-verifies in the
 // fan's browser with NO API key. The fetch (getAccountInfo) is I/O and lives in the caller (the UI / a script);
-// the verify is this pure function, which REUSES `verifyOuReceipt` (no second verifier — no-duplicate-mechanism).
+// the verify is this pure function, which REUSES `verifyOuReceiptForMarket` (no weaker second verifier).
 
 import { PublicKey } from "@solana/web3.js";
 import { ouReceiptPda } from "./receipt.js";
-import { verifyOuReceiptForLine, type OnchainAccount } from "./settle_consumer.js";
+import { verifyOuReceiptForMarket, type OnchainAccount } from "./settle_consumer.js";
 
 /** market_id of the phase 2c real settle: deriveMarketId(17588395, OuAnotherGoal, 0). */
 export const REAL_MARKET_ID_HEX = "532843d51b34f1140e08daf6570ee49204e65c670abf9b043bb37c7b5b452dc1";
@@ -15,7 +15,7 @@ export const REAL_RECEIPT_PDA = "39vT6hs7hmqcQ3oaQ3AgCMJrdX2dz5973hhoffVQiX6n";
 /** the anchored fixture the proof settled. */
 export const REAL_FIXTURE_ID = 17588395n;
 /** PC-04: the receipt's on-chain `line_q` (decoded live = 10). Binding the flagship in-browser re-verify to
- *  it (via `verifyOuReceiptForLine`) makes SECURITY §3.5's "the fan re-derives the outcome bound to THIS
+ *  it (via `verifyOuReceiptForMarket`) makes SECURITY §3.5's "the fan re-derives the outcome bound to THIS
  *  market's line" literally TRUE — a receipt at any other line fail-closes (`WrongLine`), not a silent pass. */
 export const REAL_LINE_Q = 10;
 
@@ -41,7 +41,7 @@ export interface RealReceiptVerification {
 }
 
 /**
- * Verify the REAL on-chain receipt, in-browser, via the SAME 3-step gate. `fetched === null` means the account
+ * Verify the REAL on-chain receipt, in-browser, via the SAME fixture-bound gate. `fetched === null` means the account
  * was not found on devnet (devnet prunes confirmed txs ~30 days) — surfaced as a throw so the UI shows an
  * honest "receipt pruned" state rather than a fabricated pass. A wrong owner/discriminator/PDA throws a
  * `ReceiptGateError` (fail-closed).
@@ -51,6 +51,6 @@ export function verifyRealReceipt(fetched: FetchedAccount | null, marketIdHex = 
   const pda = ouReceiptPda(marketId);
   if (fetched === null) throw new Error(`receipt ${pda.toBase58()} not found on devnet (devnet prunes ~30 days — re-mint to refresh)`);
   const acct: OnchainAccount = { pubkey: pda, owner: fetched.owner, data: fetched.data };
-  const v = verifyOuReceiptForLine(acct, marketId, REAL_LINE_Q); // PC-04: LINE-bound, not just owner/disc/PDA
+  const v = verifyOuReceiptForMarket(acct, { marketId, fixtureId: REAL_FIXTURE_ID, lineQ: REAL_LINE_Q });
   return { resolution: v.over ? "YES" : "NO", fixtureId: v.fixtureId, pda };
 }

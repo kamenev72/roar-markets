@@ -21,7 +21,7 @@ const goal = (fixtureId: bigint, minute: number, h: number, a: number): ScoreEve
 
 /** A receipt account shaped like a real OuBoundReceipt: the embedded market_id@8 MUST match the market (the gate
  *  now self-validates it, not just the caller-supplied PDA), plus the bound line_q@48 and the over@50 outcome. */
-function synthOu(marketId: Uint8Array, over: boolean, lineQ = 10, fixtureId = 17588395n): { owner: PublicKey; data: Uint8Array } {
+function synthOu(marketId: Uint8Array, over: boolean, lineQ: number, fixtureId: bigint): { owner: PublicKey; data: Uint8Array } {
   const d = new Uint8Array(51);
   d.set(OU_BOUND_RECEIPT_DISCRIMINATOR, 0);
   d.set(marketId, 8);
@@ -39,7 +39,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("a goal then a settle trigger: mint + on-chain re-verify (Over → YES) is recorded", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.onGoal(goal(17588395n, 23, 1, 0));
-    const r = new LiveResolver(f, hookReturning("MINT_TX_1"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)), { now: () => 123 });
+    const r = new LiveResolver(f, hookReturning("MINT_TX_1"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)), { now: () => 123 });
     const res = await r.settle(m, goal(17588395n, 67, 2, 0));
     expect(res).not.toBeNull();
     expect(res!.resolution).toBe("YES");
@@ -52,7 +52,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("whistle with no more goals (Under → NO) resolves NO", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.onGoal(goal(7n, 10, 1, 0));
-    const r = new LiveResolver(f, hookReturning("MINT_TX_2"), fetcherReturning(synthOu(m.id.bytes, false, m.lineQ!)));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_2"), fetcherReturning(synthOu(m.id.bytes, false, m.lineQ!, m.fixtureId)));
     const res = await r.settle(m, goal(7n, 90, 1, 0));
     expect(res!.resolution).toBe("NO");
   });
@@ -60,7 +60,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("not yet provable (hook returns null) → no settle, nothing recorded (the daemon retries)", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.onGoal(goal(7n, 10, 1, 0));
-    const r = new LiveResolver(f, hookReturning(null), fetcherReturning(synthOu(m.id.bytes, true)));
+    const r = new LiveResolver(f, hookReturning(null), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
     expect(await r.settle(m, goal(7n, 11, 1, 0))).toBeNull();
     expect(r.list()).toHaveLength(0);
   });
@@ -79,7 +79,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("idempotent on a re-delivered goal frame (one market) and marks resolved (sweep-safe)", async () => {
     const f = new PropMarketFactory(new MemoryTransport(), { bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 }, confidence: 0, now: () => 0 });
     const a = await f.onGoal(goal(9n, 30, 1, 0));
-    const r = new LiveResolver(f, hookReturning("MINT_TX_4"), fetcherReturning(synthOu(a.id.bytes, true, a.lineQ!)));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_4"), fetcherReturning(synthOu(a.id.bytes, true, a.lineQ!, a.fixtureId)));
     const b = await r.onGoal(goal(9n, 30, 1, 0)); // duplicate poll re-delivery
     expect(marketIdHex(a.id)).toBe(marketIdHex(b.id));
     expect(f.listMarkets()).toHaveLength(1);
@@ -92,7 +92,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
   it("a LINE market (total-goals) settles via the BOUND resolver: own line → YES", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.spawnTotalGoals(17588395n, 2.5, [1.9, 1.9]); // lineQ = 10
-    const r = new LiveResolver(f, hookReturning("MINT_TX_5"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_5"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
     const res = await r.settle(m, goal(17588395n, 80, 3, 0));
     expect(res!.resolution).toBe("YES");
   });
@@ -101,7 +101,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     const run = async (now: number) => {
       const f = new PropMarketFactory(new MemoryTransport());
       const m = await f.onGoal(goal(17588395n, 23, 1, 0));
-      const r = new LiveResolver(f, hookReturning("TX"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)), { now: () => now });
+      const r = new LiveResolver(f, hookReturning("TX"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)), { now: () => now });
       return (await r.settle(m, goal(17588395n, 67, 2, 0)))!;
     };
     const a = await run(111);
@@ -115,8 +115,118 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.spawnTotalGoals(17588395n, 2.5, [1.9, 1.9]); // expects lineQ 10
     // a receipt minted at line 1.5 (lineQ 6) for THIS market's PDA must NOT resolve the 2.5 market
-    const r = new LiveResolver(f, hookReturning("MINT_TX_6"), fetcherReturning(synthOu(m.id.bytes, true, 6)));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_6"), fetcherReturning(synthOu(m.id.bytes, true, 6, m.fixtureId)));
     await expect(r.settle(m, goal(17588395n, 80, 3, 0))).rejects.toThrow(/WrongLine/);
+  });
+
+  it("rejects a genuine-shaped receipt from another fixture without recording evidence or marking the market resolved", async () => {
+    const f = new PropMarketFactory(new MemoryTransport(), { bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 }, confidence: 0, now: () => 0 });
+    const m = await f.onGoal(goal(7n, 23, 1, 0));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_FIXTURE"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, 17588395n)));
+
+    await expect(r.settle(m, goal(7n, 67, 2, 0))).rejects.toThrow(/WrongFixture/);
+    expect(r.list()).toHaveLength(0);
+    expect(f.sweep(-1)).toBe(1);
+  });
+
+  it("rejects a cross-fixture settle frame before mint and leaves state unchanged", async () => {
+    const f = new PropMarketFactory(new MemoryTransport(), { bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 }, confidence: 0, now: () => 0 });
+    const m = await f.onGoal(goal(7n, 23, 1, 0));
+    let mints = 0;
+    const hook: SettleHook = { mint: async () => { mints += 1; return "UNREACHABLE"; } };
+    const r = new LiveResolver(f, hook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
+
+    await expect(r.settle(m, goal(17588395n, 67, 2, 0))).rejects.toThrow(/WrongFixture/);
+    expect(mints).toBe(0);
+    expect(r.list()).toHaveLength(0);
+    expect(f.sweep(-1)).toBe(1);
+  });
+
+  it("rejects a cross-fixture frame even after this market has prior evidence", async () => {
+    const f = new PropMarketFactory(new MemoryTransport());
+    const m = await f.onGoal(goal(7n, 23, 1, 0));
+    let mints = 0;
+    const hook: SettleHook = { mint: async () => { mints += 1; return "MINT_TX_ONCE"; } };
+    const r = new LiveResolver(f, hook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
+    const settled = await r.settle(m, goal(7n, 67, 2, 0));
+
+    await expect(r.settle(m, goal(17588395n, 90, 2, 0))).rejects.toThrow(/WrongFixture/);
+    expect(mints).toBe(1);
+    expect(r.list()).toEqual([settled]);
+  });
+
+  it("derives the binding from the factory's canonical market, not a forged structural clone", async () => {
+    const f = new PropMarketFactory(new MemoryTransport(), { bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 }, confidence: 0, now: () => 0 });
+    const canonical = await f.onGoal(goal(7n, 23, 1, 0));
+    const forged = Object.freeze({ ...canonical, fixtureId: 17588395n }) as typeof canonical;
+    let mints = 0;
+    const hook: SettleHook = { mint: async () => { mints += 1; return "UNREACHABLE"; } };
+    const r = new LiveResolver(
+      f,
+      hook,
+      fetcherReturning(synthOu(canonical.id.bytes, true, canonical.lineQ!, 17588395n)),
+    );
+
+    await expect(r.settle(forged, goal(17588395n, 67, 2, 0))).rejects.toThrow(/WrongFixture/);
+    expect(mints).toBe(0);
+    expect(r.list()).toHaveLength(0);
+    expect(f.sweep(-1)).toBe(1);
+  });
+
+  it("keeps verified evidence immutable across list views and idempotent returns", async () => {
+    const f = new PropMarketFactory(new MemoryTransport());
+    const m = await f.onGoal(goal(7n, 23, 1, 0));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_IMMUTABLE"), fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
+    const first = (await r.settle(m, goal(7n, 67, 2, 0)))!;
+    const exposed = r.list()[0]!;
+
+    try {
+      (exposed as { fixtureId: bigint }).fixtureId = 17588395n;
+      (exposed as { resolution: "YES" | "NO" }).resolution = "NO";
+    } catch {
+      // Object.freeze throws under strict-mode engines; either way the stored evidence must stay unchanged.
+    }
+
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(r.list()[0]).toMatchObject({ fixtureId: 7n, resolution: "YES" });
+    expect(await r.settle(m, goal(7n, 90, 2, 0))).toMatchObject({ fixtureId: 7n, resolution: "YES" });
+  });
+
+  it("holds a factory settlement lease so sweep cannot reap the market during mint/fetch awaits", async () => {
+    const f = new PropMarketFactory(new MemoryTransport(), { bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 }, confidence: 0, now: () => 0 });
+    const m = await f.onGoal(goal(7n, 23, 1, 0));
+    const hook: SettleHook = {
+      mint: async () => {
+        expect(f.finishSettlement(marketIdHex(m.id), Symbol("foreign lease"))).toBe(false);
+        f.abortSettlement(marketIdHex(m.id), Symbol("foreign lease"));
+        expect(f.sweep(-1)).toBe(0);
+        await Promise.resolve();
+        return "MINT_TX_LEASED";
+      },
+    };
+    const r = new LiveResolver(f, hook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
+
+    expect((await r.settle(m, goal(7n, 67, 2, 0)))!.resolution).toBe("YES");
+    expect(f.get(marketIdHex(m.id))).toBe(m);
+    expect(f.sweep(-1)).toBe(0);
+    expect(r.list()).toHaveLength(1);
+  });
+
+  it("releases the settlement lease on retry and error paths", async () => {
+    const make = async (hook: SettleHook) => {
+      const f = new PropMarketFactory(new MemoryTransport(), { bootstrap: { levels: 4, baseHalfSpread: 0.02, levelStep: 0.01, sizePerLevel: 10, coldExtra: 2 }, confidence: 0, now: () => 0 });
+      const m = await f.onGoal(goal(7n, 23, 1, 0));
+      const r = new LiveResolver(f, hook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
+      return { f, m, r };
+    };
+
+    const retry = await make(hookReturning(null));
+    expect(await retry.r.settle(retry.m, goal(7n, 67, 2, 0))).toBeNull();
+    expect(retry.f.sweep(-1)).toBe(1);
+
+    const failed = await make({ mint: async () => { throw new Error("mint failed"); } });
+    await expect(failed.r.settle(failed.m, goal(7n, 67, 2, 0))).rejects.toThrow(/mint failed/);
+    expect(failed.f.sweep(-1)).toBe(1);
   });
 
   it("the PRIMARY 'another goal' market is ALSO line-bound: a wrong-line receipt fail-closes (WrongLine)", async () => {
@@ -124,7 +234,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     const m = await f.onGoal(goal(17588395n, 23, 1, 0)); // "another goal after 1-0" ⇔ Over 1.5 ⇔ lineQ 6
     expect(m.lineQ).toBe(6);
     // a receipt minted at a DIFFERENT line (2.5 = lineQ 10) for THIS market's PDA must NOT silently resolve it
-    const r = new LiveResolver(f, hookReturning("MINT_TX_7"), fetcherReturning(synthOu(m.id.bytes, true, 10)));
+    const r = new LiveResolver(f, hookReturning("MINT_TX_7"), fetcherReturning(synthOu(m.id.bytes, true, 10, m.fixtureId)));
     await expect(r.settle(m, goal(17588395n, 67, 2, 0))).rejects.toThrow(/WrongLine/);
   });
 
@@ -133,7 +243,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     const m = await f.onGoal(goal(17588395n, 23, 1, 0));
     let mints = 0;
     const countingHook: SettleHook = { mint: async () => { mints += 1; return `TX_${mints}`; } };
-    const r = new LiveResolver(f, countingHook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)));
+    const r = new LiveResolver(f, countingHook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
     const first = await r.settle(m, goal(17588395n, 67, 2, 0)); // next-goal trigger
     const second = await r.settle(m, goal(17588395n, 90, 2, 0)); // whistle trigger on the SAME market
     expect(first).not.toBeNull();
@@ -147,7 +257,7 @@ describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → r
     const m = await f.onGoal(goal(17588395n, 23, 1, 0));
     let mints = 0;
     const hook: SettleHook = { mint: async () => { mints += 1; await Promise.resolve(); return `TX_${mints}`; } };
-    const r = new LiveResolver(f, hook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!)));
+    const r = new LiveResolver(f, hook, fetcherReturning(synthOu(m.id.bytes, true, m.lineQ!, m.fixtureId)));
     const [a, b] = await Promise.all([r.settle(m, goal(17588395n, 67, 2, 0)), r.settle(m, goal(17588395n, 90, 2, 0))]);
     expect(mints).toBe(1);
     expect(r.list()).toHaveLength(1);

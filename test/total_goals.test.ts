@@ -4,8 +4,7 @@ import { PropMarketFactory } from "../src/factory/factory.js";
 import { marketIdHex, PrimitiveKind } from "../src/factory/market_id.js";
 import {
   ReceiptGateError,
-  resolveOuLineFromReceipt,
-  verifyOuReceiptForLine,
+  verifyOuReceiptForMarket,
   type OnchainAccount,
 } from "../src/onchain/settle_consumer.js";
 import {
@@ -72,11 +71,11 @@ describe("PROPCAST total-goals O/U line-variant primitive (breadth)", () => {
       data: synthOu(m.id.bytes, FIXTURE, lineQ, over),
     });
     // a receipt minted at THIS market's line resolves
-    expect(resolveOuLineFromReceipt(acct(m.lineQ!, true), m.id.bytes, m.lineQ!)).toBe("YES");
-    expect(verifyOuReceiptForLine(acct(m.lineQ!, false), m.id.bytes, m.lineQ!).over).toBe(false);
+    expect(verifyOuReceiptForMarket(acct(m.lineQ!, true), { marketId: m.id.bytes, fixtureId: m.fixtureId, lineQ: m.lineQ! }).over).toBe(true);
+    expect(verifyOuReceiptForMarket(acct(m.lineQ!, false), { marketId: m.id.bytes, fixtureId: m.fixtureId, lineQ: m.lineQ! }).over).toBe(false);
     // a receipt minted for a DIFFERENT line (1.5 = line_q 6) is fail-closed for this 2.5 market
-    expect(() => verifyOuReceiptForLine(acct(6, true), m.id.bytes, m.lineQ!)).toThrow(ReceiptGateError);
-    expect(() => verifyOuReceiptForLine(acct(6, true), m.id.bytes, m.lineQ!)).toThrow(/WrongLine/);
+    expect(() => verifyOuReceiptForMarket(acct(6, true), { marketId: m.id.bytes, fixtureId: m.fixtureId, lineQ: m.lineQ! })).toThrow(ReceiptGateError);
+    expect(() => verifyOuReceiptForMarket(acct(6, true), { marketId: m.id.bytes, fixtureId: m.fixtureId, lineQ: m.lineQ! })).toThrow(/WrongLine/);
   });
 
   it("is deterministic: replaying the same (fixture, line) yields identical ids", async () => {
