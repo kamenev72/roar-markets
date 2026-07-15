@@ -13,6 +13,8 @@ echo "── PROPCAST demo take ────────────────
 echo "[1/4] gate: test · typecheck · clean-room · doc-drift"
 npm test --silent >/dev/null 2>&1 && echo "      ✓ tests green"   || { echo "      ✗ tests"; exit 1; }
 npm run typecheck --silent >/dev/null 2>&1 && echo "      ✓ typecheck" || { echo "      ✗ typecheck"; exit 1; }
+npm run ui:bundle-check --silent >/dev/null 2>&1 && echo "      ✓ initial bundle budget" || { echo "      ✗ bundle"; exit 1; }
+npm run ui:e2e --silent >/dev/null 2>&1 && echo "      ✓ responsive browser gate" || { echo "      ✗ browser"; exit 1; }
 npm run cleanroom --silent >/dev/null 2>&1 && echo "      ✓ clean-room"  || { echo "      ✗ clean-room"; exit 1; }
 npm run doc-drift --silent >/dev/null 2>&1 && echo "      ✓ doc-drift"   || { echo "      ✗ doc-drift"; exit 1; }
 

@@ -3,5 +3,5 @@
   "sourceHead": "e5d05d6f15781848a3ffeab7a780a5058653024f",
   "entryRawBytes": 620308,
   "entryGzipBytes": 192600,
-  "note": "Baseline before PLAN-2107 lazy VerificationWorkbench split; Vite warned about a 620.15 kB JS asset."
+  "note": "Baseline before the lazy VerificationWorkbench split; Vite warned about a 620.15 kB JS asset."
 }

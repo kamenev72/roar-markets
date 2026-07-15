@@ -51,7 +51,8 @@ Or step by step:
 
 ```bash
 npm ci
-npm run build && npm test && npm run cleanroom && npm run doc-drift   # all green
+npm run build && npm test && npm run ui:bundle-check && npm run ui:e2e # deterministic gates green
+npm run cleanroom && npm run doc-drift && npm run xss-guard            # release hygiene green
 npm --prefix ui ci && npm --prefix ui run dev                          # open the fan board
 # the REAL card re-verifies the live receipt; the SIMULATED walkthrough clicks through the flow
 node --import tsx scripts/verify_real_settle.ts                        # the same gate, in the terminal
