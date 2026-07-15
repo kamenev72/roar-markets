@@ -13,6 +13,18 @@ import { deriveMarketId, marketIdHex, type MarketId } from "./market_id.js";
 import { anotherGoalPrimitive, totalGoalsPrimitive, type PropPrimitive, type ScoreEvent } from "./primitives.js";
 
 const SCALE_N = Number(SCALE);
+const I64_MAX = (1n << 63n) - 1n;
+
+/** Immutable identity wrapper: every byte view is a clone, so consumers cannot mutate the stored hash. */
+function immutableMarketId(id: MarketId): MarketId {
+  const stableBytes = Uint8Array.from(id.bytes);
+  return Object.freeze({
+    get bytes(): Uint8Array {
+      return Uint8Array.from(stableBytes);
+    },
+    u64: id.u64,
+  });
+}
 
 /** Map a probability in [0,1] to the venue's u32 price (1 .. SCALE-1). */
 export function probToU32(p: number): number {
@@ -20,15 +32,17 @@ export function probToU32(p: number): number {
 }
 
 export interface SpawnedMarket {
-  id: MarketId;
+  readonly id: MarketId;
   /** the pitchmaker_book venue id (u64). */
-  venueU64: bigint;
-  primitive: PropPrimitive;
-  seededLevels: number;
+  readonly venueU64: bigint;
+  /** Fixture committed immutably to the venue at initialization. */
+  readonly fixtureId: bigint;
+  readonly primitive: Readonly<PropPrimitive>;
+  readonly seededLevels: number;
   /** O/U total-goals half-line (display) — OuTotalGoals markets only. */
-  line?: number;
+  readonly line?: number;
   /** the on-chain `line_q` bound at settle (`verifyOuReceiptForLine`) — OuTotalGoals markets only. */
-  lineQ?: number;
+  readonly lineQ?: number;
 }
 
 export interface FactoryConfig {
@@ -109,19 +123,35 @@ export class PropMarketFactory {
     // bound line) is the fix, but it changes market_id derivation — which requires re-minting the pinned real
     // receipt (REAL_MARKET_ID = deriveMarketId(fixture, OuAnotherGoal, 0)) in the SAME window. Deferred to the
     // re-mint window so the flagship credential-free re-verify pin stays intact until then.
+    if (fixtureId < 0n || fixtureId > I64_MAX) throw new RangeError("spawn: fixtureId must fit 0..i64::MAX");
+    const lineQ = prim.lineQ;
+    if (lineQ === undefined || !Number.isInteger(lineQ) || lineQ < -32_768 || lineQ > 32_767) {
+      throw new RangeError("spawn: lineQ must be an i16 integer");
+    }
+
     const nkey = `${fixtureId}:${prim.kind}`;
     const nonce = this.nonce.get(nkey) ?? 0;
     this.nonce.set(nkey, nonce + 1);
-    const id = deriveMarketId(fixtureId, prim.kind, nonce);
-    await this.transport.initVenue(id.u64);
+    const derivedId = deriveMarketId(fixtureId, prim.kind, nonce);
+    await this.transport.initVenue(derivedId.u64, fixtureId, lineQ);
 
     const ladder = bootstrapLadder(prim.fairYes, this.cfg.confidence, this.cfg.bootstrap);
     for (const lvl of ladder) {
-      await this.transport.postOrder(id.u64, SIDE_BID, probToU32(lvl.bidPrice), BigInt(Math.round(lvl.size)));
-      await this.transport.postOrder(id.u64, SIDE_ASK, probToU32(lvl.askPrice), BigInt(Math.round(lvl.size)));
+      await this.transport.postOrder(derivedId.u64, SIDE_BID, probToU32(lvl.bidPrice), BigInt(Math.round(lvl.size)));
+      await this.transport.postOrder(derivedId.u64, SIDE_ASK, probToU32(lvl.askPrice), BigInt(Math.round(lvl.size)));
     }
 
-    const m: SpawnedMarket = { id, venueU64: id.u64, primitive: prim, seededLevels: ladder.length, line: prim.line, lineQ: prim.lineQ };
+    const id = immutableMarketId(derivedId);
+    const primitive: Readonly<PropPrimitive> = Object.freeze({ ...prim });
+    const m: SpawnedMarket = Object.freeze({
+      id,
+      venueU64: derivedId.u64,
+      fixtureId,
+      primitive,
+      seededLevels: ladder.length,
+      line: primitive.line,
+      lineQ,
+    });
     this.markets.set(marketIdHex(id), m);
     return m;
   }

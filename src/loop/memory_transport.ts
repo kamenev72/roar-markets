@@ -10,6 +10,8 @@ import { PitchmakerBookClient, SIDE_BID, type OrderState, type PositionState, ty
 import type { PostResult, VenueTransport } from "./transport.js";
 
 interface MemVenue {
+  fixtureId: bigint;
+  lineQ: number;
   resolved: boolean;
   outcome: number;
   nextOrderId: bigint;
@@ -20,12 +22,17 @@ interface MemOrder {
   price: number;
   remaining: bigint;
 }
+interface MemPosition {
+  yes: bigint;
+  yesBought: bigint;
+  yesSold: bigint;
+}
 
 export class MemoryTransport implements VenueTransport {
   readonly book: PitchmakerBookClient;
   private readonly venues = new Map<string, MemVenue>();
   private readonly orders = new Map<string, MemOrder>(); // `${marketId}:${orderId}`
-  private readonly positions = new Map<string, bigint>(); // `${marketId}:${trader}`
+  private readonly positions = new Map<string, MemPosition>(); // `${marketId}:${trader}`
   private readonly authPk = Keypair.generate().publicKey;
   private readonly makerPk = Keypair.generate().publicKey;
   private readonly takerPk = Keypair.generate().publicKey;
@@ -44,9 +51,11 @@ export class MemoryTransport implements VenueTransport {
     return this.takerPk;
   }
 
-  initVenue(marketId: bigint): Promise<string> {
-    this.venues.set(String(marketId), { resolved: false, outcome: 0, nextOrderId: 0n });
-    return Promise.resolve("mem");
+  async initVenue(marketId: bigint, fixtureId: bigint, lineQ: number): Promise<string> {
+    // Exercise the same PDA + wire-domain validation as bankrun/devnet before mutating memory state.
+    this.book.initVenue({ authority: this.authority, marketId, fixtureId, lineQ });
+    this.venues.set(String(marketId), { fixtureId, lineQ, resolved: false, outcome: 0, nextOrderId: 0n });
+    return "mem";
   }
 
   postOrder(marketId: bigint, side: number, price: number, size: bigint): Promise<PostResult> {
@@ -90,13 +99,18 @@ export class MemoryTransport implements VenueTransport {
 
   private addPos(marketId: bigint, trader: PublicKey, d: bigint): void {
     const key = `${marketId}:${trader.toBase58()}`;
-    this.positions.set(key, (this.positions.get(key) ?? 0n) + d);
+    const previous = this.positions.get(key) ?? { yes: 0n, yesBought: 0n, yesSold: 0n };
+    this.positions.set(key, {
+      yes: previous.yes + d,
+      yesBought: previous.yesBought + (d > 0n ? d : 0n),
+      yesSold: previous.yesSold + (d < 0n ? -d : 0n),
+    });
   }
 
   readVenue(marketId: bigint): Promise<VenueState | null> {
     const v = this.venues.get(String(marketId));
     return Promise.resolve(
-      v ? { authority: this.authPk, marketId, resolved: v.resolved, outcome: v.outcome, nextOrderId: v.nextOrderId, bump: 255 } : null,
+      v ? { authority: this.authPk, marketId, fixtureId: v.fixtureId, lineQ: v.lineQ, resolved: v.resolved, outcome: v.outcome, nextOrderId: v.nextOrderId, bump: 255 } : null,
     );
   }
   readOrder(marketId: bigint, orderId: bigint): Promise<OrderState | null> {
@@ -106,7 +120,7 @@ export class MemoryTransport implements VenueTransport {
     );
   }
   readPosition(marketId: bigint, trader: PublicKey): Promise<PositionState | null> {
-    const yes = this.positions.get(`${marketId}:${trader.toBase58()}`);
-    return Promise.resolve(yes !== undefined ? { venue: this.book.venuePda(marketId), trader, yes, claimed: false, bump: 255 } : null);
+    const position = this.positions.get(`${marketId}:${trader.toBase58()}`);
+    return Promise.resolve(position ? { venue: this.book.venuePda(marketId), trader, ...position, claimed: false, bump: 255 } : null);
   }
 }

@@ -28,9 +28,9 @@ export enum PrimitiveKind {
 
 export interface MarketId {
   /** 32-byte id — the kickoff bound-receipt PDA seed form (settle, phase 2) + the fan re-verify key. */
-  bytes: Uint8Array;
+  readonly bytes: Uint8Array;
   /** the pitchmaker_book venue marketId (u64) — little-endian decode of bytes[0..8]. */
-  u64: bigint;
+  readonly u64: bigint;
 }
 
 const DOMAIN = "propcast:market:v1";

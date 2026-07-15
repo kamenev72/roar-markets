@@ -12,12 +12,26 @@ Clean-room provenance: all pricing math derives from PUBLIC sources only —
 standard proportional de-vig; Avellaneda-Stoikov (2008) and
 Guéant-Lehalle-Fernández-Tapia (GLFT) market-making. The on-chain venue and the
 settlement/dispute layer are CONSUMED as deployed programs; PROPCAST adds the
-per-prop market factory and the consumer surface, not a new venue or oracle. No
-proprietary third-party code is included.
+per-prop market factory and the consumer surface, not a new venue or oracle. An
+exact compiled venue binary is included as a deterministic test fixture, as
+attributed below. No proprietary third-party code is included.
 
-Vendored / adapted from: nothing is copied verbatim. The on-chain account layouts
-this repo reads — the kickoff-oracle OuBoundReceipt and its receipt PDA scheme
-(["ou_bound", market_id]) — are re-derived from the programs' PUBLIC on-chain formats
-and hand-rolled here (src/onchain/), not imported. The Solana web3.js / @solana
-client libraries and vitest are used under their respective open-source licenses (see
-package.json). No code, keys, or data from any closed source are vendored.
+This distribution includes material from the Apache-2.0-licensed sibling project:
+
+PitchMaker
+Copyright 2026 Roman Kamenev
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Specifically, PROPCAST includes the exact compiled PitchMaker `pitchmaker_book.so`
+at `fixtures/pitchmaker_book.so`, sourced from
+https://github.com/kamenev72/pitchmaker.git commit
+ed567ea53e87329819ac8b98fab2ad1ee3dbb031, repository-relative source path
+`fixtures/pitchmaker_book.so`. It also includes the Apache-2.0 sibling-derived venue
+client, Borsh, discriminator, and transport seam under `src/venue/` and `src/loop/`,
+adapted where needed for PROPCAST's current ABI and in-memory factory integration.
+
+The kickoff-oracle account layouts this repository reads — including the
+OuBoundReceipt PDA scheme (["ou_bound", market_id]) — are hand-rolled from public
+on-chain formats in `src/onchain/`, not copied from a closed source. Solana web3.js,
+the Solana client libraries, and Vitest are used under their respective open-source
+licenses (see package.json). No code, keys, or data from any closed source are vendored.

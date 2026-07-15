@@ -20,7 +20,7 @@ export interface VenueTransport {
   readonly maker: PublicKey; // the agent's identity
   readonly taker: PublicKey; // the scripted counterparty
 
-  initVenue(marketId: bigint): Promise<string>;
+  initVenue(marketId: bigint, fixtureId: bigint, lineQ: number): Promise<string>;
   /** post one order at the venue's current next_order_id (read on-chain); returns the id used. */
   postOrder(marketId: bigint, side: number, price: number, size: bigint): Promise<PostResult>;
   cancelOrder(marketId: bigint, orderId: bigint): Promise<string>;
@@ -69,8 +69,8 @@ export class BankrunTransport implements VenueTransport {
     return "bankrun"; // bankrun has no explorer; the loop only records sigs cosmetically here
   }
 
-  initVenue(marketId: bigint): Promise<string> {
-    return this.send(this.authorityKp, this.book.initVenue({ authority: this.authority, marketId }));
+  initVenue(marketId: bigint, fixtureId: bigint, lineQ: number): Promise<string> {
+    return this.send(this.authorityKp, this.book.initVenue({ authority: this.authority, marketId, fixtureId, lineQ }));
   }
 
   async postOrder(marketId: bigint, side: number, price: number, size: bigint): Promise<PostResult> {

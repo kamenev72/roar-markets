@@ -9,6 +9,9 @@
 
 import { PublicKey } from "@solana/web3.js";
 
+const I64_MIN = -(1n << 63n);
+const I64_MAX = (1n << 63n) - 1n;
+
 /** Append-only little-endian borsh encoder. */
 export class BorshWriter {
   private readonly chunks: Buffer[] = [];
@@ -32,8 +35,22 @@ export class BorshWriter {
     return this;
   }
   i64(v: bigint | number): this {
+    if (typeof v === "number" && !Number.isSafeInteger(v)) {
+      throw new RangeError("i64 value must be a safe integer number or bigint");
+    }
+    const value = BigInt(v);
+    if (value < I64_MIN || value > I64_MAX) throw new RangeError("i64 value must fit a signed 64-bit integer");
     const b = Buffer.alloc(8);
-    b.writeBigInt64LE(BigInt(v), 0);
+    b.writeBigInt64LE(value, 0);
+    this.chunks.push(b);
+    return this;
+  }
+  i16(v: number): this {
+    if (!Number.isFinite(v) || !Number.isInteger(v) || v < -32_768 || v > 32_767) {
+      throw new RangeError("i16 value must be a finite integer in [-32768, 32767]");
+    }
+    const b = Buffer.alloc(2);
+    b.writeInt16LE(v, 0);
     this.chunks.push(b);
     return this;
   }
@@ -83,6 +100,11 @@ export class BorshReader {
   i64(): bigint {
     const v = this.buf.readBigInt64LE(this.off);
     this.off += 8;
+    return v;
+  }
+  i16(): number {
+    const v = this.buf.readInt16LE(this.off);
+    this.off += 2;
     return v;
   }
   bool(): boolean {

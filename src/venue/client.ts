@@ -11,7 +11,7 @@
 
 import { PublicKey, SystemProgram, TransactionInstruction, type AccountMeta } from "@solana/web3.js";
 import { BorshReader, BorshWriter } from "./borsh.js";
-import { ixDiscriminator } from "./discriminator.js";
+import { accountDiscriminator, ixDiscriminator } from "./discriminator.js";
 
 /** Deployed program id (Anchor.toml [programs.devnet], declare_id! in lib.rs). */
 export const PITCHMAKER_BOOK_PROGRAM_ID = new PublicKey("JBK6odPfCTuHp1cb3Yr76PPTdnhpGgQwrZ9oszhSjh3R");
@@ -24,9 +24,20 @@ export const SIDE_ASK = 1; // sell YES
 const u64le = (v: bigint | number): Buffer => new BorshWriter().u64(v).toBuffer();
 const meta = (pubkey: PublicKey, isSigner: boolean, isWritable: boolean): AccountMeta => ({ pubkey, isSigner, isWritable });
 
+function accountReader(data: Buffer | Uint8Array, accountName: "Venue" | "Order" | "Position", expectedLength: number): BorshReader {
+  const bytes = Buffer.from(data);
+  const expectedDiscriminator = accountDiscriminator(accountName);
+  if (bytes.length !== expectedLength || !bytes.subarray(0, 8).equals(expectedDiscriminator)) {
+    throw new Error(`invalid ${accountName} account: expected ${expectedLength} bytes and matching discriminator`);
+  }
+  return new BorshReader(bytes).skip(8);
+}
+
 export interface VenueState {
   authority: PublicKey;
   marketId: bigint;
+  fixtureId: bigint;
+  lineQ: number;
   resolved: boolean;
   outcome: number;
   nextOrderId: bigint;
@@ -45,6 +56,8 @@ export interface PositionState {
   trader: PublicKey;
   /** signed net YES shares: + long YES, − short YES (= long NO). */
   yes: bigint;
+  yesBought: bigint;
+  yesSold: bigint;
   claimed: boolean;
   bump: number;
 }
@@ -70,9 +83,9 @@ export class PitchmakerBookClient {
 
   // ---------- instruction builders ----------
 
-  initVenue(args: { authority: PublicKey; marketId: bigint | number }): TransactionInstruction {
+  initVenue(args: { authority: PublicKey; marketId: bigint | number; fixtureId: bigint | number; lineQ: number }): TransactionInstruction {
     const venue = this.venuePda(args.marketId);
-    const data = Buffer.concat([ixDiscriminator("init_venue"), new BorshWriter().u64(args.marketId).toBuffer()]);
+    const data = Buffer.concat([ixDiscriminator("init_venue"), new BorshWriter().u64(args.marketId).i64(args.fixtureId).i16(args.lineQ).toBuffer()]);
     return new TransactionInstruction({
       programId: this.programId,
       keys: [meta(args.authority, true, true), meta(venue, false, true), meta(SystemProgram.programId, false, false)],
@@ -170,15 +183,15 @@ export class PitchmakerBookClient {
   // ---------- account decoders (skip the 8-byte Anchor discriminator, then packed borsh) ----------
 
   decodeVenue(data: Buffer | Uint8Array): VenueState {
-    const r = new BorshReader(data).skip(8);
-    return { authority: r.pubkey(), marketId: r.u64(), resolved: r.bool(), outcome: r.u8(), nextOrderId: r.u64(), bump: r.u8() };
+    const r = accountReader(data, "Venue", 69);
+    return { authority: r.pubkey(), marketId: r.u64(), fixtureId: r.i64(), lineQ: r.i16(), resolved: r.bool(), outcome: r.u8(), nextOrderId: r.u64(), bump: r.u8() };
   }
   decodeOrder(data: Buffer | Uint8Array): OrderState {
-    const r = new BorshReader(data).skip(8);
+    const r = accountReader(data, "Order", 86);
     return { venue: r.pubkey(), maker: r.pubkey(), side: r.u8(), price: r.u32(), remaining: r.u64(), bump: r.u8() };
   }
   decodePosition(data: Buffer | Uint8Array): PositionState {
-    const r = new BorshReader(data).skip(8);
-    return { venue: r.pubkey(), trader: r.pubkey(), yes: r.i64(), claimed: r.bool(), bump: r.u8() };
+    const r = accountReader(data, "Position", 98);
+    return { venue: r.pubkey(), trader: r.pubkey(), yes: r.i64(), yesBought: r.u64(), yesSold: r.u64(), claimed: r.bool(), bump: r.u8() };
   }
 }

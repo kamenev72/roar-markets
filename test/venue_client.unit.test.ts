@@ -53,8 +53,17 @@ describe("PitchmakerBookClient — instruction borsh layout", () => {
     expect(args.readBigUInt64LE(21)).toBe(100n); // size
   });
 
+  it("encodes init_venue as discriminator + u64 market + i64 fixture + i16 line", () => {
+    const ix = client.initVenue({ authority: PublicKey.default, marketId: 1n, fixtureId: 17_588_395n, lineQ: 10 });
+    expect(ix.data.subarray(0, 8).toString("hex")).toBe("182df4a54be4d926");
+    expect(ix.data.length).toBe(26);
+    expect(ix.data.readBigUInt64LE(8)).toBe(1n);
+    expect(ix.data.readBigInt64LE(16)).toBe(17_588_395n);
+    expect(ix.data.readInt16LE(24)).toBe(10);
+  });
+
   it("orders init_venue / post_order / take_order account metas exactly as the program's #[derive(Accounts)]", () => {
-    const init = client.initVenue({ authority: PublicKey.default, marketId: 1n });
+    const init = client.initVenue({ authority: PublicKey.default, marketId: 1n, fixtureId: 17_588_395n, lineQ: 10 });
     expect(init.keys.map((k) => [k.isSigner, k.isWritable])).toEqual([
       [true, true], // authority (mut Signer)
       [false, true], // venue (init)
@@ -86,27 +95,98 @@ describe("PitchmakerBookClient — instruction borsh layout", () => {
   });
 });
 
+describe("BorshWriter — signed integer domains", () => {
+  it.each([1.5, Number.NaN, Number.POSITIVE_INFINITY, 32_768, -32_769])("rejects invalid i16 value %s", (value) => {
+    expect(() => new BorshWriter().i16(value)).toThrow(/i16/);
+  });
+
+  it.each([Number.MAX_SAFE_INTEGER + 1, 1.5, (1n << 63n), -(1n << 63n) - 1n])("rejects invalid i64 value %s", (value) => {
+    expect(() => new BorshWriter().i64(value)).toThrow(/i64/);
+  });
+});
+
 describe("PitchmakerBookClient — account decoders", () => {
   const client = new PitchmakerBookClient();
-  it("round-trips a Position buffer (signed i64 yes, bool claimed)", () => {
+
+  const expectRejectedVariants = (
+    accountName: string,
+    valid: Buffer,
+    wrongDiscriminator: Buffer,
+    decode: (data: Buffer) => unknown,
+  ): void => {
+    expect(() => decode(valid.subarray(0, valid.length - 1))).toThrow(`invalid ${accountName} account`);
+    expect(() => decode(wrongDiscriminator)).toThrow(`invalid ${accountName} account`);
+    expect(() => decode(Buffer.concat([valid, Buffer.from([0])]))).toThrow(`invalid ${accountName} account`);
+  };
+
+  it("rejects truncated, wrong-type, and trailing Venue accounts", () => {
+    const valid = new BorshWriter().bytes(accountDiscriminator("Venue")).pubkey(PublicKey.default).u64(7n).i64(17_588_395n).i16(10).bool(false).u8(0).u64(0n).u8(255).toBuffer();
+    const wrongType = Buffer.from(valid);
+    accountDiscriminator("Order").copy(wrongType, 0);
+    expectRejectedVariants("Venue", valid, wrongType, (data) => client.decodeVenue(data));
+  });
+
+  it("rejects truncated, wrong-type, and trailing Order accounts", () => {
+    const valid = new BorshWriter().bytes(accountDiscriminator("Order")).pubkey(PublicKey.default).pubkey(PublicKey.default).u8(0).u32(600_000).u64(100n).u8(255).toBuffer();
+    const wrongType = Buffer.from(valid);
+    accountDiscriminator("Position").copy(wrongType, 0);
+    expectRejectedVariants("Order", valid, wrongType, (data) => client.decodeOrder(data));
+  });
+
+  it("rejects truncated, wrong-type, and trailing Position accounts", () => {
+    const valid = new BorshWriter().bytes(accountDiscriminator("Position")).pubkey(PublicKey.default).pubkey(PublicKey.default).i64(-100n).u64(40n).u64(140n).bool(false).u8(254).toBuffer();
+    const wrongType = Buffer.from(valid);
+    accountDiscriminator("Venue").copy(wrongType, 0);
+    expectRejectedVariants("Position", valid, wrongType, (data) => client.decodePosition(data));
+  });
+
+  it("round-trips a Position buffer (net and gross YES lots)", () => {
     const buf = new BorshWriter()
       .bytes(accountDiscriminator("Position"))
       .pubkey(PublicKey.default)
       .pubkey(PublicKey.default)
       .i64(-100n)
+      .u64(40n)
+      .u64(140n)
       .bool(true)
       .u8(254)
       .toBuffer();
     const pos = client.decodePosition(buf);
     expect(pos.yes).toBe(-100n);
+    expect(pos.yesBought).toBe(40n);
+    expect(pos.yesSold).toBe(140n);
     expect(pos.claimed).toBe(true);
     expect(pos.bump).toBe(254);
+  });
+
+  it("decodes the current fixed Venue, Position, and unchanged Order layouts", () => {
+    const venue = new BorshWriter().bytes(accountDiscriminator("Venue")).pubkey(PublicKey.default).u64(7n).i64(17_588_395n).i16(10).bool(true).u8(2).u64(5n).u8(255).toBuffer();
+    expect(venue.length).toBe(69);
+    expect(venue.readBigInt64LE(48)).toBe(17_588_395n);
+    expect(venue.readInt16LE(56)).toBe(10);
+    expect(client.decodeVenue(venue)).toMatchObject({ fixtureId: 17_588_395n, lineQ: 10 });
+
+    const position = new BorshWriter().bytes(accountDiscriminator("Position")).pubkey(PublicKey.default).pubkey(PublicKey.default).i64(-100n).u64(40n).u64(140n).bool(true).u8(254).toBuffer();
+    expect(position.length).toBe(98);
+    expect(position.readBigUInt64LE(80)).toBe(40n);
+    expect(position.readBigUInt64LE(88)).toBe(140n);
+    expect(position.readUInt8(96)).toBe(1);
+    expect(client.decodePosition(position)).toMatchObject({ yesBought: 40n, yesSold: 140n, claimed: true });
+
+    const order = new BorshWriter().bytes(accountDiscriminator("Order")).pubkey(PublicKey.default).pubkey(PublicKey.default).u8(0).u32(600_000).u64(100n).u8(255).toBuffer();
+    expect(order.length).toBe(86);
+    expect(order.readUInt8(72)).toBe(0);
+    expect(order.readUInt32LE(73)).toBe(600_000);
+    expect(order.readBigUInt64LE(77)).toBe(100n);
+    expect(client.decodeOrder(order)).toMatchObject({ side: 0, price: 600_000, remaining: 100n });
   });
   it("round-trips a Venue buffer", () => {
     const buf = new BorshWriter()
       .bytes(accountDiscriminator("Venue"))
       .pubkey(PublicKey.default)
       .u64(7n)
+      .i64(17_588_395n)
+      .i16(10)
       .bool(true)
       .u8(2)
       .u64(5n)
@@ -114,6 +194,8 @@ describe("PitchmakerBookClient — account decoders", () => {
       .toBuffer();
     const v = client.decodeVenue(buf);
     expect(v.marketId).toBe(7n);
+    expect(v.fixtureId).toBe(17_588_395n);
+    expect(v.lineQ).toBe(10);
     expect(v.resolved).toBe(true);
     expect(v.outcome).toBe(2);
     expect(v.nextOrderId).toBe(5n);
