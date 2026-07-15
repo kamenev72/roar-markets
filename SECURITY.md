@@ -8,8 +8,8 @@ devnet consumer** for a hackathon, holding **no mainnet value and no fan funds**
 
 PROPCAST auto-spawns goal-grain micro-markets, seeds a de-vigged line, and **settles**
 by re-verifying an on-chain bound-receipt minted by a deployed kickoff-oracle program
-(`kickoff_oracle` `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw`) through a 3-step
-fail-closed gate. The fan UI is read-only (a devnet `getAccountInfo` + an in-browser
+(`kickoff_oracle` `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw`) through a complete
+binding gate. The fan UI is read-only (a devnet `getAccountInfo` + an in-browser
 re-verify; no wallet, no key). The v1 venue is in-process (no escrow). There is **no
 real-money PnL** anywhere; market quality/coverage is the only metric.
 
@@ -23,26 +23,27 @@ real-money custody (v1 holds none).
 Actors: (a) a fan loading the read-only UI; (b) a network-position adversary on the
 path to the RPC; (c) a hostile/compromised RPC operator; (d) the off-chain
 proof-builder + autonomous mint daemon (the operator's own credentialed tooling);
-(e) the venue/oracle authority key-holder. The trust root is the on-chain receipt;
-everything a fan sees is re-derivable from it.
+(e) the venue/oracle authority key-holder. The receipt binding is re-derivable; the
+choice of when to mint it and venue payout are separate trust boundaries.
 
 ## 3. Trust assumptions (stated)
 
-1. **The trustless datum is the on-chain bound receipt** — anyone can re-verify it via
-   the 3-step gate (owner / Anchor discriminator / `["ou_bound" | "btts_bound",
-   market_id]` PDA), with the per-kind outcome offset and the `line_q` line-binding.
-2. **The receipt MINT is gated to a fresh, finalized, signed Merkle-proven score ONLY
-   when the oracle's `cpi_gated` flag is true.** The offline default is fail-open — a
-   config-validation gate must assert `cpi_gated=true` for any trust-bearing settle.
+1. **The independently re-verifiable datum is the on-chain bound receipt** — anyone can
+   re-check its immutable binding via owner, Anchor discriminator, PDA, embedded
+   `market_id`, fixture, line (OU), and canonical 0/1 outcome byte. This is not proof
+   of the off-chain finality decision or of payout.
+2. **Receipt finality is not independently proven by this public consumer.**
+   `LiveResolver` trusts an injected/private mint hook; `settle_ou_bound` defaults
+   `minFinalTs` to `0` unless its caller supplies it. CPI proof validation binds supplied
+   data, not a public finality policy.
 3. **The oracle ships a mock variant that shares a real discriminator and returns
-   Ok().** The consumer's owner+discriminator+PDA gate makes that collision irrelevant
-   to settlement; the minting-trust footgun belongs to the oracle, not the consumer.
-4. **The v1 venue close-path (A) is the venue authority's `resolve()`** — labeled
-   on-screen and in docs as "trusted-now, proof-gated-target". The venue payout is
-   **not** claimed trustless; a fully proof-gated venue close is future work (B).
+   Ok().** The full consumer gate additionally checks owner, PDA, embedded market,
+   fixture, line, and canonical outcome; mock-shape similarity alone cannot pass it.
+4. **There is no public fund-holding v1 close path.** A future authority `resolve()` is
+   modeled as "trusted-now, proof-gated-target"; proof-gated payout/refund remains work.
 5. **The fan re-derives the SETTLEMENT COMPUTATION, not the market FRAMING.** What is
-   trustlessly re-checkable is the OUTCOME rule — `over @ line_q` vs the Merkle-attested
-   goal total carried on the receipt. The market's FRAMING (the base score it was spawned
+   independently re-checkable is the bound outcome carried by the receipt: `over` for the
+   receipt's `line_q`. The market's FRAMING (the base score it was spawned
    at, e.g. "another goal after 1-0" ⇒ line 1.5) comes from the off-chain TxLINE SSE feed,
    a STATED trusted input: a lied base score would mis-frame the market (wrong `line_q`)
    but is NOT itself proof-bound. The honest claim is "re-check OUR settlement", never
@@ -52,10 +53,10 @@ everything a fan sees is re-derivable from it.
 
 ## 4. Attack-surface map
 
-- The in-browser re-verify (`getAccountInfo` over a single RPC — trust = RPC honesty;
-  no light-client proof; see §6).
-- The settle consumer gate (owner / discriminator / PDA / per-kind outcome offset /
-  `line_q` binding / VOID-on-absent).
+- The in-browser re-verify (`getAccountInfo` over primary and secondary RPCs; both remain
+  trust assumptions, with no light-client proof; see §6).
+- The complete binding gate (owner / discriminator / PDA / embedded market / fixture /
+  line where applicable / canonical outcome byte).
 - The `market_id` derivation (full 32-byte SHA-256 receipt PDA vs the u64 venue bridge).
 - The off-chain proof-builder + autonomous mint daemon (finality trigger, idempotency,
   credential files, success signalling).
@@ -63,33 +64,29 @@ everything a fan sees is re-derivable from it.
 
 ## 5. Mitigations in place
 
-- Owner-first fail-closed ordering before any byte read; Anchor discriminator + PDA
-  binding; per-kind outcome offset (over@50 / btts-yes@48) with length-guards before
-  every byte read (no out-of-bounds fail-open); `line_q` binding so a wrong-line
-  receipt fail-closes; VOID-on-absent distinct from the fail-closed throw.
+- Owner-first fail-closed ordering before any byte read; discriminator, PDA, embedded
+  market, fixture, and line binding; canonical 0/1 outcome bytes and length guards.
 - The receipt PDA seeds the full 32-byte SHA-256 `market_id` (collision-resistant);
   only the venue bridge truncates to u64.
 - One reused verifier (no weaker second path); React auto-escaping (no HTML-injection
   sink); `@solana/web3.js` pinned past the December-2024 backdoor with lockfile
   integrity; no Clock/slot trust in the read path; per-signature idempotent spawn dedup.
+- `LiveResolver` recovers the factory's canonical immutable market record before mint
+  and uses its opaque settlement lease so sweep cannot reap an in-flight settlement.
 - A clean-room + secret CI gate that detects proprietary vocabulary, private-key
   blocks, Solana keypair byte-arrays, base58 secrets, and JWTs, with a selftest.
 
 ## 6. Residual risks (honest)
 
-- **Single-RPC trust on the in-browser read.** The re-verify proves the queried RPC
-  reports the right owner / discriminator / PDA / outcome; it is **not** a
-  cryptographic light-client proof, so a hostile or man-in-the-middle RPC could report
-  a fabricated account. Cross-check the receipt on a block explorer (and/or a second
-  RPC) for stronger assurance. A validator-attested light client is out of v1 scope.
-- **v1 venue payout is single-key trusted** (close-path A): a lost / compromised /
-  withholding authority key has no permissionless or timeout-driven refund. v1 holds
-  no fan funds, so this is latent; it becomes real only if a fund-holding venue is
-  wired, which must gate on close-path (B) or an on-chain timeout refund.
-- **Off-chain trust boundary**: the proof-builder + mint daemon run with live data
-  credentials; a compromise of that tooling or the oracle mint key could mint a
-  valid-but-mislabeled receipt. `cpi_gated=true` binds the outcome to a Merkle-proven
-  score, so that config gate is the load-bearing control.
+- **RPC trust on the in-browser read.** Cross-RPC agreement is stronger than one read,
+  but it is **not** a cryptographic light-client proof; colluding or intercepted RPCs
+  could report fabricated bytes. The explorer is an additional check, not an SPV proof.
+- **Future venue-close authority risk:** the public v1 holds no fan funds. If an
+  authority-controlled fund-holding venue is wired, loss, compromise, or withholding
+  creates payout/refund risk until proof-gated close or an on-chain timeout exists.
+- **Off-chain finality boundary**: the private proof-builder/mint hook chooses when to
+  request a receipt. The public consumer cannot prove the supplied score is final;
+  `minFinalTs=0` is the encoder default unless the hook supplies a stronger value.
 - The clean-room secret gate is a denylist; the durable backstop is keeping all keys
   outside the work tree.
 - Dev-toolchain advisories reachable only by a developer running the dev server on a
@@ -106,20 +103,15 @@ everything a fan sees is re-derivable from it.
 
 ## 7. Scope & non-claims
 
-- "next-goal which-side" is not a trustless v1 primitive (no on-chain proof attests
-  goal order) — a labeled proxy only.
-- The venue payout is not trustless (trusted-now, proof-gated-target).
-- No real-money PnL; goal-grain only; event-granularity (~60s) settle, not per-second.
-- The in-browser re-verify proves provenance as reported by one RPC, not absolute
+- "next-goal which-side" has no on-chain goal-order proof in v1 — a labeled proxy only.
+- No public fund-holding venue, payout, refund, or proof-gated close is demonstrated.
+- No real-money PnL; goal-grain only. The intended private hook is event-granular over a
+  ~60s feed, but this public consumer does not implement or prove that policy.
+- The in-browser re-verify proves provenance as reported by RPCs, not absolute
   truth — cross-check on the explorer for independence.
-- **VAR-reversal / stale-frame gap (named-open, PC-12):** a market spawns and settles
-  against the goal count attested at settle time. If a goal is later DISALLOWED by VAR
-  after the receipt is minted, the settlement is correct *per the proof it was bound to*
-  but stale *per the final match state* — the settle-consumer has no re-org / correction
-  path in v1. Goal-grain settle waits for the ~60s-delayed final-status frame (which
-  reduces, but does not eliminate, an in-window reversal); a proof-supersession /
-  dispute-window correction is the named pre-production hardening, mirroring the
-  kickoff-oracle dispute layer this repo consumes.
+- **VAR/finality gap:** golden tests show the consumer is stateless over supplied bytes;
+  they do not prove a receipt cannot be minted before a later correction. There is no
+  public correction, dispute, or finality-enforcement path in v1.
 
 ## 8. Reporting a vulnerability
 
@@ -131,8 +123,8 @@ third-party and out of our control.
 
 ## 9. Security testing & CI gates
 
-The test suite pins the fail-closed gate (forged / foreign / wrong-type /
-wrong-market / wrong-line / truncated / absent), the per-kind offset traps, the
+The test suite pins the complete binding gate (forged / foreign / wrong-type /
+wrong-market / wrong-fixture / wrong-line / truncated), the per-kind offset traps, the
 collision-free `market_id` grid, and idempotency. CI enforces typecheck + build +
 tests, the clean-room/secret scan and its selftest, doc-drift (including the pinned
 deployed program id), and the UI subproject build + audit.

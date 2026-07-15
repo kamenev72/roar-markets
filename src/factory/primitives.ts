@@ -1,7 +1,6 @@
 // PROPCAST goal-primitive trigger map. A scoring event yields the v1 PRIMARY prop: "will there be another
-// goal" (an O/U-goals binary), seeded from the de-vigged consensus line. This is the only primitive that is
-// trustlessly settleable in v1 (goal-total via the kickoff settle_ou_bound rail). "next-goal which-side" is
-// emitted ONLY as a labeled proxy (no on-chain proof attests goal ORDER), never as a trustless market in v1.
+// goal" (an O/U-goals binary), seeded from the de-vigged consensus line. It has a kickoff bound-receipt rail.
+// "next-goal which-side" is emitted only as a labeled proxy because no on-chain proof attests goal order.
 
 import { binaryProb } from "../signal/devig.js";
 import { lineToLineQ } from "../onchain/receipt.js";
@@ -107,8 +106,8 @@ export interface PropPrimitive {
   question: string;
   /** de-vigged fair YES probability — the seed centre. */
   fairYes: number;
-  /** true => trustlessly settleable in v1 (goal-total via settle_ou_bound); false => labeled proxy only. */
-  trustlessSettleV1: boolean;
+  /** True when v1 has a complete market/fixture(/line) bound-receipt verifier for this primitive. */
+  receiptBindableV1: boolean;
   /** O/U total-goals half-line (e.g. 2.5) — set for the OuTotalGoals variant only (UI display). */
   line?: number;
   /** the on-chain `line_q` integer bound at settle (`lineToLineQ(line)`) — OuTotalGoals only. */
@@ -131,16 +130,15 @@ export function anotherGoalPrimitive(ev: ScoreEvent): PropPrimitive {
     kind: PrimitiveKind.OuAnotherGoal,
     question: `Another goal after ${ev.homeScore}-${ev.awayScore} (${ev.minute}')?`,
     fairYes,
-    trustlessSettleV1: true,
+    receiptBindableV1: true,
     line,
     lineQ: lineToLineQ(line),
   };
 }
 
 /**
- * SECONDARY primitive: "both teams to score?" — a fixture-level BTTS binary, de-vigged seed, trustlessly
- * settleable via `settle_btts_bound` (two-proof: P1>0 AND P2>0 for `yes`). It is goal-key only (the same
- * objective stat the rail validates), so it does not widen the honesty surface past goal grain.
+ * SECONDARY primitive: "both teams to score?" — a fixture-level BTTS binary with a complete bound-receipt
+ * verifier over the `settle_btts_bound` layout. It is goal-key only.
  */
 export function bttsPrimitive(bttsOdds: [number, number]): PropPrimitive {
   const fairYes = binaryProb(bttsOdds, 0); // index 0 = YES (both teams score)
@@ -148,14 +146,14 @@ export function bttsPrimitive(bttsOdds: [number, number]): PropPrimitive {
     kind: PrimitiveKind.BttsYes,
     question: "Both teams to score?",
     fairYes,
-    trustlessSettleV1: true,
+    receiptBindableV1: true,
   };
 }
 
 /**
  * BREADTH primitive: an O/U total-goals market at an explicit half-line (1.5 / 2.5 / 3.5). Goal-key only (the
- * same objective stat the rail validates — it does NOT widen the honesty surface past goal grain), trustlessly
- * settleable via the SAME `settle_ou_bound` rail as "another goal", but BOUND to its line: the market carries
+ * same goal-total stat the rail validates) using the SAME `settle_ou_bound` receipt layout as "another goal",
+ * but BOUND to its line: the market carries
  * `lineQ = lineToLineQ(line)` so the settle-consumer (`verifyOuReceiptForMarket`) fail-closes a wrong-line
  * receipt. `odds` are [OVER, UNDER] decimals → de-vigged to the seed fair YES (Over).
  */
@@ -165,7 +163,7 @@ export function totalGoalsPrimitive(line: number, odds: [number, number]): PropP
     kind: PrimitiveKind.OuTotalGoals,
     question: `Over/Under ${line} total goals?`,
     fairYes,
-    trustlessSettleV1: true,
+    receiptBindableV1: true,
     line,
     lineQ: lineToLineQ(line),
   };

@@ -1,6 +1,6 @@
 # DEVLOG — PROPCAST
 
-Dated build journal for the auto-spawned, trustlessly-settled goal-grain micro-prop market venue (Track C).
+Dated build journal for the PROPCAST goal-grain market and bound-receipt prototype (Track C).
 
 ---
 
@@ -15,16 +15,16 @@ Dated build journal for the auto-spawned, trustlessly-settled goal-grain micro-p
   bound-receipt PDA seed (phase 2). Collision-free over a grid + a venue-PDA cross-check (the frozen seam).
 - **CP4 the `PropMarketFactory` spine** — `onGoal` → derive a `market_id` → `init_venue` → post the de-vigged
   two-sided seed ladder over `MemoryTransport`; "will there be another goal" (O/U) is the v1 PRIMARY
-  (trustlessly settleable via the kickoff `settle_ou_bound` rail in phase 2); next-goal-which-side is a labeled
+  (planned for a kickoff bound-receipt rail in phase 2); next-goal-which-side is a labeled
   proxy only (no on-chain proof of goal order). 47/47 tests, build + clean-room green.
 
 **Deferred to a later phase:** the live in-play scores schema pin (needs a live TxLINE rail + a real scoring frame),
 the on-chain settle path (mint + consume the kickoff bound receipt), and the fan UI. Honesty: goal-grain
-only; event-granularity settle (not per-second); the factory reports coverage/quality, never a $-PnL.
+only; the intended hook was event-granular, not per-second; the factory reports coverage/quality, never $-PnL.
 
 2026-06-29  **phase 2a — on-chain settle-consumer (the trust gate, rail/proof-independent).**
-- `src/onchain/receipt.ts` + `src/onchain/settle_consumer.ts` — `verifyOuReceipt` runs the p2p_pool
-  three-step fail-closed gate over a kickoff `OuBoundReceipt` (owner == kickoff_oracle / the OU discriminator
+- `src/onchain/receipt.ts` + `src/onchain/settle_consumer.ts` — the then-current consumer ran a three-check
+  parser over a kickoff `OuBoundReceipt` (owner == kickoff_oracle / the OU discriminator
   / the `["ou_bound", market_id]` PDA), then reads `over`@**50** (NOT @48 — `line_q:i16` occupies 48..50) +
   `fixture_id`@40, mapping Over ⇒ "another goal" YES. The TS twin of the parlay_slip program's `verify_leg`.
 - `test/settle_consumer.test.ts` 6/6 (53/53 total): valid over/under, the OU@50-vs-@48 crafted-`line_q` trap,
@@ -39,37 +39,36 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
 - `ui/` — a vite React app (mirrors the kickoff explorer) that runs the phase 1 de-vig seed + the phase 2a
   settle-consumer IN THE BROWSER: ⚽ a goal spawns the "another goal" micro-market (seeded from the de-vigged
   consensus YES%, keyed by the `market_id`), the fan picks YES/NO, the whistle settles it from a (clearly
-  SYNTHETIC) `OuBoundReceipt` through the identical 3-step gate (`verifyOuReceipt` → owner / OU disc /
-  `["ou_bound", market_id]` PDA / `over`@50), and a "✓ trustless verify — the proof decides" badge renders.
+  SYNTHETIC) `OuBoundReceipt` through the then-current gate (owner / OU disc /
+  `["ou_bound", market_id]` PDA / `over`@50), and the then-current proof badge rendered. The 2026-07-15
+  hardening replaced that overclaim with explicit receipt-binding and finality boundaries.
 - `src/onchain/receipt.ts` `ouReceiptPda` now uses `TextEncoder` (not Node `Buffer`) → browser-safe, the
   IDENTICAL PDA (root tests stay 53/53). `npm run build` (tsc + vite) green.
 - HONESTY: the receipt is labeled SYNTHETIC (the live mint of a real receipt for this market is rail/proof-
-  gated); no $-PnL; goal-grain only; event-granularity settle. Deferred: the live mint + the real venue-resolve
-  tx + the live scores-schema pin (the launchd daemon auto-captures that during a live WC match).
+  gated); no $-PnL; goal-grain only. Deferred: live mint, venue resolve, and live schema capture.
 
 2026-06-29  **phase 2c — REAL on-chain settle (not synthetic).** The deferred live mint is DONE on devnet:
 - A fresh TxLINE composite total-proof (P1+P2, op=Add) **verified live** via `txoracle::validate_stat`
   (tx `5k69yoyn…`), then a **real `OuBoundReceipt` minted** via `kickoff_oracle::settle_ou_bound`'s
   CPI-gated `validate_stat` (tx `4CzqNgSp…` → receipt `39vT6hs7…` at market_id `532843…` =
-  `deriveMarketId(17588395, OuAnotherGoal, 0)`), and **PROPCAST's settle-consumer 3-step gate verified it
+  `deriveMarketId(17588395, OuAnotherGoal, 0)`), and the then-current settle-consumer verified it
   on-chain** (`over=false fixtureId=17588395 → NO`). `scripts/mint_real_receipt.ts` (producer) +
   `scripts/verify_real_settle.ts` (consumer) + `evidence/real_onchain_settle.md`.
 - Root-caused the earlier `0x66`: `settle_ou_bound`'s current signature REQUIRES the `fixture_id:i64` field
-  (added by the trustless-gate hardening); the stale `live_ou_bound` layout omitted it → shifted the proof
+  (added by the binding-gate hardening); the stale `live_ou_bound` layout omitted it → shifted the proof
   bytes → txoracle Merkle-fail. And the proof must be FRESH (matching the finalized day-root; a mid-day
-  snapshot fails). No $-PnL. The live in-play (`Participant`) schema pin still needs a live match (the
-  `com.propcast.scores-capture` launchd daemon auto-captures it).
+  snapshot fails). No $-PnL. The `Participant` schema was captured later that day; it does not prove goal order.
 
 2026-06-29  **phase 3 — finish + ship (primitives-harden-demo-docs).** The submittable v1:
-- **Golden edge-case battery** (`test/golden_edge_cases.test.ts`): abandoned→VOID (`resolveFromReceiptOrVoid`:
-  absent receipt = VOID, distinct from the fail-closed throw), VAR-disallowed (the consumer reads only the
-  FINAL receipt's `over`, never a provisional state), own-goal (the OU primitive is attribution-agnostic;
+- **Golden edge-case battery** (`test/golden_edge_cases.test.ts`): then included abandoned/VOID lifecycle
+  examples and supplied-byte VAR examples; later claim hardening clarifies these did not prove finality or refund.
+  Own-goal remains attribution-agnostic;
   which-side stays a proxy), double-goal-in-tick (idempotent `onGoal` per goal frame — a duplicate poll
   re-delivery does not double-spawn; a real 2nd goal advances the score → a fresh market).
 - **Quality/coverage metrics** (`src/metrics/quality.ts`, NO $-PnL): markets spawned, coverage %, time-to-
   first-quote, time-to-settle, seed-vs-realized calibration markout — a code test asserts no money-named field.
 - **REAL on-chain re-verify card** (`ui/`, `src/onchain/real_receipt.ts`): the headline fetches the live
-  receipt `39vT6hs7…` read-only and runs the SAME 3-step gate in-browser (no key/wallet); a test PINS
+  receipt `39vT6hs7…` read-only and ran the then-current gate in-browser (no key/wallet); a test PINS
   `ouReceiptPda(real market_id)` to the live PDA. The interactive walkthrough is relabeled SIMULATED;
   close-path (A) labeled "trusted-now, proof-gated-target".
 - **Factory harden**: per-key lock (one micro-market's confirm-block never starves others; race-free dedup),
@@ -80,7 +79,7 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
 - Pending (operator handoff, labeled): record + host the ≤5-min demo video, then flip the repo public before
   the 2026-07-19 submission close.
 - **CP8 (if-time) — BTTS secondary primitive done** (`844fc38`): a "both teams to score" consumer
-  (`verifyBttsReceipt`, `yes`@48 — NOT 50, no `line_q`) + `bttsPrimitive`, grounded in the real
+  (BTTS receipt parser, `yes`@48 — NOT 50, no `line_q`) + `bttsPrimitive`, grounded in the real
   `BttsBoundReceipt` layout + the verified discriminator + the `["btts_bound", market_id]` PDA;
   fail-closed + offset-pinned by `test/btts.test.ts` (6). Live mint for a PROPCAST market_id is DESIGN.
   Remaining if-time: the live ~60s match beat (gated on a live WC match + the private proof-build).
@@ -97,13 +96,13 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
 
 2026-06-30  **phase 4 — fan-experience polish + breadth (Track-C deepening).** v1 was already submittable; phase 4 adds
   breadth + trust-depth, all reuse, no net-new program.
-- **CP1 — line_q-bound OU consumer.** `verifyOuReceiptForLine` reads the receipt's `line_q`@48 and binds it to
+- **CP1 — line_q-bound OU consumer.** The then-current API read the receipt's `line_q`@48 and bound it to
   the market's declared line — a wrong-line receipt fail-closes (`WrongLine`), the precondition for >1 O/U line
   (without it a single receipt would resolve every line the same way, the multi-line fail-open). `line_q =
   round(line × 4)` pinned to the real phase 2c receipt (Under 2.5 = line_q 10). `VerifiedOu` gains `lineQ`.
 - **CP2 — total-goals O/U line-variant primitive.** `totalGoalsPrimitive(line, odds)` + `factory.spawnTotalGoals`
-  auto-spawn O/U 1.5/2.5/3.5 as distinct, line-bound, trustlessly-settleable markets (goal-key only — no
-  honesty-surface widening), reusing the same spawn + per-key lock. `test/total_goals.test.ts`.
+  auto-spawn O/U 1.5/2.5/3.5 as distinct, receipt-bindable markets (goal-key only), reusing the same spawn +
+  per-key lock. `test/total_goals.test.ts`.
 - **CP3 — UI trust-deepening.** The re-verify panels (REAL on-chain card + the SIMULATED walkthrough) render a
   RAW gate-trace (decoded owner / discriminator / PDA / `line_q` / `over` bytes) via the SAME gate fn (no second
   verifier) + an honest EvidenceLabel badge (LIVE·VERIFIED vs SIMULATED·DEMONSTRATED); a compact auto-spawned
@@ -113,4 +112,9 @@ only; event-granularity settle (not per-second); the factory reports coverage/qu
   taxonomy in CLAIMS, and `scripts/demo.sh` (one-command repeatable take: gate-green print + the on-chain
   re-verify, RPC key masked).
 - Gate at each CP: test ∧ typecheck ∧ cleanroom ∧ doc-drift (+ ui build for CP3). Final suite **99/99**.
+
+2026-07-15  **claim and trust-boundary hardening.** The complete verifier now binds owner, type, PDA,
+embedded market, fixture, line, and canonical outcome. The factory/resolver uses canonical immutable state
+and an opaque settlement lease. Public copy and APIs now say `receiptBindableV1`, not "trustless settle": the
+private mint hook's finality policy, nonce persistence, and any fund-holding payout/refund remain explicit gaps.
   Operator handoff unchanged: record + host the demo video, then flip the repo public before 2026-07-19.

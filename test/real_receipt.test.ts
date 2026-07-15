@@ -47,8 +47,8 @@ describe("REAL on-chain receipt (phase 2c pin + in-browser re-verify)", () => {
     expect(v.pda.toBase58()).toBe(REAL_RECEIPT_PDA);
   });
 
-  it("a pruned/absent account throws an honest not-found (no fabricated pass)", () => {
-    expect(() => verifyRealReceipt(null)).toThrow(/not found on devnet/);
+  it("an absent account throws an honest not-found without guessing the cause", () => {
+    expect(() => verifyRealReceipt(null)).toThrow(/not found via the selected devnet RPC/);
   });
 
   it("a wrong-owner account is fail-closed (ReceiptGateError), never a silent pass", () => {

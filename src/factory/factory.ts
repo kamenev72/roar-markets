@@ -163,7 +163,7 @@ export class PropMarketFactory {
   }
 
   /**
-   * BREADTH: spawn + seed a trustless O/U total-goals micro-market at an explicit half-line (1.5/2.5/3.5) —
+   * BREADTH: spawn + seed a receipt-bindable O/U total-goals micro-market at an explicit half-line —
    * IDEMPOTENT per (fixture, line). Distinct lines are distinct markets (the dedup signature carries the line),
    * while a re-delivered same-line frame returns the already-spawned market unchanged. Reuses the SAME private
    * spawn (init venue + de-vigged ladder) and the SAME per-key lock as `onGoal` — no forked spawn path. The

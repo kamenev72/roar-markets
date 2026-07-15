@@ -9,7 +9,7 @@ PROPCAST is a public, clean-room project. Nothing in this repo derives from any 
   local files, gitignored). They are never committed, never in docs, never in fixtures.
 - **Public-knowledge math only** — de-vig is standard proportional overround removal; the pricing seed is
   Avellaneda-Stoikov / GLFT, all from public literature.
-- **Consume, don't fork** — the Solana escrow-cross venue and the trustless settlement/dispute + Merkle re-verify
-  rails are deployed programs PROPCAST CALLS. PROPCAST does not re-implement a venue or an oracle.
+- **Consume, don't fork** — the Solana venue and bound-receipt/Merkle verification rails are programs PROPCAST
+  calls. PROPCAST does not re-implement a venue or an oracle, and does not claim their private hook policy.
 
 Run the gate locally before any push: `npm run cleanroom`.

@@ -1,5 +1,5 @@
 // Fan-trust surface helpers — an honest EvidenceLabel + a RAW gate-trace formatter. Pure: it only FORMATS
-// values the 3-step gate already decoded (it never re-verifies — the gate in src/onchain stays the single
+// values the complete binding gate already decoded (it never re-verifies — the gate in src/onchain stays the single
 // authority, no duplicate mechanism). The trace turns "the proof decides" into checkable bytes a fan can read.
 
 import type { PublicKey } from "@solana/web3.js";
@@ -15,7 +15,7 @@ export interface EvidenceLabel {
 export const LABEL_LIVE: EvidenceLabel = { rail: "LIVE", strength: "VERIFIED" };
 export const LABEL_SIMULATED: EvidenceLabel = { rail: "SIMULATED", strength: "DEMONSTRATED" };
 export const LABEL_PARTIAL: EvidenceLabel = { rail: "PARTIAL", strength: "DEMONSTRATED" };
-/** PC-UI-01: the neutral pre-result label — the receipt has not (yet) passed the 3-step gate. NEVER green. */
+/** PC-UI-01: the neutral pre-result label — the receipt has not passed the complete binding gate. NEVER green. */
 export const LABEL_PENDING: EvidenceLabel = { rail: "LIVE", strength: "PENDING" };
 
 /** True only for a confirmed, verified LIVE read — the ONLY state that earns the green tick + a strength claim. */
@@ -81,7 +81,7 @@ const short = (s: string, n = 12): string => (s.length > n ? `${s.slice(0, n)}�
 const hex = (b: Uint8Array): string => Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
 
 /**
- * The raw gate-trace: one line per check the 3-step gate ran, with the DECODED bytes. `verified` is the gate's
+ * The raw gate-trace: selected decoded values from the complete binding gate. `verified` is the gate's
  * own output (already-passed); `owner`/`pda` are the account fields the gate matched. `lineBound` true ⇒ this is
  * a line-bound total-goals market (show the line); false ⇒ "another goal".
  */

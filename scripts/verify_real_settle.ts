@@ -1,6 +1,6 @@
-// Real on-chain settle proof: read the REAL OuBoundReceipt (minted via the kickoff settle_ou_bound CPI-gate
-// against a live-verified TxLINE Merkle proof) from devnet and run PROPCAST's fixture-bound settle-consumer gate
-// over it. No synthetic data — this is the trustless settle end-to-end. Run: node --import tsx scripts/verify_real_settle.ts
+// Historical on-chain receipt check: read the REAL OuBoundReceipt minted via kickoff's settle_ou_bound CPI
+// path and run PROPCAST's complete market/fixture/line binding gate. This proves the account bytes and their
+// immutable binding, not the private hook's mint-time finality policy or venue payout.
 import { Connection, PublicKey } from "@solana/web3.js";
 import { deriveMarketId, marketIdHex, PrimitiveKind } from "../src/factory/market_id.js";
 import { ouReceiptPda, KICKOFF_ORACLE_PROGRAM_ID } from "../src/onchain/receipt.js";
@@ -20,4 +20,4 @@ const acct = { pubkey: pda, owner: ai.owner, data: new Uint8Array(ai.data) };
 const v = verifyOuReceiptForMarket(acct, { marketId: id.bytes, fixtureId: REAL_FIXTURE_ID, lineQ: REAL_LINE_Q });
 const res = v.over ? "YES" : "NO";
 console.log(`owner == kickoff_oracle: ${ai.owner.equals(KICKOFF_ORACLE_PROGRAM_ID)}`);
-console.log(`✅ REAL on-chain settle verified via PROPCAST's market+fixture+line gate: over=${v.over} fixtureId=${v.fixtureId} -> resolution ${res} (Under 2.5 -> NO "another goal")`);
+console.log(`✅ REAL on-chain receipt binding verified: over=${v.over} fixtureId=${v.fixtureId} -> encoded outcome ${res} (Under 2.5 -> NO "another goal")`);

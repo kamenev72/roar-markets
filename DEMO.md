@@ -1,18 +1,20 @@
 # DEMO — the ≤5-min walkthrough
 
-**Video:** _(link lands before submission)_
+**Video:** not recorded or linked in this repository.
 
-The recorded demo IS the MVP. It leads with the DETERMINISTIC fixture (a live `serviceLevelId=1` ~60s run is
-an optional second beat, gated on a live WC match). Devnet prunes confirmed txs ~30 days, so it is recorded
-against the still-resolvable phase 2c hashes.
+The intended demo leads with the deterministic fixture. A live `serviceLevelId=1` ~60s run is an optional
+second beat, gated on a live WC match. It must be recorded against still-resolvable devnet evidence; no video
+artifact is currently published here.
 
 ## The spine (what the demo shows)
 
-1. **A goal fires** → a fresh binary "another goal?" micro-market **spawns** on the fan board (auto-spawn
-   factory derives a collision-free `market_id`, inits the venue, seeds the de-vigged line).
+1. **A synthetic walkthrough frame** → the fan board illustrates a fresh "another goal?" market. The factory
+   behavior is unit/bankrun tested; this UI click does not perform a live venue initialization.
 2. **A fan takes a side** (YES / NO) — no wallet connect needed to watch the trust flow.
-3. **The next goal/whistle is Merkle-proven** on-chain (TxLINE goal-total → `kickoff_oracle` settle).
-4. **AUTO-SETTLE** — PROPCAST's 3-step gate reads the proven receipt and resolves the market.
+3. **A supplied receipt is inspected** — the real evidence is a historical devnet receipt; this walkthrough
+   does not prove a whistle/finality decision.
+4. **Receipt verification** — the complete binding gate accepts a receipt only for the canonical market,
+   fixture, and line. The private mint/finality hook is a disclosed boundary, not proof.
 5. **One-tap in-browser re-verify** — the fan re-checks the receipt themselves, **no API key, no wallet**.
 
 ## The REAL on-chain beat (the climax — not a mock)
@@ -34,7 +36,7 @@ Outcome read on-chain: `over=false → NO` (Under 2.5), fixture 17588395.
 Beyond "another goal", the factory auto-spawns **O/U total-goals** lines
 (1.5 / 2.5 / 3.5) — each goal-key only, each LINE-BOUND: the settle-consumer reads
 the receipt's `line_q` and fail-closes a wrong-line receipt, so every line settles
-independently and trustlessly. BTTS ("both teams to score") is the secondary
+independently once a correctly bound receipt exists. BTTS ("both teams to score") is the secondary
 goal-key primitive. All shown on the fan board with their de-vigged seeds.
 
 ## Run it locally (for the recording)
@@ -42,22 +44,22 @@ goal-key primitive. All shown on the fan board with their de-vigged seeds.
 ```bash
 bash scripts/demo.sh        # one command: gate-green print + the on-chain re-verify (RPC key masked)
 # then, in a second terminal, open the fan board:
-npm --prefix ui install && npm --prefix ui run dev
+npm --prefix ui ci && npm --prefix ui run dev
 ```
 
 Or step by step:
 
 ```bash
-npm install
+npm ci
 npm run build && npm test && npm run cleanroom && npm run doc-drift   # all green
-npm --prefix ui install && npm --prefix ui run dev                     # open the fan board
+npm --prefix ui ci && npm --prefix ui run dev                          # open the fan board
 # the REAL card re-verifies the live receipt; the SIMULATED walkthrough clicks through the flow
 node --import tsx scripts/verify_real_settle.ts                        # the same gate, in the terminal
 ```
 
 ## Positioning one-liner
 
-"The live in-play micro-market **the fan settles themselves** — re-compute the Merkle-anchored settlement in your own
-browser, no key, no trusted oracle — auto-spawned from an objective goal, at a goal-grain Polymarket can't service."
+"A goal-grain devnet prototype: browser-verifiable receipt binding, with finality and payout stated as
+remaining boundaries."
 
 Deployed program ids + the full reproduce: `README.md`, `docs/TXLINE_USAGE.md`, `evidence/real_onchain_settle.md`.

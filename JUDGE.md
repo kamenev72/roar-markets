@@ -1,28 +1,27 @@
 # Judge — the 90-second path
 
-One command, hermetic, no credentials:
+One locked, credential-free install-and-check command runs the deterministic judge path:
 
 ```bash
-npm install && npm run judge-demo
+npm ci && npm --prefix ui ci && npm run judge-demo
 ```
 
-It runs (~10s, deterministic): `build` (tsc) → `test` (139 tests) → `cleanroom` → `doc-drift` → `xss-guard`.
-The factory auto-spawns per-goal micro-markets, the 3-step fail-closed settle-consumer gate re-verifies an
-on-chain `OuBoundReceipt`, and the fan UI all pass.
+It runs 175 deterministic tests, root typecheck, the production UI build, clean-room plus its selftest,
+doc-drift, and XSS checks. Tests cover the factory and complete receipt-binding gate. This command does not
+make a live RPC request; the historical devnet receipt is the separate browser/terminal beat below.
 
 ## The wedge — see it in the browser (no wallet, no API key)
 
 ```bash
-npm --prefix ui install && npm --prefix ui run dev
+npm --prefix ui ci && npm --prefix ui run dev
 ```
 
 Open the app → the top **REAL · on-chain · devnet** card fetches the live `OuBoundReceipt` and
-**re-computes the settlement in your own browser** — no wallet connect, no API key, no trusted oracle to take
-on faith. Client-side re-verify is not unique (several entries let a fan re-check a score); the SPECIFIC,
+**re-computes the receipt binding in your own browser** — no wallet connect or API key. Client-side re-verify
+is not unique; the SPECIFIC,
 defensible property here is **a LINE-BOUND, fail-closed settle-consumer over a REAL cross-repo `kickoff_oracle`
-receipt** — the 3-step gate re-derives owner + `OuBoundReceipt` discriminator + the `["ou_bound", market_id]`
-PDA AND binds `line_q` (`verifyOuReceiptForLine` / `WrongLine`), so a receipt at the wrong O/U line **fail-closes
-in the browser**, not just "the fan re-reads a number". The same 3-step gate, in the terminal:
+receipt** — the complete binding gate checks owner, discriminator, PDA, embedded market, fixture, line, and
+outcome. Once canonical market state exists, an admin cannot substitute those fields. The same gate in terminal:
 
 ```bash
 node --import tsx scripts/verify_real_settle.ts
@@ -30,13 +29,13 @@ node --import tsx scripts/verify_real_settle.ts
 
 ## What to look for
 
-- `Tests 139 passed` — the factory + line-bound settle-consumer + the in-browser re-verify.
-- The REAL card resolving `over=false → NO` (Under 2.5) on fixture 17588395 — a proven on-chain artifact
-  (`kickoff_oracle`-minted receipt, PDA `39vT6hs7…`), re-verified with zero credentials.
+- `Tests 175 passed` — factory, canonical binding, and browser re-verify coverage.
+- The REAL card resolving `over=false → NO` (Under 2.5) on fixture 17588395 — a historical on-chain
+  artifact (`kickoff_oracle`-minted receipt, PDA `39vT6hs7…`), re-verified with zero credentials.
 
 ## Honest scope
 
-Goal-grain only (v1); the v1 venue is **in-process** (bankrun against the deployed `.so`) — the PROVEN
+Goal-grain only (v1); the venue ABI is **locally bankrun-validated** against a vendored current `.so` — the PROVEN
 on-chain artifact is the **settle receipt**, not a live venue-init tx (SECURITY §1). No $-PnL hero number — a
-fan venue is measured on market quality/coverage. No wallet/faucet needed: the trust flow is **read-only
-re-verification**, which is exactly the point. Full detail: `README.md`, `SECURITY.md`, `CLAIMS.md`.
+fan venue is measured on market quality/coverage. Finality selection is private/injected and payout/refund is
+not demonstrated. Full detail: `README.md`, `SECURITY.md`, `CLAIMS.md`.

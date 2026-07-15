@@ -73,7 +73,7 @@ describe("PROPCAST golden edge-cases (settle-lifecycle correctness)", () => {
 
   // 3. OWN-GOAL. Which-side is a LABELED proxy only (no on-chain proof of scorer); the v1 PRIMARY OU
   //    "another goal" primitive counts a goal toward the total regardless of WHO scored, so an own-goal and a
-  //    regular goal with the same line spawn the identical trustlessly-settleable market.
+  //    regular goal with the same line spawn the identical receipt-bindable market.
   describe("own-goal: OU primitive is attribution-agnostic; which-side stays a proxy", () => {
     it("own-goal vs regular goal with the same odds yield the identical OU primitive", () => {
       const regular = anotherGoalPrimitive(goal(7n, 55, 1, 0, [1.9, 1.95]));
@@ -82,9 +82,9 @@ describe("PROPCAST golden edge-cases (settle-lifecycle correctness)", () => {
       expect(regular.kind).toBe(PrimitiveKind.OuAnotherGoal);
       expect(ownGoal.kind).toBe(PrimitiveKind.OuAnotherGoal);
     });
-    it("the emitted v1 primitive is trustlessly settleable (OU), not a which-side proxy", () => {
+    it("the emitted v1 primitive is receipt-bindable (OU), not a which-side proxy", () => {
       const prim = anotherGoalPrimitive(goal(7n, 55, 1, 0));
-      expect(prim.trustlessSettleV1).toBe(true);
+      expect(prim.receiptBindableV1).toBe(true);
       expect(prim.kind).not.toBe(PrimitiveKind.NextGoalProxy);
     });
   });

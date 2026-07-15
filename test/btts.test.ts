@@ -91,10 +91,10 @@ describe("PROPCAST BTTS secondary primitive", () => {
     expect(() => verifyBttsReceiptForMarket(acct(MK, synthBtts(MK, 17588395n, true)), { marketId: MK, fixtureId: 7n })).toThrow(/WrongFixture/);
   });
 
-  it("the BTTS primitive is trustlessly settleable and goal-key only", () => {
+  it("the BTTS primitive has a bound-receipt verifier and is goal-key only", () => {
     const p = bttsPrimitive([1.9, 1.95]);
     expect(p.kind).toBe(PrimitiveKind.BttsYes);
-    expect(p.trustlessSettleV1).toBe(true);
+    expect(p.receiptBindableV1).toBe(true);
     expect(p.fairYes).toBeGreaterThan(0);
     expect(p.fairYes).toBeLessThan(1);
   });

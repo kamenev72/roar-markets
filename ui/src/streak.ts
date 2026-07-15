@@ -1,7 +1,6 @@
 // Fan-engagement streak + share taxonomy — pure, deterministic, and OUTSIDE the trust core (it consumes
-// a settlement result the 3-step gate already produced; it never touches verification). A streak rewards
-// consecutive correct calls with a capped multiplier label; every resolution mints a named, shareable
-// verdict string that carries the trustless receipt reference — each settlement becomes a share artifact.
+// a result the complete binding gate already produced; it never touches verification). A streak rewards
+// consecutive correct calls with a capped multiplier label; shares are demo artifacts, not receipt claims.
 
 export interface StreakState {
   /** consecutive correct calls (0 when the last call missed). */
@@ -36,13 +35,13 @@ export function shareText(args: {
   pick: string;
   question: string;
   streak: number;
-  receiptRef: string; // e.g. the receipt PDA (base58, truncated ok)
+  receiptRef: string; // demo reference; not evidence that this result has a real receipt
 }): string {
   const name = verdictName(args.won, args.streak);
   const mult = multiplier(args.streak);
   const head = args.won ? `✅ ${name}` : `❌ ${name}`;
   const run = args.won ? ` · streak ${args.streak} (×${mult.toFixed(1)})` : "";
-  return `${head} — "${args.question}" → ${args.pick}${run}\nSettled trustlessly from a Merkle-proven score; re-verify the receipt in your browser: ${args.receiptRef}\n#PROPCAST #WorldCup`;
+  return `${head} — "${args.question}" → ${args.pick}${run}\nDemo reference: ${args.receiptRef}. Use the REAL card to re-verify an on-chain receipt.\n#PROPCAST #WorldCup`;
 }
 
 /** localStorage persistence (device-local; no accounts, no backend — honest scope). */

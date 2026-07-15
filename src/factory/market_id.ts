@@ -1,9 +1,8 @@
 // PROPCAST market_id contract — the single FROZEN seam threading spawn -> settle -> re-verify.
 //
 // One deterministic derivation produces BOTH forms a micro-market needs:
-//   - bytes  : the 32-byte id = SHA-256(domain || fixtureId_le64 || kind_u8 || nonce_le32). This is the form
-//              the trustless settle binds to (the kickoff bound-receipt PDA seed, used in phase 2) and the fan
-//              re-verify key.
+//   - bytes  : the 32-byte id = SHA-256(domain || fixtureId_le64 || kind_u8 || nonce_le32). This is the kickoff
+//              bound-receipt PDA seed and fan re-verify key.
 //   - u64    : the pitchmaker_book venue id = little-endian decode of bytes[0..8]. The venue PDA is
 //              findProgramAddress(["venue", u64_le], program) — so bytes[0..8] == u64 bridges the two forms.
 //
@@ -13,16 +12,16 @@
 import { createHash } from "node:crypto";
 
 export enum PrimitiveKind {
-  /** "will there be another goal" (O/U-goals) — the v1 PRIMARY, trustlessly settleable via settle_ou_bound. */
+  /** "will there be another goal" (O/U-goals) — the v1 PRIMARY with an OU bound-receipt rail. */
   OuAnotherGoal = 0,
   /** a goal-total predicate (declare via create_stat_market) — also goal-key only. */
   GoalTotal = 1,
-  /** next-goal which-side — a LABELED proxy ONLY; no trustless settle in v1 (no on-chain proof of goal order). */
+  /** next-goal which-side — a LABELED proxy ONLY; no on-chain proof of goal order in v1. */
   NextGoalProxy = 2,
-  /** "both teams to score" — the SECONDARY goal-key primitive, trustlessly settleable via settle_btts_bound. */
+  /** "both teams to score" — the SECONDARY goal-key primitive with a BTTS bound-receipt rail. */
   BttsYes = 3,
-  /** O/U total-goals at an explicit half-line (1.5/2.5/3.5) — goal-key only, trustlessly settleable via the
-   *  same settle_ou_bound rail; the market's line_q is bound at settle (see verifyOuReceiptForMarket). */
+  /** O/U total-goals at an explicit half-line (1.5/2.5/3.5) — goal-key only, using the same bound-receipt
+   *  rail; the market's line_q is checked by verifyOuReceiptForMarket. */
   OuTotalGoals = 4,
 }
 

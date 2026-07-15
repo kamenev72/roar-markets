@@ -48,7 +48,7 @@ describe("PropMarketFactory spine (synthetic, MemoryTransport)", () => {
     expect(marketIdHex(m.id)).toBe(marketIdHex(expected));
     expect(m.venueU64).toBe(expected.u64);
     expect(m.fixtureId).toBe(17_588_395n);
-    expect(m.primitive.trustlessSettleV1).toBe(true);
+    expect(m.primitive.receiptBindableV1).toBe(true);
     expect(f.listMarkets()).toHaveLength(1);
 
     // the venue exists and a two-sided book was seeded (levels * 2 orders)

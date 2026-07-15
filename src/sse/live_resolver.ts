@@ -1,6 +1,6 @@
-// PROPCAST live-match auto-resolver — the clean, testable orchestration core for the no-human-in-the-loop
-// demo: detect a goal → auto-spawn the micro-market → (at the settle trigger: the next goal or the whistle)
-// mint the TxLINE-proven receipt → re-verify it through PROPCAST's complete market/fixture/line gate → record evidence.
+// PROPCAST resolver orchestration core: accept an injected score frame, recover the factory's canonical
+// market, ask an injected private hook for a receipt, verify its complete binding, and record evidence.
+// This module does not implement or prove the hook's trigger/finality policy or any venue payout.
 //
 // EVENT granularity (a goal / whistle), NEVER per-second. Idempotent (the factory dedups a re-delivered frame).
 // NO secrets here: the live scores feed, the TxLINE proof build, the mint, and the RPC read are all INJECTED
@@ -21,11 +21,9 @@ export type GoalFrame = ScoreEvent;
  * spike (it holds the X-Api-Token + the proof builder + the wallet) and INJECTED — the public repo never
  * carries secrets or proof internals. Returns the mint tx signature, or `null` if not yet provably settleable.
  *
- * FINALITY CONTRACT (the injected spike MUST honor it): the settle path fires on the NEXT GOAL or the WHISTLE.
- * A goal proves the total regardless of match status, but a WHISTLE-driven ("no more goals" → NO) settle is
- * valid ONLY when the frame is a genuine full time — gate it on `isFinalised(frame)` (StatusId {9,10,13}),
- * fail-closed. Settling on a paused / half-time / interrupted in-play frame would mint a proof over an
- * unfinished total; for a World Cup KO fixture the final goal count is the post-ET total, never the 90' one.
+ * The private implementation owns trigger/finality policy. A whistle-driven NO is safe only after genuine
+ * full time (including extra time where applicable); the public interface cannot enforce or attest that.
+ * `null` means the hook declined to mint for the supplied frame.
  */
 export interface SettleHook {
   mint(market: SpawnedMarket, settleEv: GoalFrame): Promise<string | null>;
@@ -70,9 +68,8 @@ export class LiveResolver {
   }
 
   /**
-   * A settle trigger (the next goal, or the whistle) proves `market`'s total: mint the TxLINE-anchored receipt
-   * via the injected hook, re-verify it on-chain through PROPCAST's gate, record the evidence, mark it resolved.
-   * Returns `null` if the hook reports the event is not yet provable (the daemon retries on the next frame).
+   * Ask the injected hook for a receipt, re-verify its binding, record evidence, and mark the canonical market
+   * resolved. Returns `null` when the hook declines; no finality guarantee is inferred from this interface.
    */
   async settle(market: SpawnedMarket, settleEv: GoalFrame): Promise<ResolvedMarket | null> {
     // PC-09: serialize per market so two concurrent triggers (next-goal + whistle delivered in one poll

@@ -1,6 +1,6 @@
 // Mint a REAL kickoff_oracle OuBoundReceipt for a PROPCAST market_id, gated by the txoracle's validate_stat
-// CPI over a live-verified TxLINE Merkle total-proof. This is the producer side of PROPCAST's trustless
-// settle (the consumer is src/onchain/settle_consumer.ts).
+// CPI over a TxLINE Merkle total-proof. This is the producer side of PROPCAST's historical receipt evidence
+// chain (the consumer is src/onchain/settle_consumer.ts); mint-time finality remains caller policy.
 //
 // Inputs (runtime-only, NEVER committed):
 //   VSD_TOTAL_PATH  — a fresh composite (P1+P2 Add) validate_stat proof JSON {validateStatDataHex,

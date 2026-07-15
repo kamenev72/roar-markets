@@ -10,7 +10,7 @@ import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
 
 // A 2nd INDEPENDENT public devnet RPC for the cross-check (keyless; best-effort — the card degrades to
 // single-RPC + explorer if it is unavailable). Independence is the point: agreement of two providers is a
-// much stronger "the proof decides" than one provider's word.
+// stronger evidence that both providers report the same bytes than one provider's word; it is not an SPV proof.
 const PRIMARY_RPC = "https://api.devnet.solana.com";
 // Independent keyless devnet RPCs for the cross-read, tried in order. (Ankr + Helius now gate `getAccountInfo`
 // behind an API key; Triton's `devnet.rpcpool.com` serves it keyless.) Best-effort — if EVERY entry fails the
@@ -108,7 +108,7 @@ function RealReceiptCard() {
       // PC-UI-04: bound the read so a hung RPC becomes an error+retry, not a frozen demo climax.
       const info = await withTimeout(new Connection(PRIMARY_RPC, "confirmed").getAccountInfo(pda, slice), RPC_TIMEOUT_MS);
       const fetched = info ? { owner: info.owner, data: new Uint8Array(info.data) } : null;
-      const v = verifyRealReceipt(fetched); // throws if pruned / fail-closed
+      const v = verifyRealReceipt(fetched); // absent or mismatched account fails closed
       // re-read the decoded fields via the SAME authoritative gate (no second verifier) for the raw trace
       const verified = verifyOuReceiptForMarket({ pubkey: pda, owner: fetched!.owner, data: fetched!.data }, { marketId, fixtureId: REAL_FIXTURE_ID, lineQ: REAL_LINE_Q });
       const trace = gateTraceLines({ owner: fetched!.owner, pda, verified, lineBound: true });
@@ -147,7 +147,7 @@ function RealReceiptCard() {
         <div style={{ marginTop: 10, color: C.warn, fontSize: 12, fontFamily: C.mono }}>
           ⚠ live RPC unreachable: {state.msg}
           <div style={{ marginTop: 6, color: C.dim }}>
-            the receipt IS on devnet — re-verify it directly:{" "}
+            inspect the historical account reference directly:{" "}
             <a href={explorer} target="_blank" rel="noreferrer" style={{ color: C.text }}>open the account on the explorer ↗</a>{" "}
             (owner = kickoff_oracle, PDA {pda.toBase58().slice(0, 8)}…).
             <button onClick={() => void load()} style={{ marginLeft: 10, background: "transparent", color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>↻ retry</button>
@@ -233,7 +233,7 @@ export function App() {
     <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "system-ui, sans-serif", padding: 24 }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <h1 style={{ fontSize: 22, margin: 0 }}>
-          PROPCAST <span style={{ color: C.dim, fontWeight: 400 }}>— live goal-grain micro-markets</span>
+          PROPCAST <span style={{ color: C.dim, fontWeight: 400 }}>— goal-grain receipt-binding prototype</span>
           {demoSecs !== null && (
             <span title={`deterministic self-serve replay (?demo=${demoSecs}) — not live data`} style={{ marginLeft: 10, fontSize: 11, fontWeight: 700, color: "#000", background: C.warn, padding: "3px 8px", borderRadius: 4, verticalAlign: "middle" }}>● REPLAY {demoSecs}s</span>
           )}
@@ -242,8 +242,8 @@ export function App() {
           )}
         </h1>
         <p style={{ color: C.dim, marginTop: 6, fontSize: 14 }}>
-          The in-play micro-market <b>the fan settles themselves</b> — re-compute the Merkle-anchored settlement in your
-          own browser, no key, no trusted oracle — auto-spawned from an objective goal, at a goal-grain Polymarket can't service.
+          Re-check a historical Merkle receipt's <b>market · fixture · line · outcome binding</b> in your own
+          browser, no key or wallet. The private mint hook's finality decision and venue payout are not shown.
         </p>
 
         {/* the REAL on-chain re-verify (the climax — not a mock) */}
@@ -254,7 +254,7 @@ export function App() {
 
         {/* the live match */}
         <div style={{ marginTop: 14, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
-          <div style={{ color: C.dim, fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Live · World Cup</div>
+          <div style={{ color: C.dim, fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Simulated · World Cup walkthrough</div>
           <div style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>Argentina 1–0 France <span style={{ color: C.dim, fontSize: 14 }}>· 23'</span></div>
 
           {phase === "kickoff" && (
@@ -287,14 +287,14 @@ export function App() {
                   ))}
                 </div>
                 <button onClick={() => settle()} disabled={!pick} style={{ marginTop: 12, width: "100%", background: pick ? C.warn : C.border, color: pick ? "#000" : C.dim, border: 0, padding: "10px 0", borderRadius: 8, cursor: pick ? "pointer" : "default", fontWeight: 700 }}>
-                  🔊 Whistle: settle from the kickoff Merkle proof
+                  🔊 Whistle: verify a synthetic bound receipt
                 </button>
               </>
             )}
           </div>
         )}
 
-        {/* the trustless resolution */}
+        {/* the simulated receipt-binding result */}
         {phase === "resolved" && result && (
           <div style={{ marginTop: 16, background: C.panel, border: `1px solid ${result.won ? C.ok : C.border}`, borderRadius: 10, padding: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -302,7 +302,7 @@ export function App() {
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}><EvidenceBadge label={LABEL_SIMULATED} /><Pill color={result.won ? C.ok : C.bad}>{result.won ? `your ${pick} won` : `your ${pick} lost`}</Pill></div>
             </div>
             <div style={{ marginTop: 12, background: "#0e2a18", border: `1px solid ${C.ok}`, borderRadius: 8, padding: 12 }}>
-              <div style={{ color: C.ok, fontWeight: 700 }}>✓ trustless verify — the proof decides, not an authority</div>
+              <div style={{ color: C.ok, fontWeight: 700 }}>✓ receipt binding verified — market, fixture, line, outcome</div>
               <div style={{ marginTop: 8, fontSize: 12, color: C.dim, lineHeight: 1.7 }}>
                 ✓ receipt owned by kickoff_oracle ({KICKOFF_ORACLE_PROGRAM_ID.toBase58().slice(0, 8)}…)<br />
                 ✓ OuBoundReceipt discriminator matches<br />
@@ -312,11 +312,10 @@ export function App() {
               <GateTrace lines={gateTraceLines({ owner: KICKOFF_ORACLE_PROGRAM_ID, pda: receiptPda, verified: result.verified, lineBound: true })} />
             </div>
             <p style={{ color: C.dim, fontSize: 11, marginTop: 12 }}>
-              This card is <b>SIMULATED</b> for the walkthrough (the live mint of a real OuBoundReceipt for THIS
-              market is rail/proof-gated) — it runs the identical fixture-bound gate (<code>verifyOuReceiptForMarket</code>). The
-              <b> REAL on-chain instance is the green card at the top</b>. Venue close (claim/payout) is labeled
-              <b> trusted-now, proof-gated-target</b> — the trustless datum is the kickoff receipt shown here.
-              No $-PnL — PROPCAST measures market coverage + the trustless receipt, not profit.
+              This card is <b>SIMULATED</b> and runs the same complete binding gate
+              (<code>verifyOuReceiptForMarket</code>) on synthetic bytes. The <b>historical REAL receipt is the
+              card at the top</b>. No public finality hook, fund-holding venue, payout, or refund is demonstrated.
+              No $-PnL — PROPCAST measures market coverage and receipt-verification behavior, not profit.
             </p>
             {/* engagement layer: the named verdict + the share artifact (outside the trust core) */}
             <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -336,7 +335,7 @@ export function App() {
           </div>
         )}
 
-        {/* breadth: the auto-spawned total-goals line markets (each line-bound + trustlessly settleable) */}
+        {/* breadth: simulated total-goals line markets, each with a receipt line-binding contract */}
         <div style={{ marginTop: 18, color: C.dim, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>more goal-grain markets · auto-spawned · O/U total goals (SIMULATED)</div>
         <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
           {TOTAL_GOALS_LINES.map(({ line, odds }) => (
@@ -353,17 +352,16 @@ export function App() {
         <details style={{ marginTop: 18, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px" }}>
           <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🛡️ how we keep this honest</summary>
           <ul style={{ marginTop: 10, marginBottom: 0, paddingLeft: 18, color: C.dim, fontSize: 12, lineHeight: 1.8 }}>
-            <li><b>The trustless datum is the on-chain receipt</b> — anyone re-verifies it (owner · discriminator · PDA · outcome). The green tick above is a 2-RPC cross-check, not our word.</li>
-            <li><b>The receipt is minted only behind a Merkle-proven score</b> (the oracle's <code>cpi_gated</code> path); a fabricated "trustless" mint is impossible while it is on.</li>
-            <li><b>The venue payout is trusted-now, proof-gated-target</b> — labeled, not hidden; the trustless datum is the receipt, the close is a future proof-gated upgrade.</li>
-            <li><b>Goal-grain only · event-granularity (~60s) · NO $-PnL</b> — we report market coverage + the trustless receipt, never profit; never "per-second".</li>
+            <li><b>The receipt binding is independently re-verifiable</b> — owner · type · PDA · embedded market · fixture · line · outcome. Two RPCs can still collude or be intercepted.</li>
+            <li><b>The historical receipt was minted through a Merkle-proof CPI path.</b> That does not prove when the private hook chose to mint or that the score was final.</li>
+            <li><b>No public fund-holding venue or payout/refund path is demonstrated.</b> Receipt verification is not payout verification.</li>
+            <li><b>Goal-grain only · NO $-PnL.</b> The intended private hook is event-granular (~60s feed), but that policy is outside this public consumer.</li>
             <li>Full threat model: <code>SECURITY.md</code>.</li>
           </ul>
         </details>
 
         <p style={{ color: C.dim, fontSize: 11, marginTop: 18 }}>
-          goal-grain only (v1) · event-granularity settle (not per-second) · novelty = grain + objective Merkle
-          settle (on-chain parlays + live in-game markets already exist) · clean-room.
+          goal-grain only (v1) · immutable Merkle-receipt binding · finality/payout not claimed · clean-room.
         </p>
       </div>
     </div>

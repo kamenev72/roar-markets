@@ -16,12 +16,12 @@ npm run typecheck --silent >/dev/null 2>&1 && echo "      ✓ typecheck" || { ec
 npm run cleanroom --silent >/dev/null 2>&1 && echo "      ✓ clean-room"  || { echo "      ✗ clean-room"; exit 1; }
 npm run doc-drift --silent >/dev/null 2>&1 && echo "      ✓ doc-drift"   || { echo "      ✗ doc-drift"; exit 1; }
 
-echo "[2/4] re-verify the REAL on-chain receipt (3-step gate, no key, read-only)"
-node --import tsx scripts/verify_real_settle.ts 2>&1 | mask || true
+echo "[2/4] re-verify the REAL on-chain receipt (complete binding gate, no key, read-only)"
+node --import tsx scripts/verify_real_settle.ts 2>&1 | mask
 
 echo "[3/4] fan board — launch in a second terminal, then record:"
-echo "      npm --prefix ui install && npm --prefix ui run dev"
+echo "      npm --prefix ui ci && npm --prefix ui run dev"
 
-echo "[4/4] demo spine: goal → market spawns → pick a side → whistle settles → re-verify the bytes in-browser."
-echo "      breadth: the O/U total-goals lines (1.5/2.5/3.5) are auto-spawned + line-bound."
+echo "[4/4] demo spine: synthetic board flow → receipt bytes re-verified in-browser."
+echo "      The injected mint/finality hook and venue payout are not demonstrated by this script."
 echo "─────────────────────────────────────────────────────────────────"

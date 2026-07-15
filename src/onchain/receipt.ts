@@ -1,12 +1,12 @@
-// On-chain kickoff OuBoundReceipt — the trust root + the byte layout PROPCAST's settle-consumer reads.
+// On-chain kickoff bound-receipt layouts consumed by PROPCAST.
 //
-// PROPCAST resolves a micro-market by reading a kickoff_oracle `OuBoundReceipt` (the trustless attestation
-// that TxODDS's signed goal total settled an Over/Under for a fixture). The consumer trusts it only after the
-// p2p_pool-style three-step gate (owner / discriminator / PDA) — never via a blind deserialize.
+// The consumer never blind-deserializes: it checks owner, discriminator, PDA, embedded market, fixture, line
+// where applicable, and a canonical outcome byte. These checks prove immutable receipt binding, not the
+// private mint hook's finality policy or a venue payout.
 
 import { PublicKey } from "@solana/web3.js";
 
-/** The deployed kickoff_oracle program that owns + produces the receipts (the trust root). */
+/** The deployed kickoff_oracle program expected to own the receipts. */
 export const KICKOFF_ORACLE_PROGRAM_ID = new PublicKey("34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw");
 
 /** Anchor discriminator of `OuBoundReceipt` = sha256("account:OuBoundReceipt")[..8]. Confirmed equal to a

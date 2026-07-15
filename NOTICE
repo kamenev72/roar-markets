@@ -5,8 +5,8 @@ Licensed under the Apache License, Version 2.0 (see LICENSE).
 
 Built for the TxODDS World Cup Hackathon. It is anchored to TxLINE's de-vigged
 consensus line (TxODDS data), spawns binary YES/NO goal-grain micro-markets on
-its own Solana binary escrow-cross venue, and settles them trustlessly against TxODDS's
-Merkle-anchored scores.
+its own Solana binary escrow-cross venue, and verifies immutable bindings on TxODDS
+Merkle-anchored receipt accounts. Finality selection and payout are not claimed here.
 
 Clean-room provenance: all pricing math derives from PUBLIC sources only —
 standard proportional de-vig; Avellaneda-Stoikov (2008) and

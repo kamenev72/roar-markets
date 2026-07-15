@@ -30,7 +30,7 @@ function synthOu(marketId: Uint8Array, fixtureId: bigint, lineQ: number, over: b
 }
 
 describe("PROPCAST total-goals O/U line-variant primitive (breadth)", () => {
-  it("spawns 1.5 / 2.5 / 3.5 as THREE distinct, line-bound trustless markets", async () => {
+  it("spawns 1.5 / 2.5 / 3.5 as THREE distinct, line-bound receipt markets", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m15 = await f.spawnTotalGoals(FIXTURE, 1.5, OU);
     const m25 = await f.spawnTotalGoals(FIXTURE, 2.5, OU);
@@ -42,10 +42,10 @@ describe("PROPCAST total-goals O/U line-variant primitive (breadth)", () => {
     expect(new Set([m15.venueU64, m25.venueU64, m35.venueU64]).size).toBe(3);
     expect(f.listMarkets()).toHaveLength(3);
 
-    // each is goal-key trustless, kind OuTotalGoals, with the bound line_q recorded (x4 quantization)
+    // each is goal-key receipt-bindable, kind OuTotalGoals, with the bound line_q recorded (x4 quantization)
     for (const m of [m15, m25, m35]) {
       expect(m.primitive.kind).toBe(PrimitiveKind.OuTotalGoals);
-      expect(m.primitive.trustlessSettleV1).toBe(true);
+      expect(m.primitive.receiptBindableV1).toBe(true);
     }
     expect(m15.lineQ).toBe(lineToLineQ(1.5)); // 6
     expect(m25.lineQ).toBe(lineToLineQ(2.5)); // 10

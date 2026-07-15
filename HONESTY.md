@@ -7,27 +7,29 @@ The honesty invariant is the spine of PROPCAST. Every surface — UI, docs, demo
    metric field names a money quantity (`test/metrics.test.ts`).
 2. **Goal grain only (v1).** Only goal stat keys (`statKey 1/2`) are TxLINE-validated on-chain. PROPCAST does
    not imply coverage of corners/cards/possession or arbitrary markets.
-3. **Event granularity, never per-second.** Settle fires at the goal/whistle. The free WC TxLINE tier is
-   ~60s-delayed; PROPCAST never dresses that as real-time / live cash-out.
-4. **The close-path is labeled.** The v1 venue close (claim/payout) is the venue authority's `resolve()`,
-   shown on-screen as **"trusted-now, proof-gated-target"** beside the filed kickoff receipt. The TRUSTLESS
-   datum is the receipt (real, on-chain, re-verifiable); a trusted-now resolve is never presented as trustless.
+3. **Event granularity, never per-second.** The intended private hook may act on goal/whistle frames; this
+   public consumer does not prove that policy or finality. The free WC TxLINE tier is ~60s-delayed.
+4. **The close-path is labeled.** Any future venue close (claim/payout) is authority-controlled and modeled
+   as **"trusted-now, proof-gated-target"**. The public v1 has no fund-holding close path; receipt verification
+   is never presented as proof of payout or finality.
 5. **Resident MM disclosed.** The spawned book is seeded by a resident maker (the venue census says no organic
    two-sided football flow exists on Solana). Disclosed, not hidden as organic depth.
-6. **`cpi_gated=true` is a gate, not a convention.** A receipt is trusted only after the on-chain CPI verify;
-   the offline `mock_oracle` (which shares `validate_stat`'s discriminator and returns Ok) can never wire into
-   a "trustless" demo.
+6. **Mock shape is not evidence.** The offline `mock_oracle` shares a discriminator with `validate_stat`, but
+   the consumer also requires the deployed owner, PDA, embedded market, fixture, line, and canonical outcome.
+   CPI validation binds supplied proof data; it still does not establish the private hook's finality policy.
 7. **Real vs simulated is labeled everywhere.** The UI's headline card is a REAL on-chain re-verify; the
    interactive walkthrough is labeled SIMULATED. The line is drawn precisely in `MOCKS.md`.
-8. **Novelty is scoped.** Goal grain + objective Merkle settle — NOT "first on-chain / first in-play market".
-9. **Deferrals are labeled, not hidden.** Order-account rent reclaim is a documented post-v1 deferral (the
-   lamport stake returns to fans on `claim`); USDC-SPL collateral is deferred (v1 is lamports).
+8. **Novelty is scoped.** Goal grain + immutable Merkle-receipt binding — NOT proof of finality, "first
+   on-chain", or "first in-play market".
+9. **Deferrals are labeled, not hidden.** There is no public fund-holding venue, permissionless refund, or
+   on-chain VOID path in v1; payout/refund design is deferred.
 10. **Trust is bounded, not overstated.** The in-browser re-verify proves the queried RPC(s) report the right
     owner / discriminator / PDA / line_q / outcome — it is NOT a cryptographic light-client proof. The UI reads
     the receipt from the primary RPC AND cross-reads it from a 2nd independent keyless RPC, and labels the
     strength HONESTLY: **cross-confirmed on 2 RPCs** (green) only when both agree; **single-RPC** (amber caveat)
     when the 2nd is unreachable; **PARTIAL — divergence** (amber) when the 2nd RPC has no account or a different
     account at the PDA; and it never shows a green VERIFIED tick while the read is loading or errored. It always
-    points to the explorer for a fully independent cross-check, never "no authority". The v1 venue payout has no
-    permissionless / timeout refund (close-path A,
-    single-key) — a labeled residual, latent because v1 holds no fan funds. Full threat model: `SECURITY.md`.
+    points to the explorer for a fully independent cross-check, never "no authority". No public v1 venue
+    payout/refund is demonstrated. Full threat model: `SECURITY.md`.
+11. **Finality is not implied.** The private mint hook chooses when to mint; the public consumer verifies a
+    supplied binding, not that the match was final. Its encoder uses `minFinalTs=0` unless the hook supplies it.

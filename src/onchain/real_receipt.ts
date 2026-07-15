@@ -41,15 +41,13 @@ export interface RealReceiptVerification {
 }
 
 /**
- * Verify the REAL on-chain receipt, in-browser, via the SAME fixture-bound gate. `fetched === null` means the account
- * was not found on devnet (devnet prunes confirmed txs ~30 days) — surfaced as a throw so the UI shows an
- * honest "receipt pruned" state rather than a fabricated pass. A wrong owner/discriminator/PDA throws a
- * `ReceiptGateError` (fail-closed).
+ * Verify the historical REAL receipt via the same complete binding gate. `fetched === null` means the RPC
+ * did not return the account; it does not diagnose why. Absence and any binding mismatch fail closed.
  */
 export function verifyRealReceipt(fetched: FetchedAccount | null, marketIdHex = REAL_MARKET_ID_HEX): RealReceiptVerification {
   const marketId = marketIdFromHex(marketIdHex);
   const pda = ouReceiptPda(marketId);
-  if (fetched === null) throw new Error(`receipt ${pda.toBase58()} not found on devnet (devnet prunes ~30 days — re-mint to refresh)`);
+  if (fetched === null) throw new Error(`receipt ${pda.toBase58()} not found via the selected devnet RPC; inspect the explorer or refresh the evidence`);
   const acct: OnchainAccount = { pubkey: pda, owner: fetched.owner, data: fetched.data };
   const v = verifyOuReceiptForMarket(acct, { marketId, fixtureId: REAL_FIXTURE_ID, lineQ: REAL_LINE_Q });
   return { resolution: v.over ? "YES" : "NO", fixtureId: v.fixtureId, pda };
