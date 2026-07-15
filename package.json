@@ -18,7 +18,8 @@
     "doc-drift": "bash scripts/check_doc_drift.sh",
     "xss-guard": "bash scripts/check_no_xss_sinks.sh",
     "ui:build": "npm --prefix ui run build",
-    "judge-demo": "npm test && npm run typecheck && npm run cleanroom && npm run cleanroom:selftest && npm run doc-drift && npm run xss-guard"
+    "ui:bundle-check": "node scripts/check_ui_bundle.mjs",
+    "judge-demo": "npm test && npm run typecheck && npm run ui:bundle-check && npm run cleanroom && npm run cleanroom:selftest && npm run doc-drift && npm run xss-guard"
   },
   "devDependencies": {
     "@solana/web3.js": "^1.98.4",

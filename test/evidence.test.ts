@@ -4,6 +4,8 @@
 
 import { describe, it, expect } from "vitest";
 import { badgeLabelFor, crossCheckVerdict, isVerifiedLive, LABEL_LIVE, LABEL_PARTIAL } from "../ui/src/evidence.js";
+import { EVIDENCE_STATES, isGreenEvidence, stateForCrossCheck } from "../ui/src/evidence_state.js";
+import { EVIDENCE_CATALOG, validateEvidenceCatalog } from "../ui/src/evidenceCatalog.js";
 import type { VerifiedOu } from "../src/onchain/settle_consumer.js";
 
 const v = (over: boolean, fixtureId: bigint, lineQ: number): VerifiedOu => ({ over, fixtureId, lineQ });
@@ -70,5 +72,41 @@ describe("PC-UI-02: the 2nd-RPC read is classified 3-way (a divergence is not a 
   });
   it("2nd RPC verified + disagrees → PARTIAL", () => {
     expect(crossCheckVerdict(p, { kind: "verified", v: v(false, 17588395n, 10) }).label.rail).toBe("PARTIAL");
+  });
+});
+
+describe("evidence state matrix", () => {
+  it("single-RPC is visibly weaker than dual-RPC verified", () => {
+    expect(stateForCrossCheck(true, { kind: "verified", agrees: true }).kind).toBe("LIVE_RECEIPT_DUAL_RPC");
+    expect(stateForCrossCheck(true, { kind: "unavailable" }).kind).toBe("LIVE_RECEIPT_SINGLE_RPC");
+    expect(isGreenEvidence(EVIDENCE_STATES.LIVE_RECEIPT_DUAL_RPC)).toBe(true);
+    expect(isGreenEvidence(EVIDENCE_STATES.LIVE_RECEIPT_SINGLE_RPC)).toBe(false);
+  });
+
+  it("absent, gate-fail, disagreement and primary invalid never render green completion", () => {
+    const states = [
+      stateForCrossCheck(true, { kind: "absent" }),
+      stateForCrossCheck(true, { kind: "gate-fail" }),
+      stateForCrossCheck(true, { kind: "verified", agrees: false }),
+      stateForCrossCheck(false, { kind: "verified", agrees: true }),
+      EVIDENCE_STATES.RECEIPT_UNAVAILABLE,
+      EVIDENCE_STATES.SIMULATED,
+    ];
+    for (const state of states) expect(isGreenEvidence(state)).toBe(false);
+  });
+
+  it("finality and payout limits are independent visible limitations on every evidence state", () => {
+    for (const state of Object.values(EVIDENCE_STATES)) {
+      expect(state.limits.some((limit) => limit.kind === "FINALITY_NOT_PROVEN")).toBe(true);
+      expect(state.limits.some((limit) => limit.kind === "PAYOUT_NOT_PROVEN")).toBe(true);
+    }
+  });
+
+  it("static catalog is frozen, devnet-explorer allowlisted, limited, and not a live ledger", () => {
+    validateEvidenceCatalog();
+    expect(Object.isFrozen(EVIDENCE_CATALOG)).toBe(true);
+    expect(EVIDENCE_CATALOG[0].explorerUrl).toContain("https://explorer.solana.com/");
+    expect(EVIDENCE_CATALOG[0].explorerUrl).toContain("cluster=devnet");
+    expect(EVIDENCE_CATALOG[0].limitations.join(" ")).toMatch(/not a live market ledger/i);
   });
 });

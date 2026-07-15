@@ -6,5 +6,6 @@ import react from "@vitejs/plugin-react";
 // the board uses a fixed demo market_id.)
 export default defineConfig({
   plugins: [react()],
+  build: { manifest: true },
   server: { fs: { allow: [".."] } },
 });
