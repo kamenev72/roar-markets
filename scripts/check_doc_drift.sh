@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PROPCAST doc-drift gate — fail if a shipped current-state doc carries stale-progress language, names a
-# deployed program with a non-canonical id, or a required doc is missing. DEVLOG.md is an append-only history
+# deployed program with a non-canonical id, or a required doc is missing. docs/DEVLOG.md is an append-only history
 # and is intentionally NOT scanned for stale markers. Portable (GNU + BSD grep): no \b, uses -w for whole words.
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.." || exit 2
 fail=0
 
 # Shipped current-state docs that must exist + stay drift-free. The full submission set is enforced.
-REQUIRED=(README.md CLAIMS.md DEMO.md HONESTY.md MOCKS.md DEPLOYMENTS.md docs/TXLINE_USAGE.md SECURITY.md)
+REQUIRED=(README.md docs/CLAIMS.md docs/DEMO.md docs/HONESTY.md docs/MOCKS.md docs/DEPLOYMENTS.md docs/TXLINE_USAGE.md docs/SECURITY.md)
 
 # 1. required docs exist
 for f in "${REQUIRED[@]}"; do

@@ -48,14 +48,13 @@ belonged to the fan’s call.
 ## How it works
 
 ```mermaid
-flowchart LR
-    event["Match event"] --> question["Focused yes / no moment"]
-    question --> pick["Fan makes a call"]
+flowchart TB
+    event["Match moment"] --> question["Open one yes / no call"]
+    question --> pick["Fan picks a side"]
     pick --> result["Outcome arrives"]
-    result --> gate{"Binding check"}
-    receipt["Bound match receipt"] --> gate
-    gate -->|same market + fixture + line| ticket["Result ticket with proof attached"]
-    gate -->|anything differs| reject["Reject the receipt"]
+    result --> gate{"Receipt matches<br/>market · fixture · line?"}
+    gate -->|Yes| ticket["Return result ticket<br/>with proof attached"]
+    gate -->|No| reject["Reject receipt"]
 ```
 
 The browser experience has two intentionally separate rails. The match interaction is a deterministic, device-local
@@ -139,7 +138,7 @@ node --import tsx scripts/verify_real_settle.ts
 | The browser distinguishes 2-provider agreement, 1-provider reads, divergence, and failure. | Public RPCs are trusted data sources, not an SPV or light-client proof. |
 | The venue ABI is validated locally against the vendored program binary. | No live venue-initialization transaction is claimed. |
 
-The security model and exact non-claims live in [SECURITY.md](SECURITY.md) and [CLAIMS.md](CLAIMS.md). The complete
+The security model and exact non-claims live in [docs/SECURITY.md](docs/SECURITY.md) and [docs/CLAIMS.md](docs/CLAIMS.md). The complete
 historical evidence record is in [evidence/real_onchain_settle.md](evidence/real_onchain_settle.md).
 
 ## Repository layout
@@ -153,6 +152,8 @@ evidence/    committed historical receipt record and responsive UI captures
 fixtures/    vendored venue binary and ABI provenance
 docs/        TxLINE integration notes
 ```
+
+The documentation index is [docs/README.md](docs/README.md).
 
 Some package and storage identifiers retain a historical internal codename for compatibility. **Roar Markets is the
 only public product name.**

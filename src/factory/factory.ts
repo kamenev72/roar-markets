@@ -226,7 +226,7 @@ export class PropMarketFactory {
    * Returns the number swept. A RESOLVED market is never reaped. Run on a timer in the live demo.
    *
    * Rent-reclaim is a DOCUMENTED v1 DEFERRAL: the lamport stake escrow returns to fans on `claim()`; reclaiming
-   * the closed venue/order ACCOUNTS' rent is a post-v1 op (labeled in HONESTY.md/MOCKS.md), not done on sweep.
+   * the closed venue/order ACCOUNTS' rent is a post-v1 op (labeled in docs/HONESTY.md/docs/MOCKS.md), not done on sweep.
    */
   sweep(ttlMs: number): number {
     const now = this.now();

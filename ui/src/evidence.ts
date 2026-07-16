@@ -6,7 +6,7 @@ import type { PublicKey } from "@solana/web3.js";
 import { lineQToLine, OU_BOUND_RECEIPT_DISCRIMINATOR } from "../../src/onchain/receipt.js";
 import type { VerifiedOu } from "../../src/onchain/settle_consumer.js";
 
-/** rail: where the receipt came from; strength: how strongly the claim is shown. Honest labeling (see HONESTY.md). */
+/** rail: where the receipt came from; strength: how strongly the claim is shown. Honest labeling (see docs/HONESTY.md). */
 export interface EvidenceLabel {
   rail: "LIVE" | "PARTIAL" | "SIMULATED";
   strength: "VERIFIED" | "DEMONSTRATED" | "PENDING";

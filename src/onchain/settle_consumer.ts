@@ -99,7 +99,7 @@ function parseOuReceipt(acct: OnchainAccount, expectedMarketId: Uint8Array): Ver
  * spawned-market binding. A receipt minted for
  * a DIFFERENT total-goals line (e.g. a 2.5 receipt) can NEVER resolve a market declared at another line (e.g.
  * 1.5) — it fail-closes with `WrongLine`. Without this binding a single shared receipt account would silently
- * resolve every line market the same way (the multi-line fail-open SECURITY.md warns about); with it, each line is
+ * resolve every line market the same way (the multi-line fail-open docs/SECURITY.md warns about); with it, each line is
  * independently bound. `binding.lineQ` is the integer `lineToLineQ(line)` recorded at spawn.
  */
 export function verifyOuReceiptForMarket(acct: OnchainAccount, binding: OuMarketBinding): VerifiedOu {
