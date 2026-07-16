@@ -64,6 +64,10 @@ so the trust claim is checkable, not a bare green tick.
 ## Explicit non-claims
 
 - **NOT-CLAIMED** — no `$`-PnL, no MM-profit, no ROI. PROPCAST reports market **quality / coverage** only.
+- **NOT-CLAIMED** — device-local history, streak, accuracy, and the downloadable private SVG record card are not a
+  public leaderboard, rank, reward, or "Prediction IQ". Those future concepts require identity, anti-sybil,
+  server-authoritative pick locks, settlement and probability-scoring, retention, and proof prerequisites that v1
+  does not provide.
 - **NOT-CLAIMED** — not "real-time" / not per-second. The intended private hook may react to goal/whistle
   frames at **event granularity**; the public consumer does not prove this policy or finality. The free WC
   TxLINE tier is ~60s-delayed.

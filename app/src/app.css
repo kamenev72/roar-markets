@@ -135,6 +135,17 @@ code, .score, .match-minute, .line-split, .ticket-score { font-family: var(--uti
 .proof-details p { margin: 0 0 10px; color: #4b6079; font-size: 0.72rem; line-height: 1.5; }
 .proof-details code { display: block; padding: 8px; border-radius: 8px; background: #e7edf2; font-size: 0.62rem; overflow-wrap: anywhere; }
 .ticket-actions { margin-top: 18px; display: flex; gap: 10px; }
+.record-card-preview { max-width: 100%; margin: 28px 0 0; padding: 22px; overflow: hidden; border: 1px solid rgba(101,216,255,0.5); border-radius: 18px; background: #06142e; color: #fff; }
+.record-card-preview figcaption span { color: var(--sky); font-family: var(--utility); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.record-card-preview h3 { margin: 6px 0 16px; font-size: clamp(1.35rem, 4vw, 2rem); }
+.record-card-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.record-card-stats span { min-width: 0; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.07); color: #b9cbe4; font-size: 0.75rem; }
+.record-card-stats b { display: block; color: #fff; font-size: 1.15rem; overflow-wrap: anywhere; }
+.record-card-current { margin-top: 14px; padding: 14px; border-left: 3px solid #79e9c2; background: rgba(121,233,194,0.08); overflow-wrap: anywhere; }
+.record-card-current span, .record-card-current strong, .record-card-current small { display: block; }
+.record-card-current span { color: #79e9c2; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+.record-card-current strong { margin-top: 4px; }
+.record-card-current small, .record-card-preview > p { margin-top: 5px; color: #b9cbe4; }
 .ticket-body .button { min-height: 44px; padding: 10px 16px; font-size: 0.78rem; }
 .ticket-body .button-quiet { border-color: #a9b6c4; color: var(--ink); }
 .sr-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }

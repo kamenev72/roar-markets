@@ -33,3 +33,7 @@ The honesty invariant is the spine of PROPCAST. Every surface — UI, docs, demo
     payout/refund is demonstrated. Full threat model: `SECURITY.md`.
 11. **Finality is not implied.** The private mint hook chooses when to mint; the public consumer verifies a
     supplied binding, not that the match was final. Its encoder uses `minFinalTs=0` unless the hook supplies it.
+12. **Private record is not standing.** The v1 history, streak, accuracy, and downloadable SVG card are bounded
+    device-local display state. They do not establish PnL, rank, reward, public leaderboard placement, or a
+    "Prediction IQ". Any future shared score needs identity, anti-sybil controls, server-authoritative pick locks,
+    settlement and probability scoring, retention, and proof rules first.

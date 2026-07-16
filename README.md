@@ -39,7 +39,8 @@ belonged to the fan’s call.
 - **Returns a result ticket, not a detached verdict.** The walkthrough joins the pick, outcome, fixture, and line in
   one shareable card.
 - **Keeps a private call record.** A bounded, device-local history shows recent calls, accuracy, and best run without
-  requiring an account or pretending to be a public leaderboard.
+  requiring an account or pretending to be a public leaderboard. It can be cleared on-device; a deterministic SVG
+  record card is a private export, not a rank, reward, or payout artifact.
 - **Checks an actual historical receipt in the browser.** A separate progressive proof panel reads a Solana devnet
   account and validates its owner, type, derived address, embedded market, fixture, line, and outcome.
 - **Fails closed when evidence does not match.** Wrong-market, wrong-fixture, wrong-line, malformed, foreign-owner,
@@ -75,6 +76,10 @@ receipt’s evidence label.
 
 Roar Markets is goal-grain by design in this prototype. It does not claim per-second markets, a full sportsbook, or
 profit-and-loss performance.
+
+Future public leaderboards or any "Prediction IQ" score require an account identity model, anti-sybil controls,
+server-authoritative pick locks, settlement and probability-scoring rules, an auditable data-retention policy, and
+an explicit proof boundary. None exists in v1.
 
 ## Live evidence and walkthrough
 

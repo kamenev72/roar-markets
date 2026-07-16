@@ -16,4 +16,16 @@ describe("device-local call history", () => {
     const loaded = loadHistory({ getItem: () => JSON.stringify({ records: [call("ok"), { won: true }] }) });
     expect(loaded.records).toHaveLength(1);
   });
+  it("normalizes hostile persisted data, recomputes wins, and caps at twenty", () => {
+    const rows = Array.from({ length: 21 }, (_, i) => ({
+      id: ` id-${i}\\u0000`, question: i === 0 ? `${"a".repeat(159)}😀tail` : "Q<svg>\ud800", pick: i % 2 ? "YES" : "NO", outcome: "YES", won: false, receiptRef: "receipt\u0001",
+    }));
+    rows.push({ ...rows[0]!, id: "lower", pick: "yes", won: true });
+    const loaded = loadHistory({ getItem: () => JSON.stringify({ records: rows }) });
+    expect(loaded.records).toHaveLength(20);
+    expect(loaded.records[0]).toMatchObject({ pick: "NO", outcome: "YES", won: false });
+    expect(loaded.records.some((row) => (row.pick as string) === "yes")).toBe(false);
+    expect(loaded.records[0]?.id).not.toMatch(/[\u0000-\u001f\ud800-\udfff]/);
+    expect(loaded.records[0]?.question.endsWith("😀")).toBe(true);
+  });
 });

@@ -45,10 +45,10 @@ export function shareText(args: {
 }
 
 /** localStorage persistence (device-local; no accounts, no backend — honest scope). */
-const KEY = "propcast_streak_v1";
+export const STREAK_KEY = "propcast_streak_v1";
 export function loadStreak(storage: Pick<Storage, "getItem"> | null): StreakState {
   try {
-    const raw = storage?.getItem(KEY);
+    const raw = storage?.getItem(STREAK_KEY);
     if (!raw) return FRESH;
     const p = JSON.parse(raw) as Partial<StreakState>;
     const streak = Number.isInteger(p.streak) && (p.streak as number) >= 0 ? (p.streak as number) : 0;
@@ -60,7 +60,7 @@ export function loadStreak(storage: Pick<Storage, "getItem"> | null): StreakStat
 }
 export function saveStreak(storage: Pick<Storage, "setItem"> | null, s: StreakState): void {
   try {
-    storage?.setItem(KEY, JSON.stringify(s));
+    storage?.setItem(STREAK_KEY, JSON.stringify(s));
   } catch {
     /* storage unavailable (private mode) — engagement is best-effort, never breaks the app */
   }

@@ -1,9 +1,11 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { binaryProb } from "../../packages/core/src/signal/devig.js";
 import { EVIDENCE_CATALOG } from "./evidenceCatalog.js";
 import { applyResult, loadStreak, multiplier, saveStreak, shareText } from "./streak.js";
 import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
 import { accuracy, appendCall, loadHistory, saveHistory } from "./history.js";
+import { browserDownload, createRecordCardModel, renderRecordCard, type RecordCardV1 } from "./record_card.js";
+import { clearPrivateStorage } from "./clear_record.js";
 
 const VerificationWorkbench = lazy(() => import("./components/VerificationWorkbench.js"));
 
@@ -77,6 +79,9 @@ function ResultTicket({
   receiptRef,
   onShare,
   shareStatus,
+  onDownload,
+  downloadStatus,
+  card,
   onReset,
 }: {
   pick: Side;
@@ -85,6 +90,9 @@ function ResultTicket({
   receiptRef: string;
   onShare: () => void;
   shareStatus: "idle" | "copied" | "failed";
+  onDownload: () => void;
+  downloadStatus: "idle" | "started" | "failed";
+  card: RecordCardV1;
   onReset: () => void;
 }) {
   const won = pick === outcome;
@@ -126,11 +134,30 @@ function ResultTicket({
           <button className="button button-primary" type="button" onClick={onShare}>
             {shareStatus === "copied" ? "Result copied" : shareStatus === "failed" ? "Copy failed" : "Copy my call"}
           </button>
+          <button className="button button-quiet" type="button" onClick={onDownload}>Download record card</button>
           <button className="button button-quiet" type="button" onClick={onReset}>Play again</button>
         </div>
-        <p className="sr-status" aria-live="polite">{shareStatus === "copied" ? "Result copied to clipboard." : shareStatus === "failed" ? "Clipboard unavailable. Select and copy the result manually." : ""}</p>
+        <p className="sr-status" aria-live="polite">{shareStatus === "copied" ? "Result copied to clipboard." : shareStatus === "failed" ? "Clipboard unavailable. Select and copy the result manually." : downloadStatus === "started" ? "Download started." : downloadStatus === "failed" ? "Download could not be started." : ""}</p>
+        <RecordCardPreview card={card} />
       </div>
     </section>
+  );
+}
+
+function RecordCardPreview({ card }: { card: RecordCardV1 }) {
+  const current = card.history.find((record) => record.id === card.currentRecordId) ?? card.history[0];
+  if (!current) return null;
+  return (
+    <figure className="record-card-preview" aria-labelledby="record-card-preview-title">
+      <figcaption><span>Simulated walkthrough · this browser only · no prize</span><h3 id="record-card-preview-title">Your private record card</h3></figcaption>
+      <div className="record-card-stats">
+        <span><b>{card.history.length}</b> calls</span><span><b>{card.accuracy === null ? "—" : `${card.accuracy}%`}</b> accuracy</span><span><b>{card.bestRun}</b> best run</span>
+      </div>
+      <article className="record-card-current" aria-current="true" aria-label="Current call highlight">
+        <span>Current call</span><strong>{current.question}</strong><small>{current.pick} · outcome {current.outcome} · {current.won ? "Called it" : "Missed"}</small>
+      </article>
+      <p>No payout, rank, reward, leaderboard, Prediction IQ, or prize.</p>
+    </figure>
   );
 }
 
@@ -140,14 +167,21 @@ export function App() {
   const [result, setResult] = useState<{ outcome: Side; won: boolean; shareReceiptRef: string } | null>(null);
   const [streak, setStreak] = useState(() => loadStreak(typeof localStorage === "undefined" ? null : localStorage));
   const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [downloadStatus, setDownloadStatus] = useState<"idle" | "started" | "failed">("idle");
+  const [historyStatus, setHistoryStatus] = useState("");
   const [history, setHistory] = useState(() => loadHistory(typeof localStorage === "undefined" ? null : localStorage));
+  const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
   const [proofOpen, setProofOpen] = useState(false);
+  const clearButtonRef = useRef<HTMLButtonElement>(null);
   const demoSecs = useMemo(() => parseDemoParam(typeof window === "undefined" ? "" : window.location.search), []);
   const fairYes = useMemo(() => binaryProb(DEMO_LINE, 0), []);
   const yesPct = Math.round(fairYes * 100);
+  const recordCard = useMemo(() => result ? createRecordCardModel(history, streak.best, currentRecordId) : null, [currentRecordId, history, result, streak.best]);
 
   function recordResult(next: { outcome: Side; won: boolean; shareReceiptRef: string }) {
+    const recordId = `${Date.now()}:${pick ?? "YES"}:${next.outcome}`;
     setResult(next);
+    setCurrentRecordId(recordId);
     setStreak((current) => {
       const updated = applyResult(current, next.won);
       saveStreak(typeof localStorage === "undefined" ? null : localStorage, updated);
@@ -155,7 +189,7 @@ export function App() {
     });
     setHistory((current) => {
       const updated = appendCall(current, {
-        id: `${Date.now()}:${pick ?? "YES"}:${next.outcome}`,
+        id: recordId,
         question: "Another goal after 1–0 (23′)?",
         pick: pick ?? "YES",
         outcome: next.outcome,
@@ -166,6 +200,7 @@ export function App() {
       return updated;
     });
     setShareStatus("idle");
+    setDownloadStatus("idle");
     setPhase("resolved");
   }
 
@@ -188,7 +223,9 @@ export function App() {
     setPhase("kickoff");
     setPick(null);
     setResult(null);
+    setCurrentRecordId(null);
     setShareStatus("idle");
+    setDownloadStatus("idle");
   }
 
   async function copyResult() {
@@ -205,6 +242,35 @@ export function App() {
       await navigator.clipboard.writeText(text);
       setShareStatus("copied");
     } catch { setShareStatus("failed"); }
+  }
+
+  function downloadResultCard() {
+    if (!recordCard) return;
+    try { setDownloadStatus(browserDownload(renderRecordCard(recordCard)) ? "started" : "failed"); }
+    catch { setDownloadStatus("failed"); }
+  }
+
+  function clearPrivateRecord() {
+    try {
+      if (typeof window === "undefined" || !window.confirm("Clear your saved calls and best run from this device?")) {
+        setHistoryStatus("Your private record was not cleared.");
+        return;
+      }
+      const storage = window.localStorage;
+      const cleared = clearPrivateStorage(storage);
+      if (cleared.kind === "cleared") {
+        setHistory({ records: [] }); setStreak({ streak: 0, best: 0 }); setHistoryStatus("Your saved calls and best run were cleared from this device.");
+      } else if (cleared.kind === "restored" || cleared.kind === "partial") {
+        setHistory(loadHistory({ getItem: () => cleared.history })); setStreak(loadStreak({ getItem: () => cleared.streak }));
+        setHistoryStatus(cleared.kind === "restored" ? "Could not clear your private record. The previous device record was restored." : "Could not fully clear your private record. Device storage now contains a partial state.");
+      } else {
+        setHistory(loadHistory(storage)); setStreak(loadStreak(storage)); setHistoryStatus("Could not verify whether your private record was cleared. Device storage may have changed.");
+      }
+    } catch {
+      setHistoryStatus("Could not verify whether your private record was cleared. Device storage may have changed.");
+    } finally {
+      window.setTimeout(() => clearButtonRef.current?.focus(), 0);
+    }
   }
 
   return (
@@ -276,7 +342,7 @@ export function App() {
                 </div>
               ) : null}
 
-              {phase === "resolved" && result && pick ? (
+              {phase === "resolved" && result && pick && recordCard ? (
                 <ResultTicket
                   pick={pick}
                   outcome={result.outcome}
@@ -284,6 +350,9 @@ export function App() {
                   receiptRef={result.shareReceiptRef}
                   onShare={copyResult}
                   shareStatus={shareStatus}
+                  onDownload={downloadResultCard}
+                  downloadStatus={downloadStatus}
+                  card={recordCard}
                   onReset={reset}
                 />
               ) : null}
@@ -314,6 +383,8 @@ export function App() {
               <strong>{call.pick}</strong><small>Outcome {call.outcome}</small>
             </li>)}
           </ol> : <p className="history-empty">Make the first call to start a private match-day record.</p>}
+          <button ref={clearButtonRef} className="button button-quiet" type="button" onClick={clearPrivateRecord}>Clear private record</button>
+          <p className="sr-status" aria-live="polite">{historyStatus}</p>
         </section>
 
         <section id="how-it-works" className="section how-section" aria-labelledby="how-title">
