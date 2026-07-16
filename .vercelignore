@@ -1,0 +1,14 @@
+node_modules/
+ui/node_modules/
+ui/dist/
+dist/
+.git/
+.github/
+fixtures/
+reports/
+scripts/
+test/
+tests/
+docs/
+*.md
+!README.md

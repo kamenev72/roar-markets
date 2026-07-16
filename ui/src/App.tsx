@@ -67,10 +67,11 @@ export function App() {
     <main className="app-shell">
       <div className="board">
         <section className="hero" aria-labelledby="propcast-title">
-          <h1 id="propcast-title">PROPCAST — goal-grain receipt evidence board</h1>
+          <div className="eyebrow">Crowd90 · by PROPCAST</div>
+          <h1 id="propcast-title">Crowd90 by PROPCAST — pick the next moment. Keep the proof attached.</h1>
           <p className="muted">
-            Fan-friendly market discovery plus an explicitly bounded trust card: market · fixture · line ·
-            outcome binding can be re-checked, while finality, payout, refund and custody are not claimed.
+            A live-match fan board for fast YES/NO moments. Every result card stays bound to the exact market,
+            fixture and line; finality, payout, refund and custody remain explicitly outside this prototype.
           </p>
           <div className="card-row">
             {demoSecs !== null && <span className="pill">● REPLAY {demoSecs}s</span>}

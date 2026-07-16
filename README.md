@@ -1,4 +1,23 @@
-# PROPCAST
+# Crowd90
+
+### Pick the next moment. Keep the proof attached.
+
+**Crowd90 is the public fan experience built by PROPCAST:** a responsive World Cup board for fast YES/NO match moments. When a result card appears, its evidence remains bound to the exact market, fixture and line instead of becoming an unexplained admin verdict.
+
+> **Try the product:** `npm run judge-demo`. The walkthrough is explicit about what is simulated and what comes from a historical devnet receipt. A hosted URL will be added after public deployment.
+
+| Fan experience | Trust experience |
+|---|---|
+| Discover a live match and choose a simple moment. | Every evidence state is named: simulated, verified, unavailable, invalid or divergent. |
+| Follow the market as the match changes. | A receipt for another fixture or line is rejected. |
+| Share a result and streak card. | Finality, custody and payout are never implied by a green binding check. |
+
+<details>
+<summary><strong>Technical scope and evidence boundaries</strong></summary>
+
+The implementation-level receipt contract and limitations follow.
+
+---
 
 **A goal-grain receipt-binding prototype** — re-check a real Merkle-anchored `kickoff_oracle` receipt in your
 browser, with no API key or wallet. It demonstrates immutable market/fixture/line binding; the private mint
@@ -38,3 +57,5 @@ binary. This is not a live venue-init proof, public video, public-repo access gu
 - receipt PDA scheme: `["ou_bound", market_id]` · `market_id = SHA-256(domain ‖ fixtureId ‖ kind ‖ nonce)`.
 
 Gate: `npm ci && npm --prefix ui ci && npm run judge-demo`.
+
+</details>

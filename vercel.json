@@ -1,0 +1,13 @@
+{
+  "buildCommand": "npm --prefix ui run build",
+  "installCommand": "npm --prefix ui install --no-package-lock --no-audit --no-fund",
+  "outputDirectory": "ui/dist",
+  "cleanUrls": true,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [{ "source": "/(.*)", "headers": [
+    { "key": "X-Content-Type-Options", "value": "nosniff" },
+    { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+    { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+    { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.devnet.solana.com https://*.solana.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" }
+  ] }]
+}
