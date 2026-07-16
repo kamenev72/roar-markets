@@ -17,16 +17,17 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("responsive evidence board has no horizontal overflow and honest state text", async ({ page }, testInfo) => {
+test("responsive Roar Markets page has no horizontal overflow and keeps scope honest", async ({ page }, testInfo) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /PROPCAST/i })).toBeVisible();
-  const receiptDisclosure = page.getByText(/Re-verify the real historical receipt/i);
-  await expect(receiptDisclosure).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Call the next moment/i })).toBeVisible();
+  await expect(page.getByText(/Payout, finality, and custody are outside/i)).toBeVisible();
+
+  const receiptDisclosure = page.getByText(/Open the historical match proof/i);
   await receiptDisclosure.click();
-  await expect(page.getByRole("heading", { name: /Re-verify a real kickoff receipt/i })).toBeVisible();
-  await expect(page.getByText(/RECEIPT UNAVAILABLE|RECEIPT INVALID/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Does the saved answer still belong/i })).toBeVisible();
+  await expect(page.getByText(/Check did not pass|Waiting for receipt/i)).toBeVisible();
   await expect(page.getByText(/Finality policy is not publicly proven/i)).toBeVisible();
-  await expect(page.getByText(/Payout, refund, custody/i)).toBeVisible();
+  await expect(page.getByLabel("What this check does not prove").getByText(/Payout, refund, custody/i)).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
@@ -34,16 +35,17 @@ test("responsive evidence board has no horizontal overflow and honest state text
   await page.screenshot({ path: `../evidence/ui/${testInfo.project.name}.png`, fullPage: true });
 });
 
-test("keyboard flow reaches market choices and simulated verifier", async ({ page }) => {
+test("keyboard flow makes a call, reveals the result, and exposes attached proof", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: /Goal/i }).focus();
+  await page.getByRole("button", { name: /Open the next call/i }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: /Another goal after/i })).toBeVisible();
-  await page.getByRole("button", { name: /YES — another goal/i }).focus();
+  await expect(page.getByRole("heading", { name: /Will there be another goal/i })).toBeVisible();
+  await page.getByRole("button", { name: /YES Another goal lands/i }).focus();
   await page.keyboard.press("Enter");
-  await page.getByRole("button", { name: /Whistle/i }).focus();
+  await page.getByRole("button", { name: /Reveal the match result/i }).focus();
   await page.keyboard.press("Enter");
-  const resolved = page.getByLabel(/Resolved: another goal/i);
-  await expect(page.getByRole("heading", { name: /Resolved/i })).toBeVisible();
-  await expect(resolved.getByText(/SIMULATED · DEMONSTRATED/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Another goal: YES/i })).toBeVisible();
+  await expect(page.getByText(/Argentina vs France/i)).toBeVisible();
+  await expect(page.getByText(/Another goal after 23/i)).toBeVisible();
+  await expect(page.getByText(/Bound/i)).toBeVisible();
 });

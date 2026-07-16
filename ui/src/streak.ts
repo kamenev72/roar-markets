@@ -23,10 +23,10 @@ export function applyResult(s: StreakState, won: boolean): StreakState {
 
 /** The named verdict taxonomy — a win/loss gets a shareable NAME (clean-room, ours). */
 export function verdictName(won: boolean, streak: number): string {
-  if (!won) return "EARLY WHISTLE"; // a miss resets — honest, not shameful
-  if (streak >= 5) return "ORACLE-GRADE CALL";
-  if (streak >= 3) return "PROVEN RUN";
-  return "PROVEN CALL";
+  if (!won) return "NEXT ONE"; // a miss resets — honest, not shameful
+  if (streak >= 5) return "PERFECT ROAR";
+  if (streak >= 3) return "ON A ROAR";
+  return "CALLED IT";
 }
 
 /** A self-contained share string: the call, the named verdict, the streak, and the receipt reference. */
@@ -41,7 +41,7 @@ export function shareText(args: {
   const mult = multiplier(args.streak);
   const head = args.won ? `✅ ${name}` : `❌ ${name}`;
   const run = args.won ? ` · streak ${args.streak} (×${mult.toFixed(1)})` : "";
-  return `${head} — "${args.question}" → ${args.pick}${run}\nDemo reference: ${args.receiptRef}. Use the REAL card to re-verify an on-chain receipt.\n#PROPCAST #WorldCup`;
+  return `${head} — "${args.question}" → ${args.pick}${run}\nWalkthrough reference: ${args.receiptRef}. Open the historical proof in Roar Markets to re-check a real on-chain receipt.\n#RoarMarkets #WorldCup`;
 }
 
 /** localStorage persistence (device-local; no accounts, no backend — honest scope). */

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title">
+  <title id="title">Roar Markets</title>
+  <rect width="48" height="48" rx="14" fill="#65D8FF"/>
+  <circle cx="14" cy="24" r="5" fill="#06142E"/>
+  <path d="M22 16c4 2 6 4.7 6 8s-2 6-6 8M28 10c7 3.6 11 8.3 11 14s-4 10.4-11 14" fill="none" stroke="#06142E" stroke-width="4" stroke-linecap="round"/>
+</svg>

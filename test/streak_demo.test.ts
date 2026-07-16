@@ -22,18 +22,19 @@ describe("streak", () => {
   });
 
   it("verdict names escalate with the run and a miss is honestly named", () => {
-    expect(verdictName(true, 1)).toBe("PROVEN CALL");
-    expect(verdictName(true, 3)).toBe("PROVEN RUN");
-    expect(verdictName(true, 5)).toBe("ORACLE-GRADE CALL");
-    expect(verdictName(false, 0)).toBe("EARLY WHISTLE");
+    expect(verdictName(true, 1)).toBe("CALLED IT");
+    expect(verdictName(true, 3)).toBe("ON A ROAR");
+    expect(verdictName(true, 5)).toBe("PERFECT ROAR");
+    expect(verdictName(false, 0)).toBe("NEXT ONE");
   });
 
   it("shareText carries the verdict, the streak multiplier, and the receipt reference", () => {
     const t = shareText({ won: true, pick: "YES", question: "Another goal after 1–0?", streak: 3, receiptRef: "9xAb…" });
-    expect(t).toContain("PROVEN RUN");
+    expect(t).toContain("ON A ROAR");
     expect(t).toContain("×1.6");
     expect(t).toContain("9xAb…");
-    expect(t).toContain("re-verify");
+    expect(t).toContain("re-check");
+    expect(t).toContain("#RoarMarkets");
   });
 
   it("loadStreak survives garbage storage (fail-open to FRESH, never throws)", () => {
