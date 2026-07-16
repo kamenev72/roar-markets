@@ -6,7 +6,7 @@ PROPCAST draws this line precisely so nothing is over-read.
 
 - **The historical receipt evidence.** A real `OuBoundReceipt` was minted on Solana devnet through
   `kickoff_oracle`'s CPI-gated `settle_ou_bound` against a TxLINE Merkle proof. This proves that receipt and
-  its immutable binding, not the policy that selected mint time. Hashes in `evidence/real_onchain_settle.md`.
+  its immutable binding, not the policy that selected mint time. Hashes in `artifacts/evidence/real_onchain_settle.md`.
 - **The fan re-verify.** The UI's top **REAL · on-chain** card does a read-only devnet `getAccountInfo` for
   the historical receipt `39vT6hs7…` and runs the SAME complete binding gate in the browser — no API key, no
   wallet. If the selected RPC returns no account, the card reports it unavailable and points to the explorer;

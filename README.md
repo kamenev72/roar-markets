@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="ui/public/roar-mark.svg" width="88" height="88" alt="Roar Markets mark">
+  <img src="app/public/roar-mark.svg" width="88" height="88" alt="Roar Markets mark">
 </p>
 
 <h1 align="center">Roar Markets</h1>
@@ -107,7 +107,7 @@ run the complete deterministic gate:
 git clone https://github.com/kamenev72/roar-markets.git
 cd roar-markets
 npm ci
-npm --prefix ui ci
+npm --prefix app ci
 npm run judge-demo
 ```
 
@@ -118,7 +118,7 @@ It does not make the historical RPC request; that live read belongs to the brows
 For a local product session:
 
 ```bash
-npm --prefix ui run dev
+npm --prefix app run dev
 ```
 
 For the same historical receipt check in a terminal:
@@ -139,17 +139,17 @@ node --import tsx scripts/verify_real_settle.ts
 | The venue ABI is validated locally against the vendored program binary. | No live venue-initialization transaction is claimed. |
 
 The security model and exact non-claims live in [docs/SECURITY.md](docs/SECURITY.md) and [docs/CLAIMS.md](docs/CLAIMS.md). The complete
-historical evidence record is in [evidence/real_onchain_settle.md](evidence/real_onchain_settle.md).
+historical evidence record is in [artifacts/evidence/real_onchain_settle.md](artifacts/evidence/real_onchain_settle.md).
 
 ## Repository layout
 
 ```text
-ui/          React + Vite fan experience and browser receipt checker
+app/          React + Vite fan experience and browser receipt checker
 src/         market factory, pricing helpers, receipt layouts, and binding consumer
 test/        deterministic factory, binding, evidence-state, and edge-case coverage
 scripts/     reproduce, bundle, clean-room, documentation, and release checks
-evidence/    committed historical receipt record and responsive UI captures
-fixtures/    vendored venue binary and ABI provenance
+artifacts/evidence/    committed historical receipt record and responsive UI captures
+artifacts/fixtures/    vendored venue binary and ABI provenance
 docs/        TxLINE integration notes
 ```
 

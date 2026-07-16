@@ -26,7 +26,7 @@ jobs:
         run: bash scripts/check_doc_drift.sh
       - name: XSS-sink guard (UI renders only React-escaped values)
         run: bash scripts/check_no_xss_sinks.sh
-      - name: ui build (the fan re-verify path — root tsconfig excludes ui/)
-        run: npm --prefix ui ci && npm --prefix ui run build
+      - name: ui build (the fan re-verify path — root tsconfig excludes app/)
+        run: npm --prefix app ci && npm --prefix app run build
       - name: ui dependency audit (advisory — build-only, non-blocking)
-        run: npm --prefix ui audit --omit=dev || true
+        run: npm --prefix app audit --omit=dev || true

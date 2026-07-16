@@ -35,4 +35,4 @@ One `market_id` threads spawn → settle → re-verify (`src/factory/market_id.t
 | market_id | `532843d51b34f1140e08daf6570ee49204e65c670abf9b043bb37c7b5b452dc1` |
 | outcome (over@50) | `false → NO` (Under 2.5) |
 
-Reproduce: `evidence/real_onchain_settle.md`.
+Reproduce: `artifacts/evidence/real_onchain_settle.md`.

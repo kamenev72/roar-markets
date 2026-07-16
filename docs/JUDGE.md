@@ -3,7 +3,7 @@
 One locked, credential-free install-and-check command runs the deterministic judge path:
 
 ```bash
-npm ci && npm --prefix ui ci && npm run judge-demo
+npm ci && npm --prefix app ci && npm run judge-demo
 ```
 
 It runs 181 deterministic tests, root typecheck, the production UI build, initial bundle budget, Playwright
@@ -14,7 +14,7 @@ make a live RPC request; the historical devnet receipt is the separate browser/t
 ## The wedge — see it in the browser (no wallet, no API key)
 
 ```bash
-npm --prefix ui ci && npm --prefix ui run dev
+npm --prefix app ci && npm --prefix app run dev
 ```
 
 Open the app → the top **REAL · on-chain · devnet** card fetches the live `OuBoundReceipt` and

@@ -36,7 +36,7 @@ only; the intended hook was event-granular, not per-second; the factory reports 
   schema during the next live WC match.
 
 2026-06-29  **phase 2b — fan Goal-Markets board (the Track-C consumer surface).**
-- `ui/` — a vite React app (mirrors the kickoff explorer) that runs the phase 1 de-vig seed + the phase 2a
+- `app/` — a vite React app (mirrors the kickoff explorer) that runs the phase 1 de-vig seed + the phase 2a
   settle-consumer IN THE BROWSER: ⚽ a goal spawns the "another goal" micro-market (seeded from the de-vigged
   consensus YES%, keyed by the `market_id`), the fan picks YES/NO, the whistle settles it from a (clearly
   SYNTHETIC) `OuBoundReceipt` through the then-current gate (owner / OU disc /
@@ -53,7 +53,7 @@ only; the intended hook was event-granular, not per-second; the factory reports 
   CPI-gated `validate_stat` (tx `4CzqNgSp…` → receipt `39vT6hs7…` at market_id `532843…` =
   `deriveMarketId(17588395, OuAnotherGoal, 0)`), and the then-current settle-consumer verified it
   on-chain** (`over=false fixtureId=17588395 → NO`). `scripts/mint_real_receipt.ts` (producer) +
-  `scripts/verify_real_settle.ts` (consumer) + `evidence/real_onchain_settle.md`.
+  `scripts/verify_real_settle.ts` (consumer) + `artifacts/evidence/real_onchain_settle.md`.
 - Root-caused the earlier `0x66`: `settle_ou_bound`'s current signature REQUIRES the `fixture_id:i64` field
   (added by the binding-gate hardening); the stale `live_ou_bound` layout omitted it → shifted the proof
   bytes → txoracle Merkle-fail. And the proof must be FRESH (matching the finalized day-root; a mid-day
@@ -67,7 +67,7 @@ only; the intended hook was event-granular, not per-second; the factory reports 
   re-delivery does not double-spawn; a real 2nd goal advances the score → a fresh market).
 - **Quality/coverage metrics** (`src/metrics/quality.ts`, NO $-PnL): markets spawned, coverage %, time-to-
   first-quote, time-to-settle, seed-vs-realized calibration markout — a code test asserts no money-named field.
-- **REAL on-chain re-verify card** (`ui/`, `src/onchain/real_receipt.ts`): the headline fetches the live
+- **REAL on-chain re-verify card** (`app/`, `src/onchain/real_receipt.ts`): the headline fetches the live
   receipt `39vT6hs7…` read-only and ran the then-current gate in-browser (no key/wallet); a test PINS
   `ouReceiptPda(real market_id)` to the live PDA. The interactive walkthrough is relabeled SIMULATED;
   close-path (A) labeled "trusted-now, proof-gated-target".
@@ -87,7 +87,7 @@ only; the intended hook was event-granular, not per-second; the factory reports 
 2026-06-29  **phase 2 schema PINNED — risk #1 CLOSED (the daemon caught a live match).** The
   `com.propcast.scores-capture` launchd daemon AUTONOMOUSLY captured a real in-play frame at 17:08Z
   (Brazil-Japan, the R32 window) — the #1 cross-project unknown (the in-play `Participant`/which-side schema,
-  never seen live) is now KNOWN. Pinned: `fixtures/live_scores_frame.json` (a real captured frame) +
+  never seen live) is now KNOWN. Pinned: `artifacts/fixtures/live_scores_frame.json` (a real captured frame) +
   `src/factory/primitives.ts` gains `LiveScoreFrame` (the real schema — which-side = `Participant1IsHome`,
   goals = `Stats["1"]`/`["2"]` per-participant, `Clock.Seconds`, `StatusId===2` in-play) + `isInPlay` +
   `scoreEventFromLiveFrame` (bridges a real frame → the factory's `ScoreEvent`, resolving home/away via

@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
 // future live/devnet integration test (phase 2+) cannot contend on a shared native resource.
 export default defineConfig({
   test: {
-    exclude: ["**/node_modules/**", "**/dist/**", "ui/e2e/**", "ui/test-results/**"],
+    exclude: ["**/node_modules/**", "**/dist/**", "app/e2e/**", "app/test-results/**"],
     fileParallelism: false,
     testTimeout: 30000,
     hookTimeout: 30000,

@@ -9,7 +9,7 @@ import { PrimitiveKind } from "./market_id.js";
 /**
  * The factory's normalized scoring event. phase 1 replays these from a fixture / MemoryTransport; a REAL live
  * TxLINE frame is bridged into one by `scoreEventFromLiveFrame` (the in-play schema is now PINNED from a live
- * capture — see `LiveScoreFrame` + `fixtures/live_scores_frame.json`).
+ * capture — see `LiveScoreFrame` + `artifacts/fixtures/live_scores_frame.json`).
  */
 export interface ScoreEvent {
   fixtureId: bigint;
@@ -24,7 +24,7 @@ export interface ScoreEvent {
 // ---------- the REAL TxLINE in-play scores schema (PINNED from a live capture, 2026-06-29) ----------
 //
 // Pinned against a real Brazil-Japan in-play frame captured live by the launchd daemon (the #1 cross-project
-// unknown — the which-side / Participant field — is now KNOWN): `fixtures/live_scores_frame.json`.
+// unknown — the which-side / Participant field — is now KNOWN): `artifacts/fixtures/live_scores_frame.json`.
 
 /** Goal stat keys in the TxLINE in-play `Stats` map: "1" = Participant1 goals, "2" = Participant2 goals. */
 export const STAT_KEY_P1 = "1";

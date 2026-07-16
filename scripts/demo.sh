@@ -22,7 +22,7 @@ echo "[2/4] re-verify the REAL on-chain receipt (complete binding gate, no key, 
 node --import tsx scripts/verify_real_settle.ts 2>&1 | mask
 
 echo "[3/4] fan board — launch in a second terminal, then record:"
-echo "      npm --prefix ui ci && npm --prefix ui run dev"
+echo "      npm --prefix app ci && npm --prefix app run dev"
 
 echo "[4/4] demo spine: synthetic board flow → receipt bytes re-verified in-browser."
 echo "      The injected mint/finality hook and venue payout are not demonstrated by this script."

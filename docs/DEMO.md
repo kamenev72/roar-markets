@@ -44,7 +44,7 @@ goal-key primitive. All shown on the fan board with their de-vigged seeds.
 ```bash
 bash scripts/demo.sh        # one command: gate-green print + the on-chain re-verify (RPC key masked)
 # then, in a second terminal, open the fan board:
-npm --prefix ui ci && npm --prefix ui run dev
+npm --prefix app ci && npm --prefix app run dev
 ```
 
 Or step by step:
@@ -53,7 +53,7 @@ Or step by step:
 npm ci
 npm run build && npm test && npm run ui:bundle-check && npm run ui:e2e # deterministic gates green
 npm run cleanroom && npm run doc-drift && npm run xss-guard            # release hygiene green
-npm --prefix ui ci && npm --prefix ui run dev                          # open the fan board
+npm --prefix app ci && npm --prefix app run dev                         # open the fan board
 # the REAL card re-verifies the live receipt; the SIMULATED walkthrough clicks through the flow
 node --import tsx scripts/verify_real_settle.ts                        # the same gate, in the terminal
 ```
@@ -63,4 +63,4 @@ node --import tsx scripts/verify_real_settle.ts                        # the sam
 "A goal-grain devnet prototype: browser-verifiable receipt binding, with finality and payout stated as
 remaining boundaries."
 
-Deployed program ids + the full reproduce: `README.md`, `docs/TXLINE_USAGE.md`, `evidence/real_onchain_settle.md`.
+Deployed program ids + the full reproduce: `README.md`, `docs/TXLINE_USAGE.md`, `artifacts/evidence/real_onchain_settle.md`.

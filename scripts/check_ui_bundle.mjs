@@ -46,7 +46,7 @@ export function entryBudgetReport({ manifest, distDir, rawLimit, gzipLimit }) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const distDir = new URL("../ui/dist/", import.meta.url).pathname;
+  const distDir = new URL("../app/dist/", import.meta.url).pathname;
   const manifest = JSON.parse(readFileSync(join(distDir, ".vite/manifest.json"), "utf8"));
   const report = entryBudgetReport({ manifest, distDir, rawLimit: 200000, gzipLimit: 65000 });
   console.log(JSON.stringify(report, null, 2));

@@ -24,13 +24,13 @@ so the trust claim is checkable, not a bare green tick.
   gated by a TxLINE Merkle goal-total proof (`txoracle::validate_stat`), and PROPCAST's complete binding gate
   re-verified it on-chain (`over=false → NO`). Txs: proof `5k69yoyn…`, mint `4CzqNgSp…`, receipt `39vT6hs7…`,
   `market_id 532843…`, kickoff_oracle `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw`. See
-  `evidence/real_onchain_settle.md`.
+  `artifacts/evidence/real_onchain_settle.md`.
 - **VERIFIED-LIVE** — the fan re-verifies that real receipt **in the browser with no API key and no wallet**:
-  the UI does a read-only devnet `getAccountInfo` and runs the identical complete binding gate (`ui/src/App.tsx` →
+  the UI does a read-only devnet `getAccountInfo` and runs the identical complete binding gate (`app/src/App.tsx` →
   `src/onchain/real_receipt.ts`). The PDA derivation is pinned to the live account by a test.
 - **REPRODUCIBLE** — the full gate is deterministic locally: `npm test` (settle-gate, factory, golden
   edge-cases, metrics, the real-receipt PDA pin), `npm run typecheck`, `npm run cleanroom`, `npm run doc-drift`,
-  and `npm --prefix ui run build`.
+  and `npm --prefix app run build`.
 - **REPRODUCIBLE** — golden tests prove stateless handling of supplied receipt bytes, duplicate-frame handling,
   and fail-closed foreign/wrong bindings. They do not prove finality, a VAR correction path, on-chain VOID, or refunds.
 - **REPRODUCIBLE** — resolver tests recover the factory's canonical immutable market record and protect an
@@ -88,7 +88,7 @@ so the trust claim is checkable, not a bare green tick.
 
 ## Supply-chain posture (per tree)
 
-- **MEASURED** — `npm audit --omit=dev` on the ROOT package tree = 0 vulnerabilities. The browser-shipped `ui/`
+- **MEASURED** — `npm audit --omit=dev` on the ROOT package tree = 0 vulnerabilities. The browser-shipped `app/`
   tree reports dev-toolchain + transitive advisories that are build-only / tree-shaken (the vulnerable code is
   not reachable from the read-only fan path); none ship in the fan bundle. `@solana/web3.js` is pinned past the
   December-2024 backdoor with lockfile integrity. Full posture + threat model: `SECURITY.md`.

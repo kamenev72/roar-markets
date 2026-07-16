@@ -32,7 +32,7 @@ test("responsive Roar Markets page has no horizontal overflow and keeps scope ho
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
 
-  await page.screenshot({ path: `../evidence/ui/${testInfo.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: `../artifacts/evidence/ui/${testInfo.project.name}.png`, fullPage: true });
 });
 
 test("keyboard flow makes a call, reveals the result, and exposes attached proof", async ({ page }) => {

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { isFinalised, isInPlay, scoreEventFromLiveFrame, STATUS_FULL_TIME, type LiveScoreFrame } from "../src/factory/primitives.js";
 
 // the REAL TxLINE in-play frame captured live by the launchd daemon (2026-06-29) — pins the schema.
-const fixture = JSON.parse(readFileSync(new URL("../fixtures/live_scores_frame.json", import.meta.url), "utf8")) as {
+const fixture = JSON.parse(readFileSync(new URL("../artifacts/fixtures/live_scores_frame.json", import.meta.url), "utf8")) as {
   frame: LiveScoreFrame;
 };
 const frame = fixture.frame;

@@ -10,16 +10,16 @@
   "description": "Goal-grain micro-market prototype with immutable TxLINE receipt binding on Solana.",
   "scripts": {
     "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit && npm --prefix ui run build",
+    "typecheck": "tsc --noEmit && npm --prefix app run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "cleanroom": "bash scripts/check_cleanroom.sh",
     "cleanroom:selftest": "bash scripts/cleanroom_selftest.sh",
     "doc-drift": "bash scripts/check_doc_drift.sh",
     "xss-guard": "bash scripts/check_no_xss_sinks.sh",
-    "ui:build": "npm --prefix ui run build",
+    "ui:build": "npm --prefix app run build",
     "ui:bundle-check": "node scripts/check_ui_bundle.mjs",
-    "ui:e2e": "npm --prefix ui run e2e",
+    "ui:e2e": "npm --prefix app run e2e",
     "judge-demo": "npm test && npm run typecheck && npm run ui:bundle-check && npm run ui:e2e && npm run cleanroom && npm run cleanroom:selftest && npm run doc-drift && npm run xss-guard"
   },
   "devDependencies": {

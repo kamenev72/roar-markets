@@ -26,6 +26,6 @@ binding gate verifying that receipt. It does not prove a public finality hook or
   txoracle Merkle verify (`custom program error: 0x66`).
 - `settle_ou_bound`'s current signature requires the **`fixture_id:i64`** field (added by the binding-gate
   hardening); a layout omitting it shifts the proof bytes → `0x66`.
-- The synthetic-demo fan board (`ui/`) shows the same flow offline; THIS is the real on-chain instance.
+- The synthetic-demo fan board (`app/`) shows the same flow offline; THIS is the real on-chain instance.
 - Honesty: this proves one historical receipt and its immutable binding. It does not independently prove a
   public live finality hook, venue payout/refund, or current video/submission access. No $-PnL.
