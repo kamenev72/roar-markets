@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm --prefix ui run build",
-  "installCommand": "npm --prefix ui install --no-package-lock --no-audit --no-fund",
+  "installCommand": "npm install --no-package-lock --no-audit --no-fund && npm --prefix ui install --no-package-lock --no-audit --no-fund",
   "outputDirectory": "ui/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [{ "source": "/(.*)", "headers": [
