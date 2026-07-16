@@ -20,6 +20,9 @@ test.beforeEach(async ({ page }) => {
 test("responsive evidence board has no horizontal overflow and honest state text", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /PROPCAST/i })).toBeVisible();
+  const receiptDisclosure = page.getByText(/Re-verify the real historical receipt/i);
+  await expect(receiptDisclosure).toBeVisible();
+  await receiptDisclosure.click();
   await expect(page.getByRole("heading", { name: /Re-verify a real kickoff receipt/i })).toBeVisible();
   await expect(page.getByText(/RECEIPT UNAVAILABLE|RECEIPT INVALID/i)).toBeVisible();
   await expect(page.getByText(/Finality policy is not publicly proven/i)).toBeVisible();

@@ -79,10 +79,6 @@ export function App() {
           </div>
         </section>
 
-        <Suspense fallback={<section className="card"><p className="muted">loading verifier workbench…</p></section>}>
-          <VerificationWorkbench mode="real" />
-        </Suspense>
-
         <section className="card" aria-labelledby="match-title">
           <div className="eyebrow">Simulated · World Cup walkthrough</div>
           <h2 id="match-title">Argentina 1–0 France · 23'</h2>
@@ -146,6 +142,15 @@ export function App() {
           </section>
         )}
 
+        <details className="disclosure">
+          <summary>Re-verify the real historical receipt</summary>
+          <Suspense fallback={<section className="card"><p className="muted">Loading verifier workbench…</p></section>}>
+            <VerificationWorkbench mode="real" />
+          </Suspense>
+        </details>
+
+        <details className="disclosure">
+          <summary>Explore more markets & the trust boundary</summary>
         <section className="grid" aria-label="Goal-grain market discovery">
           {TOTAL_GOALS_LINES.map(({ line, odds }) => (
             <article key={line} className="card">
@@ -165,6 +170,7 @@ export function App() {
             <li>Goal-grain only; no $-PnL.</li>
           </ul>
         </section>
+        </details>
       </div>
     </main>
   );

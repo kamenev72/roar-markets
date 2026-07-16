@@ -30,6 +30,12 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--warn); outline-
 
 .app-shell { min-height: 100vh; padding: clamp(14px, 4vw, 28px); }
 .board { max-width: 1040px; margin: 0 auto; display: grid; gap: 16px; }
+.disclosure { border: 1px solid var(--border); border-radius: 16px; background: var(--panel); overflow: clip; }
+.disclosure > summary { min-height: 52px; display: flex; align-items: center; cursor: pointer; padding: 0 18px; color: var(--text); font-weight: 800; }
+.disclosure > summary:hover { background: #151f2e; }
+.disclosure > summary:focus-visible { outline: 3px solid var(--warn); outline-offset: -4px; }
+.disclosure[open] > summary { border-bottom: 1px solid var(--border); }
+.disclosure > .card, .disclosure > .grid { margin: 14px; }
 .hero { display: grid; gap: 8px; }
 .hero h1 { margin: 0; font-size: clamp(23px, 4vw, 42px); letter-spacing: -0.04em; }
 .muted { color: var(--dim); }
