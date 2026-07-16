@@ -3,9 +3,9 @@
 // disagreement is PARTIAL (do not trust the green tick).
 
 import { describe, it, expect } from "vitest";
-import { badgeLabelFor, crossCheckVerdict, isVerifiedLive, LABEL_LIVE, LABEL_PARTIAL } from "../app/src/evidence.js";
-import { EVIDENCE_STATES, isGreenEvidence, stateForCrossCheck } from "../app/src/evidence_state.js";
-import { EVIDENCE_CATALOG, validateEvidenceCatalog } from "../app/src/evidenceCatalog.js";
+import { badgeLabelFor, crossCheckVerdict, isVerifiedLive, LABEL_LIVE, LABEL_PARTIAL } from "../../../app/src/evidence.js";
+import { EVIDENCE_STATES, isGreenEvidence, stateForCrossCheck } from "../../../app/src/evidence_state.js";
+import { EVIDENCE_CATALOG, validateEvidenceCatalog } from "../../../app/src/evidenceCatalog.js";
 import type { VerifiedOu } from "../src/onchain/settle_consumer.js";
 
 const v = (over: boolean, fixtureId: bigint, lineQ: number): VerifiedOu => ({ over, fixtureId, lineQ });

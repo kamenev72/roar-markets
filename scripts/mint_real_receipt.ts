@@ -1,6 +1,6 @@
 // Mint a REAL kickoff_oracle OuBoundReceipt for a PROPCAST market_id, gated by the txoracle's validate_stat
 // CPI over a TxLINE Merkle total-proof. This is the producer side of PROPCAST's historical receipt evidence
-// chain (the consumer is src/onchain/settle_consumer.ts); mint-time finality remains caller policy.
+// chain (the consumer is packages/core/src/onchain/settle_consumer.ts); mint-time finality remains caller policy.
 //
 // Inputs (runtime-only, NEVER committed):
 //   VSD_TOTAL_PATH  — a fresh composite (P1+P2 Add) validate_stat proof JSON {validateStatDataHex,
@@ -18,9 +18,9 @@
 // full-time unix seconds to also bind finality (the proof's attested window must then be at or after it).
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction, ComputeBudgetProgram, SystemProgram, sendAndConfirmTransaction } from "@solana/web3.js";
 import * as fs from "fs";
-import { settleOuBoundIxData } from "../src/onchain/settle_ou_bound.js";
+import { settleOuBoundIxData } from "../packages/core/src/onchain/settle_ou_bound.js";
 import { createHash } from "crypto";
-import { deriveMarketId, marketIdHex, PrimitiveKind } from "../src/factory/market_id.js";
+import { deriveMarketId, marketIdHex, PrimitiveKind } from "../packages/core/src/factory/market_id.js";
 
 const KICKOFF_ORACLE_PROGRAM_ID = new PublicKey("34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw");
 const ixDisc = (name: string) => createHash("sha256").update("global:" + name).digest().subarray(0, 8);
@@ -50,7 +50,7 @@ if (existing && existing.owner.equals(KICKOFF_ORACLE_PROGRAM_ID)) {
 const VSD = JSON.parse(fs.readFileSync(process.env.VSD_TOTAL_PATH as string, "utf8"));
 const vsd = Buffer.from(VSD.validateStatDataHex, "hex");
 
-// The ix-data layout has ONE owner (src/onchain/settle_ou_bound.ts), pinned by a test — inlining it here is
+// The ix-data layout has ONE owner (packages/core/src/onchain/settle_ou_bound.ts), pinned by a test — inlining it here is
 // exactly how it drifted out of step with kickoff and broke every mint.
 const data = settleOuBoundIxData({
   marketId,

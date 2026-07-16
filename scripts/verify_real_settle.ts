@@ -2,10 +2,10 @@
 // path and run PROPCAST's complete market/fixture/line binding gate. This proves the account bytes and their
 // immutable binding, not the private hook's mint-time finality policy or venue payout.
 import { Connection, PublicKey } from "@solana/web3.js";
-import { deriveMarketId, marketIdHex, PrimitiveKind } from "../src/factory/market_id.js";
-import { ouReceiptPda, KICKOFF_ORACLE_PROGRAM_ID } from "../src/onchain/receipt.js";
-import { verifyOuReceiptForMarket } from "../src/onchain/settle_consumer.js";
-import { REAL_FIXTURE_ID, REAL_LINE_Q } from "../src/onchain/real_receipt.js";
+import { deriveMarketId, marketIdHex, PrimitiveKind } from "../packages/core/src/factory/market_id.js";
+import { ouReceiptPda, KICKOFF_ORACLE_PROGRAM_ID } from "../packages/core/src/onchain/receipt.js";
+import { verifyOuReceiptForMarket } from "../packages/core/src/onchain/settle_consumer.js";
+import { REAL_FIXTURE_ID, REAL_LINE_Q } from "../packages/core/src/onchain/real_receipt.js";
 
 const id = deriveMarketId(17588395n, PrimitiveKind.OuAnotherGoal, 0);
 const pda = ouReceiptPda(id.bytes);

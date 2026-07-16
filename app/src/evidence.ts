@@ -1,10 +1,10 @@
 // Fan-trust surface helpers — an honest EvidenceLabel + a RAW gate-trace formatter. Pure: it only FORMATS
-// values the complete binding gate already decoded (it never re-verifies — the gate in src/onchain stays the single
+// values the complete binding gate already decoded (it never re-verifies — the gate in packages/core/src/onchain stays the single
 // authority, no duplicate mechanism). The trace turns "the proof decides" into checkable bytes a fan can read.
 
 import type { PublicKey } from "@solana/web3.js";
-import { lineQToLine, OU_BOUND_RECEIPT_DISCRIMINATOR } from "../../src/onchain/receipt.js";
-import type { VerifiedOu } from "../../src/onchain/settle_consumer.js";
+import { lineQToLine, OU_BOUND_RECEIPT_DISCRIMINATOR } from "../../packages/core/src/onchain/receipt.js";
+import type { VerifiedOu } from "../../packages/core/src/onchain/settle_consumer.js";
 
 /** rail: where the receipt came from; strength: how strongly the claim is shown. Honest labeling (see docs/HONESTY.md). */
 export interface EvidenceLabel {

@@ -27,11 +27,11 @@ at `artifacts/fixtures/pitchmaker_book.so`, sourced from
 https://github.com/kamenev72/pitchmaker.git commit
 ed567ea53e87329819ac8b98fab2ad1ee3dbb031, repository-relative source path
 `artifacts/fixtures/pitchmaker_book.so`. It also includes the Apache-2.0 sibling-derived venue
-client, Borsh, discriminator, and transport seam under `src/venue/` and `src/loop/`,
+client, Borsh, discriminator, and transport seam under `packages/core/src/venue/` and `packages/core/src/loop/`,
 adapted where needed for PROPCAST's current ABI and in-memory factory integration.
 
 The kickoff-oracle account layouts this repository reads — including the
 OuBoundReceipt PDA scheme (["ou_bound", market_id]) — are hand-rolled from public
-on-chain formats in `src/onchain/`, not copied from a closed source. Solana web3.js,
+on-chain formats in `packages/core/src/onchain/`, not copied from a closed source. Solana web3.js,
 the Solana client libraries, and Vitest are used under their respective open-source
 licenses (see package.json). No code, keys, or data from any closed source are vendored.

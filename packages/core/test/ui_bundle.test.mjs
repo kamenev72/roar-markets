@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectStaticImports } from "../scripts/check_ui_bundle.mjs";
+import { collectStaticImports } from "../../../scripts/check_ui_bundle.mjs";
 
 describe("ui bundle manifest traversal", () => {
   it("recursively sums static imports, dedupes cycles, and excludes dynamic imports", () => {

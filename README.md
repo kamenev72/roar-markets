@@ -145,8 +145,8 @@ historical evidence record is in [artifacts/evidence/real_onchain_settle.md](art
 
 ```text
 app/          React + Vite fan experience and browser receipt checker
-src/         market factory, pricing helpers, receipt layouts, and binding consumer
-test/        deterministic factory, binding, evidence-state, and edge-case coverage
+packages/core/src/         market factory, pricing helpers, receipt layouts, and binding consumer
+packages/core/test/        deterministic factory, binding, evidence-state, and edge-case coverage
 scripts/     reproduce, bundle, clean-room, documentation, and release checks
 artifacts/evidence/    committed historical receipt record and responsive UI captures
 artifacts/fixtures/    vendored venue binary and ABI provenance

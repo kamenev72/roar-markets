@@ -7,7 +7,7 @@ dist/
 artifacts/fixtures/
 reports/
 scripts/
-test/
+packages/core/test/
 tests/
 docs/
 *.md

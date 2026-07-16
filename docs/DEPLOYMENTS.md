@@ -23,7 +23,7 @@ receipt PDA   = findProgramAddress(["ou_bound",   market_id], kickoff_oracle)   
               | findProgramAddress(["btts_bound", market_id], kickoff_oracle)   # BTTS (secondary)
 ```
 
-One `market_id` threads spawn → settle → re-verify (`src/factory/market_id.ts`, `src/onchain/receipt.ts`).
+One `market_id` threads spawn → settle → re-verify (`packages/core/src/factory/market_id.ts`, `packages/core/src/onchain/receipt.ts`).
 
 ## Proven settle (devnet, fixture 17588395, day 2026-06-25 finalized)
 

@@ -2,8 +2,8 @@
 // share taxonomy, storage resilience, and the deterministic ?demo= schedule.
 
 import { describe, it, expect } from "vitest";
-import { FRESH, applyResult, multiplier, verdictName, shareText, loadStreak, saveStreak } from "../app/src/streak.js";
-import { parseDemoParam, demoSchedule, DEMO_MIN_SECONDS, DEMO_MAX_SECONDS } from "../app/src/demo_schedule.js";
+import { FRESH, applyResult, multiplier, verdictName, shareText, loadStreak, saveStreak } from "../../../app/src/streak.js";
+import { parseDemoParam, demoSchedule, DEMO_MIN_SECONDS, DEMO_MAX_SECONDS } from "../../../app/src/demo_schedule.js";
 
 describe("streak", () => {
   it("increments on a win, resets on a loss, tracks best", () => {

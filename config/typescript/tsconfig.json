@@ -11,10 +11,10 @@
       "vitest/globals",
       "node"
     ],
-    "outDir": "dist"
+    "outDir": "../../dist"
   },
   "include": [
-    "src",
-    "test"
+    "../../packages/core/src",
+    "../../packages/core/test"
   ]
 }

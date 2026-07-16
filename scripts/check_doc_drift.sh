@@ -29,7 +29,7 @@ for f in "${REQUIRED[@]}"; do
 done
 
 # 3. deployed-id pin: a doc that names kickoff_oracle must carry its canonical program id from the code.
-KID=$(grep -oE 'new PublicKey\("[1-9A-HJ-NP-Za-km-z]{32,44}"\)' src/onchain/receipt.ts | head -1 | grep -oE '[1-9A-HJ-NP-Za-km-z]{32,44}')
+KID=$(grep -oE 'new PublicKey\("[1-9A-HJ-NP-Za-km-z]{32,44}"\)' packages/core/src/onchain/receipt.ts | head -1 | grep -oE '[1-9A-HJ-NP-Za-km-z]{32,44}')
 if [[ -n "${KID:-}" ]]; then
   for f in "${REQUIRED[@]}"; do
     [[ -f "$f" ]] || continue

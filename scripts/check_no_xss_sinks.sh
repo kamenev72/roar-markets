@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 
 # HTML-injection sinks. `eval\(` / `new Function` need the call form to avoid matching the word in prose.
 SINKS='dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|new Function\('
-FILES=$(git ls-files 'app/src/*' 'src/*' 2>/dev/null || true)
+FILES=$(git ls-files 'app/src/*' 'packages/core/src/*' 2>/dev/null || true)
 [ -z "$FILES" ] && FILES=$(find app/src src -type f 2>/dev/null)
 
 HITS=$(printf '%s\n' $FILES | xargs grep -nIE "$SINKS" 2>/dev/null || true)

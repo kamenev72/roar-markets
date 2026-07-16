@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
-const COMMITTED = resolve(here, "../artifacts/fixtures/pitchmaker_book.so");
+const COMMITTED = resolve(here, "../../../artifacts/fixtures/pitchmaker_book.so");
 
 export const VENUE_SO = COMMITTED;
 export const VENUE_SO_DIR = dirname(VENUE_SO);

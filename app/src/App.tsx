@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { binaryProb } from "../../src/signal/devig.js";
+import { binaryProb } from "../../packages/core/src/signal/devig.js";
 import { EVIDENCE_CATALOG } from "./evidenceCatalog.js";
 import { applyResult, loadStreak, multiplier, saveStreak, shareText } from "./streak.js";
 import { demoSchedule, parseDemoParam } from "./demo_schedule.js";

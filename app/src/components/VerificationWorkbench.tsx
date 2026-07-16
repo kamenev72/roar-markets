@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Connection } from "@solana/web3.js";
-import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../../src/onchain/receipt.js";
-import { verifyOuReceiptForMarket, type OnchainAccount, type VerifiedOu } from "../../../src/onchain/settle_consumer.js";
-import { REAL_FIXTURE_ID, REAL_LINE_Q, REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../../src/onchain/real_receipt.js";
+import { KICKOFF_ORACLE_PROGRAM_ID, OU_BOUND_RECEIPT_DISCRIMINATOR, ouReceiptPda } from "../../../packages/core/src/onchain/receipt.js";
+import { verifyOuReceiptForMarket, type OnchainAccount, type VerifiedOu } from "../../../packages/core/src/onchain/settle_consumer.js";
+import { REAL_FIXTURE_ID, REAL_LINE_Q, REAL_MARKET_ID_HEX, marketIdFromHex, verifyRealReceipt, type RealReceiptVerification } from "../../../packages/core/src/onchain/real_receipt.js";
 import { gateTraceLines } from "../evidence.js";
 import { EVIDENCE_STATES, evidenceToneClass, stateForCrossCheck, type EvidenceState } from "../evidence_state.js";
 import { EVIDENCE_CATALOG } from "../evidenceCatalog.js";

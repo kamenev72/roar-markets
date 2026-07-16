@@ -14,5 +14,5 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src", "../src/signal/devig.ts", "../src/onchain"]
+  "include": ["src", "../packages/core/src/signal/devig.ts", "../packages/core/src/onchain"]
 }
