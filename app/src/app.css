@@ -231,6 +231,16 @@ code, .score, .match-minute, .line-split, .ticket-score { font-family: var(--uti
 .closing-cta .section-kicker { color: var(--card); }
 .closing-cta h2 { max-width: 13ch; margin: 0 auto 34px; }
 footer { max-width: var(--max); margin: 0 auto; padding: 36px clamp(20px, 4vw, 48px) calc(36px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 28px; border-top: 1px solid var(--line); }
+
+.history-section { display: grid; gap: 28px; }
+.history-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.history-summary > div { padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: var(--ink-soft); display: grid; gap: 4px; }
+.history-summary strong { font-size: clamp(1.8rem, 4vw, 3rem); }
+.history-summary span, .history-list small, .history-empty { color: var(--paper-muted); }
+.history-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.history-list li { display: grid; grid-template-columns: minmax(90px, auto) 1fr auto; gap: 16px; align-items: center; padding: 14px 18px; border: 1px solid var(--line); border-radius: 14px; }
+.history-win { color: var(--grass); }
+.history-miss { color: var(--signal); }
 footer p { margin: 0; color: #9db0c7; font-size: 0.8rem; text-align: center; }
 .footer-links { display: flex; align-items: center; justify-content: flex-end; gap: 20px; color: #b7c6d8; font-size: 0.76rem; }
 .footer-links a { min-height: 44px; display: inline-flex; align-items: center; text-underline-offset: 3px; }
@@ -302,6 +312,12 @@ footer p { margin: 0; color: #9db0c7; font-size: 0.8rem; text-align: center; }
   .match-card { min-height: 640px; }
   .ticket-heading { align-items: flex-start; flex-direction: column-reverse; }
   .ticket-actions { flex-direction: column; }
+}
+
+@media (max-width: 640px) {
+  .history-summary { grid-template-columns: 1fr; }
+  .history-list li { grid-template-columns: 1fr auto; }
+  .history-list small { grid-column: 1 / -1; }
 }
 
 @media (orientation: landscape) and (max-height: 560px) {

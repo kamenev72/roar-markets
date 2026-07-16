@@ -38,6 +38,8 @@ belonged to the fan’s call.
 - **Keeps the question readable.** Teams, score, minute, and line stay visible while the fan chooses yes or no.
 - **Returns a result ticket, not a detached verdict.** The walkthrough joins the pick, outcome, fixture, and line in
   one shareable card.
+- **Keeps a private call record.** A bounded, device-local history shows recent calls, accuracy, and best run without
+  requiring an account or pretending to be a public leaderboard.
 - **Checks an actual historical receipt in the browser.** A separate progressive proof panel reads a Solana devnet
   account and validates its owner, type, derived address, embedded market, fixture, line, and outcome.
 - **Fails closed when evidence does not match.** Wrong-market, wrong-fixture, wrong-line, malformed, foreign-owner,

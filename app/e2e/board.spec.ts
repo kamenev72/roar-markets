@@ -48,4 +48,7 @@ test("keyboard flow makes a call, reveals the result, and exposes attached proof
   await expect(page.getByText(/Argentina vs France/i)).toBeVisible();
   await expect(page.getByText(/Another goal after 23/i)).toBeVisible();
   await expect(page.getByText(/Bound/i)).toBeVisible();
+  const history = page.getByRole("region", { name: /A small record of your match instinct/i });
+  await expect(history.getByText("1", { exact: true }).first()).toBeVisible();
+  await expect(history.getByText("100%", { exact: true })).toBeVisible();
 });

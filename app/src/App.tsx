@@ -3,6 +3,7 @@ import { binaryProb } from "../../packages/core/src/signal/devig.js";
 import { EVIDENCE_CATALOG } from "./evidenceCatalog.js";
 import { applyResult, loadStreak, multiplier, saveStreak, shareText } from "./streak.js";
 import { demoSchedule, parseDemoParam } from "./demo_schedule.js";
+import { accuracy, appendCall, loadHistory, saveHistory } from "./history.js";
 
 const VerificationWorkbench = lazy(() => import("./components/VerificationWorkbench.js"));
 
@@ -75,7 +76,7 @@ function ResultTicket({
   streak,
   receiptRef,
   onShare,
-  shared,
+  shareStatus,
   onReset,
 }: {
   pick: Side;
@@ -83,7 +84,7 @@ function ResultTicket({
   streak: number;
   receiptRef: string;
   onShare: () => void;
-  shared: boolean;
+  shareStatus: "idle" | "copied" | "failed";
   onReset: () => void;
 }) {
   const won = pick === outcome;
@@ -123,11 +124,11 @@ function ResultTicket({
 
         <div className="ticket-actions">
           <button className="button button-primary" type="button" onClick={onShare}>
-            {shared ? "Result copied" : "Copy my call"}
+            {shareStatus === "copied" ? "Result copied" : shareStatus === "failed" ? "Copy failed" : "Copy my call"}
           </button>
           <button className="button button-quiet" type="button" onClick={onReset}>Play again</button>
         </div>
-        <p className="sr-status" aria-live="polite">{shared ? "Result copied to clipboard." : ""}</p>
+        <p className="sr-status" aria-live="polite">{shareStatus === "copied" ? "Result copied to clipboard." : shareStatus === "failed" ? "Clipboard unavailable. Select and copy the result manually." : ""}</p>
       </div>
     </section>
   );
@@ -138,7 +139,8 @@ export function App() {
   const [pick, setPick] = useState<Side | null>(null);
   const [result, setResult] = useState<{ outcome: Side; won: boolean; shareReceiptRef: string } | null>(null);
   const [streak, setStreak] = useState(() => loadStreak(typeof localStorage === "undefined" ? null : localStorage));
-  const [shared, setShared] = useState(false);
+  const [shareStatus, setShareStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [history, setHistory] = useState(() => loadHistory(typeof localStorage === "undefined" ? null : localStorage));
   const [proofOpen, setProofOpen] = useState(false);
   const demoSecs = useMemo(() => parseDemoParam(typeof window === "undefined" ? "" : window.location.search), []);
   const fairYes = useMemo(() => binaryProb(DEMO_LINE, 0), []);
@@ -151,7 +153,19 @@ export function App() {
       saveStreak(typeof localStorage === "undefined" ? null : localStorage, updated);
       return updated;
     });
-    setShared(false);
+    setHistory((current) => {
+      const updated = appendCall(current, {
+        id: `${Date.now()}:${pick ?? "YES"}:${next.outcome}`,
+        question: "Another goal after 1–0 (23′)?",
+        pick: pick ?? "YES",
+        outcome: next.outcome,
+        won: next.won,
+        receiptRef: next.shareReceiptRef,
+      });
+      saveHistory(typeof localStorage === "undefined" ? null : localStorage, updated);
+      return updated;
+    });
+    setShareStatus("idle");
     setPhase("resolved");
   }
 
@@ -174,21 +188,23 @@ export function App() {
     setPhase("kickoff");
     setPick(null);
     setResult(null);
-    setShared(false);
+    setShareStatus("idle");
   }
 
-  function copyResult() {
+  async function copyResult() {
     if (!result) return;
-    void navigator.clipboard?.writeText(
-      shareText({
+    const text = shareText({
         won: result.won,
         pick: pick ?? "YES",
         question: "Another goal after 1–0 (23′)?",
         streak: streak.streak,
         receiptRef: result.shareReceiptRef,
-      }),
-    );
-    setShared(true);
+      });
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("clipboard unavailable");
+      await navigator.clipboard.writeText(text);
+      setShareStatus("copied");
+    } catch { setShareStatus("failed"); }
   }
 
   return (
@@ -267,7 +283,7 @@ export function App() {
                   streak={streak.streak}
                   receiptRef={result.shareReceiptRef}
                   onShare={copyResult}
-                  shared={shared}
+                  shareStatus={shareStatus}
                   onReset={reset}
                 />
               ) : null}
@@ -279,6 +295,25 @@ export function App() {
           <p>One tap to call it.</p><span aria-hidden="true" />
           <p>One result you can follow.</p><span aria-hidden="true" />
           <p>One proof that stays with the moment.</p>
+        </section>
+
+        <section className="section history-section" aria-labelledby="history-title">
+          <div className="section-heading">
+            <span className="section-kicker">Your device · your calls</span>
+            <h2 id="history-title">A small record of your match instinct.</h2>
+            <p>Stored only in this browser. No account, public leaderboard, wallet, or payout claim.</p>
+          </div>
+          <div className="history-summary">
+            <div><strong>{history.records.length}</strong><span>calls saved</span></div>
+            <div><strong>{accuracy(history) === null ? "—" : `${accuracy(history)}%`}</strong><span>accuracy</span></div>
+            <div><strong>{streak.best}</strong><span>best run</span></div>
+          </div>
+          {history.records.length ? <ol className="history-list">
+            {history.records.slice(0, 5).map((call) => <li key={call.id}>
+              <span className={call.won ? "history-win" : "history-miss"}>{call.won ? "Called it" : "Missed"}</span>
+              <strong>{call.pick}</strong><small>Outcome {call.outcome}</small>
+            </li>)}
+          </ol> : <p className="history-empty">Make the first call to start a private match-day record.</p>}
         </section>
 
         <section id="how-it-works" className="section how-section" aria-labelledby="how-title">
