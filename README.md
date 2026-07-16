@@ -4,7 +4,7 @@
 
 **Crowd90 is the public fan experience built by PROPCAST:** a responsive World Cup board for fast YES/NO match moments. When a result card appears, its evidence remains bound to the exact market, fixture and line instead of becoming an unexplained admin verdict.
 
-> **Try the product:** `npm run judge-demo`. The walkthrough is explicit about what is simulated and what comes from a historical devnet receipt. A hosted URL will be added after public deployment.
+> **Try the product:** open the **[live Crowd90 fan experience](https://propcast-one.vercel.app/)**. The walkthrough is explicit about what is simulated and what comes from a historical devnet receipt. Local verification: `npm run judge-demo`.
 
 | Fan experience | Trust experience |
 |---|---|

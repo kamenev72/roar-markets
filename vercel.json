@@ -2,7 +2,6 @@
   "buildCommand": "npm --prefix ui run build",
   "installCommand": "npm --prefix ui install --no-package-lock --no-audit --no-fund",
   "outputDirectory": "ui/dist",
-  "cleanUrls": true,
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [{ "source": "/(.*)", "headers": [
     { "key": "X-Content-Type-Options", "value": "nosniff" },
