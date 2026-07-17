@@ -36,3 +36,8 @@ One `market_id` threads spawn → settle → re-verify (`packages/core/src/facto
 | outcome (over@50) | `false → NO` (Under 2.5) |
 
 Reproduce: `artifacts/evidence/real_onchain_settle.md`.
+
+> Devnet prunes transaction history (~30 days): the mint tx signatures above may return `null` from
+> `getTransaction` / show "not found" on an explorer. The **receipt account is the live evidence** — the PDA
+> `39vT6hs7…` resolves on any devnet explorer and `node --import tsx scripts/verify_real_settle.ts` re-verifies
+> the binding on-chain via `getAccountInfo` at any time.

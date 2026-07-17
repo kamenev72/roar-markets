@@ -20,7 +20,9 @@ artifact is currently published here.
 ## The REAL on-chain beat (the climax — not a mock)
 
 Open the app → the top **REAL · on-chain · devnet** card fetches the live receipt and re-verifies it in the
-browser. Show these are real on a Solana explorer (devnet):
+browser. On an explorer, show the **receipt PDA address page** (`39vT6hs7…` — the account is live and
+resolves); the mint tx signatures below are the historical record — devnet prunes tx history ~30 days, so a
+`getTransaction`/explorer-tx lookup may return "not found". The account re-verify is the durable proof:
 
 | Step | Tx / account |
 |---|---|

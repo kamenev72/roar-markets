@@ -29,4 +29,6 @@ private mint hook waited for final match state. This table maps each touchpoint 
   `settle_ou_bound` (CPI-gated) — tx `4CzqNgSp…`, receipt `39vT6hs7…`, `market_id 532843…`.
 - PROPCAST's gate re-verified it on-chain: `over=false → NO` (Under 2.5).
 
-Full hashes + reproduce steps: `../artifacts/evidence/real_onchain_settle.md`.
+Full hashes + reproduce steps: `../artifacts/evidence/real_onchain_settle.md`. (Devnet prunes tx history
+~30 days — the durable on-chain evidence is the receipt ACCOUNT `39vT6hs7…`, re-verified live by
+`scripts/verify_real_settle.ts`; the tx sigs are the historical record.)
