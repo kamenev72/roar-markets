@@ -27,7 +27,7 @@ type Side = "YES" | "NO";
 function BrandMark() {
   return (
     <a className="brand" href="#top" aria-label="Roar Markets home">
-      <img src="/roar-mark.svg" width="44" height="44" alt="" aria-hidden="true" />
+      <img src="/roar-mark-glyph.svg" width="44" height="40" alt="" aria-hidden="true" />
       <span translate="no">Roar Markets</span>
     </a>
   );
