@@ -92,7 +92,9 @@ so the trust claim is checkable, not a bare green tick.
 
 ## Supply-chain posture (per tree)
 
-- **MEASURED** — `npm audit --omit=dev` on the ROOT package tree = 0 vulnerabilities. The browser-shipped `app/`
-  tree reports dev-toolchain + transitive advisories that are build-only / tree-shaken (the vulnerable code is
-  not reachable from the read-only fan path); none ship in the fan bundle. `@solana/web3.js` is pinned past the
-  December-2024 backdoor with lockfile integrity. Full posture + threat model: `SECURITY.md`.
+- **MEASURED** — `npm audit --omit=dev` on the ROOT package tree = 0 vulnerabilities. The browser `app/` production
+  tree reports 3 moderate transitive advisories through `@solana/web3.js → jayson → uuid@8.3.2`; that dependency
+  code ships in the lazy verifier chunk. The cited uuid buffer-writing paths are not identified in the current
+  read-only RPC flow (jayson generates v4 request IDs), so exploitability is unproven rather than zero. npm offers
+  only an incompatible web3.js replacement, so no forced downgrade was applied. `@solana/web3.js` remains pinned
+  past the December-2024 backdoor with lockfile integrity. Full posture + threat model: `SECURITY.md`.

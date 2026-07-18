@@ -8,7 +8,7 @@ Repository-relative source path: `artifacts/fixtures/pitchmaker_book.so`
 
 SHA-256: `8734bbc374700870bedbce1a0f230600298b68a022ffd503aaef0c299aced646`
 
-License: Apache License 2.0. See the repository root [`LICENSE`](../LICENSE) and [`NOTICE`](../NOTICE) for the
+License: Apache License 2.0. See the repository root [`LICENSE`](../../LICENSE) and [`NOTICE`](../../NOTICE) for the
 license text and retained Touchline MM former-name attribution.
 
 The committed Roar Markets fixture is directly verifiable without a sibling checkout:

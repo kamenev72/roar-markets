@@ -89,8 +89,12 @@ choice of when to mint it and venue payout are separate trust boundaries.
   `minFinalTs=0` is the encoder default unless the hook supplies a stronger value.
 - The clean-room secret gate is a denylist; the durable backstop is keeping all keys
   outside the work tree.
-- Dev-toolchain advisories reachable only by a developer running the dev server on a
-  hostile network — never the shipped fan bundle.
+- **Production dependency residual:** the app's full and `--omit=dev` audits each report
+  3 moderate advisories through `@solana/web3.js → jayson → uuid@8.3.2`. This code ships
+  in the lazy verifier chunk. The advisory's affected uuid buffer-writing paths are not
+  identified in the read-only RPC flow (jayson uses v4 request IDs), so current
+  exploitability is unproven, not absent. npm proposes only an incompatible web3.js
+  replacement; no forced downgrade was applied.
 - **Daemon-restart market_id reuse (PC-02, named gap)**: the factory derives each
   market's nonce from an IN-MEMORY per-(fixture,kind) counter, so a daemon restart
   mid-match resets it and can re-derive an already-used market_id — whose old on-chain

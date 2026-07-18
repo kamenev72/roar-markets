@@ -69,7 +69,21 @@ fi
 # 4. The documented cold judge path must provision the exact browser dependency and
 # deployment configuration it claims to verify. These checks intentionally inspect
 # the real files instead of duplicating a second judge recipe.
-expected_csp="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.devnet.solana.com https://devnet.rpcpool.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+expected_rpc_origins="https://api.devnet.solana.com https://devnet.rpcpool.com"
+rpc_origins=$(node -e '
+  const fs = require("node:fs");
+  const source = fs.readFileSync("app/src/components/VerificationWorkbench.tsx", "utf8");
+  const primary = source.match(/const PRIMARY_RPC = "(https:\/\/[^" ]+)";/);
+  const secondaryBlock = source.match(/const SECOND_RPCS = \[([^\]]*)\];/);
+  const secondary = secondaryBlock ? [...secondaryBlock[1].matchAll(/"(https:\/\/[^" ]+)"/g)].map((match) => match[1]) : [];
+  if (!primary || secondary.length !== 1) process.exit(2);
+  process.stdout.write([primary[1], ...secondary].join(" "));
+' 2>/dev/null)
+if [[ $? -ne 0 || "$rpc_origins" != "$expected_rpc_origins" ]]; then
+  echo "❌ doc-drift: browser verifier must declare exactly the reviewed two RPC origins"
+  fail=1
+fi
+expected_csp="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${rpc_origins}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
 actual_csp=$(node -e '
   const config = require("./vercel.json");
   const headers = (Array.isArray(config.headers) ? config.headers : [])
