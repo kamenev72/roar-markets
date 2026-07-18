@@ -1,4 +1,4 @@
-// On-chain kickoff bound-receipt layouts consumed by PROPCAST.
+// On-chain kickoff bound-receipt layouts consumed by Roar Markets.
 //
 // The consumer never blind-deserializes: it checks owner, discriminator, PDA, embedded market, fixture, line
 // where applicable, and a canonical outcome byte. These checks prove immutable receipt binding, not the

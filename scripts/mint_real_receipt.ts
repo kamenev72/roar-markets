@@ -1,5 +1,5 @@
-// Mint a REAL kickoff_oracle OuBoundReceipt for a PROPCAST market_id, gated by the txoracle's validate_stat
-// CPI over a TxLINE Merkle total-proof. This is the producer side of PROPCAST's historical receipt evidence
+// Mint a REAL kickoff_oracle OuBoundReceipt for a Roar Markets market_id, gated by the txoracle's validate_stat
+// CPI over a TxLINE Merkle total-proof. This is the producer side of Roar Markets' historical receipt evidence
 // chain (the consumer is packages/core/src/onchain/settle_consumer.ts); mint-time finality remains caller policy.
 //
 // Inputs (runtime-only, NEVER committed):

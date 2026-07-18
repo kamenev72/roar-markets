@@ -1,4 +1,4 @@
-// PROPCAST PropMarketFactory — the auto-spawn multiplexer. On each goal-derived primitive it derives a
+// Roar Markets PropMarketFactory — the auto-spawn multiplexer. On each goal-derived primitive it derives a
 // collision-free market_id, inits a fresh pitchmaker_book micro-venue, and posts the de-vigged two-sided
 // seed ladder, registering the market for the fan board + the (phase 2) auto-settle path.
 //

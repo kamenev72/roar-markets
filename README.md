@@ -107,20 +107,25 @@ independent comparison.
 
 ## Reproduce it
 
-Prerequisites: Node.js 18 or newer and npm. Clone the future public repository path, install locked dependencies, and
-run the complete deterministic gate:
+Prerequisites: Node.js 22 and npm. Linux hosts must also already provide Playwright's Chromium system libraries
+(or use a Playwright-supported image). The setup script never invokes `sudo` on a judge machine; its CI branch
+provisions those host libraries with `playwright install --with-deps chromium`.
+
+With those platform prerequisites in place, clone the future public repository path and run the complete
+deterministic gate:
 
 ```bash
 git clone https://github.com/kamenev72/roar-markets.git
 cd roar-markets
-npm ci
-npm --prefix app ci
-npm run judge-demo
+bash scripts/judge_setup.sh
 ```
 
 `judge-demo` runs the TypeScript tests, root and UI type checks, production Vite build, initial-bundle budget,
 Playwright checks at 360 / 768 / 1440 pixels, clean-room checks, documentation drift checks, and the XSS sink guard.
 It does not make the historical RPC request; that live read belongs to the browser experience.
+
+Lowercase `propcast` package, storage, and domain identifiers plus the existing exported build marker are stable
+compatibility seams; Roar Markets is the only product/display name.
 
 For a local product session:
 

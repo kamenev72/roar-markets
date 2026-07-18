@@ -1,4 +1,4 @@
-// PROPCAST live-match auto-resolver — the orchestration core, driven with injected fakes (no live feed, no
+// Roar Markets live-match auto-resolver — the orchestration core, driven with injected fakes (no live feed, no
 // secrets, no RPC): a goal auto-spawns; a settle trigger mints (via the hook) + re-verifies on-chain (via the
 // fetcher) + records evidence. The real feed / proof-build / mint / RPC are wired in the private daemon.
 
@@ -35,7 +35,7 @@ function synthOu(marketId: Uint8Array, over: boolean, lineQ: number, fixtureId: 
 const hookReturning = (tx: string | null): SettleHook => ({ mint: async () => tx });
 const fetcherReturning = (acct: { owner: PublicKey; data: Uint8Array } | null): ReceiptFetcher => ({ fetchOu: async () => acct });
 
-describe("PROPCAST LiveResolver (auto-detect → spawn → mint → verify → record)", () => {
+describe("Roar Markets LiveResolver (auto-detect → spawn → mint → verify → record)", () => {
   it("a goal then a settle trigger: mint + on-chain re-verify (Over → YES) is recorded", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m = await f.onGoal(goal(17588395n, 23, 1, 0));

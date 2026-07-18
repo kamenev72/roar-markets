@@ -1,6 +1,6 @@
 # Clean-room contract
 
-PROPCAST is a public, clean-room project. Nothing in this repo derives from any private codebase.
+Roar Markets is a public, clean-room project. Nothing in this repo derives from any private codebase.
 
 - **No proprietary vocabulary** — internal finding-codes, private memory layers, private repo names, or
   private plan ids must never appear in a tracked file. `scripts/check_cleanroom.sh` enforces a denylist
@@ -9,7 +9,9 @@ PROPCAST is a public, clean-room project. Nothing in this repo derives from any 
   local files, gitignored). They are never committed, never in docs, never in fixtures.
 - **Public-knowledge math only** — de-vig is standard proportional overround removal; the pricing seed is
   Avellaneda-Stoikov / GLFT, all from public literature.
-- **Consume, don't fork** — the Solana venue and bound-receipt/Merkle verification rails are programs PROPCAST
-  calls. PROPCAST does not re-implement a venue or an oracle, and does not claim their private hook policy.
+- **Consume, don't fork** — the Solana venue and bound-receipt/Merkle verification rails are programs Roar Markets
+  calls. Roar Markets does not re-implement a venue or an oracle, and does not claim their private hook policy.
+- **Preserve compatibility seams** — lowercase `propcast` package, storage, and domain identifiers plus the
+  existing exported build marker remain stable internal/API contracts; they are not the public product name.
 
 Run the gate locally before any push: `npm run cleanroom`.

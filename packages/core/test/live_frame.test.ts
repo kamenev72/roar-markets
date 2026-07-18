@@ -52,7 +52,7 @@ describe("whistle-driven finality (isFinalised)", () => {
 
   it("stays in lock-step with the kickoff resolver finality set (no ET/penalties drift)", () => {
     // If the kickoff full-time set ever changes, this mirror must change with it — a proof minted for a
-    // status the kickoff rail would refuse cannot settle a propcast total.
+    // status the kickoff rail would refuse cannot settle a Roar Markets total.
     expect(STATUS_FULL_TIME.has(10)).toBe(true); // Ended-after-ET (KO)
     expect(STATUS_FULL_TIME.has(13)).toBe(true); // Ended-after-penalties (KO)
   });

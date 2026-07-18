@@ -1,4 +1,4 @@
-// PROPCAST golden edge-case battery (phase 3). Settle-lifecycle correctness over the REAL
+// Roar Markets golden edge-case battery (phase 3). Settle-lifecycle correctness over the REAL
 // settle-consumer + factory seams: absent receipt, caller-selected final bytes, own-goal proxy, double-goal-in-tick.
 // Synthetic fixtures only (no live rail). Each case exercises the actual code path it claims to cover.
 
@@ -40,7 +40,7 @@ const goal = (fixtureId: bigint, minute: number, h: number, a: number, odds: [nu
   anotherGoalOdds: odds,
 });
 
-describe("PROPCAST golden edge-cases (settle-lifecycle correctness)", () => {
+describe("Roar Markets golden edge-cases (settle-lifecycle correctness)", () => {
   // 1. ABSENT RECEIPT. Outcome APIs require a present receipt with a complete immutable binding. The factory
   //    sweep owns no-receipt expiry; v1 does not claim an on-chain refund/VOID settlement rail.
   describe("abandoned -> no fixture-unbound resolver", () => {

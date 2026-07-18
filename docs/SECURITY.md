@@ -1,12 +1,12 @@
 # SECURITY
 
-PROPCAST's security posture, threat model, and trust assumptions — stated, not hidden.
-Severity throughout is calibrated to what PROPCAST actually is: a **read-only Solana
+Roar Markets' security posture, threat model, and trust assumptions — stated, not hidden.
+Severity throughout is calibrated to what Roar Markets actually is: a **read-only Solana
 devnet consumer** for a hackathon, holding **no mainnet value and no fan funds** in v1.
 
 ## 1. Overview & scope
 
-PROPCAST auto-spawns goal-grain micro-markets, seeds a de-vigged line, and **settles**
+Roar Markets auto-spawns goal-grain micro-markets, seeds a de-vigged line, and **settles**
 by re-verifying an on-chain bound-receipt minted by a deployed kickoff-oracle program
 (`kickoff_oracle` `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw`) through a complete
 binding gate. The fan UI is read-only (a devnet `getAccountInfo` + an in-browser
@@ -15,7 +15,7 @@ real-money PnL** anywhere; market quality/coverage is the only metric.
 
 In scope: receipt forgery/confusion, RPC trust, settlement correctness & finality,
 idempotency, credential hygiene, supply-chain. Out of scope: the internals of the
-deployed kickoff-oracle / venue programs (PROPCAST is their consumer), and any
+deployed kickoff-oracle / venue programs (Roar Markets is their consumer), and any
 real-money custody (v1 holds none).
 
 ## 2. Threat model
@@ -127,7 +127,7 @@ The test suite pins the complete binding gate (forged / foreign / wrong-type /
 wrong-market / wrong-fixture / wrong-line / truncated), the per-kind offset traps, the
 collision-free `market_id` grid, and idempotency. CI enforces typecheck + build +
 tests, the clean-room/secret scan and its selftest, doc-drift (including the pinned
-deployed program id), and the UI subproject build + audit.
+deployed program id), bundle-budget checks, and Playwright browser checks for the UI.
 
 ## 10. Change control for trust-bearing code
 

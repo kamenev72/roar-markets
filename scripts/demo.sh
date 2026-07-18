@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PROPCAST — one-command repeatable demo take. Prints the gate green, runs the on-chain re-verify in the
+# Roar Markets — one-command repeatable demo take. Prints the gate green, runs the on-chain re-verify in the
 # terminal, and echoes the fan-board launch line — so the operator can record a clean ≤5-min screen capture in
 # one shot. Read-only: it verifies an EXISTING on-chain receipt, it mints nothing (no devnet SOL burn).
 #
@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 
 mask() { sed -E 's#(api[._-]?key=)[^[:space:]&]+#\1***MASKED***#gi; s#(/v2/)[A-Za-z0-9_-]{8,}#\1***MASKED***#g'; }
 
-echo "── PROPCAST demo take ───────────────────────────────────────────"
+echo "── Roar Markets demo take ───────────────────────────────────────"
 echo "[1/4] gate: test · typecheck · clean-room · doc-drift"
 npm test --silent >/dev/null 2>&1 && echo "      ✓ tests green"   || { echo "      ✗ tests"; exit 1; }
 npm run typecheck --silent >/dev/null 2>&1 && echo "      ✓ typecheck" || { echo "      ✗ typecheck"; exit 1; }

@@ -1,6 +1,6 @@
 // The pinned REAL on-chain OuBoundReceipt (minted phase 2c on devnet) + a pure verify over a fetched account.
 //
-// This is the demo CLIMAX: a REAL kickoff_oracle receipt that PROPCAST's own fixture-bound gate re-verifies in the
+// This is the demo CLIMAX: a REAL kickoff_oracle receipt that Roar Markets' fixture-bound gate re-verifies in the
 // fan's browser with NO API key. The fetch (getAccountInfo) is I/O and lives in the caller (the UI / a script);
 // the verify is this pure function, which REUSES `verifyOuReceiptForMarket` (no weaker second verifier).
 

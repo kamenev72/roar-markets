@@ -1,4 +1,4 @@
-// PROPCAST quality/coverage metrics — golden vectors + the honesty guard (NO $-PnL field, ever).
+// Roar Markets quality/coverage metrics — golden vectors + the honesty guard (NO $-PnL field, ever).
 
 import { describe, it, expect } from "vitest";
 import { aggregateQuality, type MarketQualityRecord, type QualityMetrics } from "../src/metrics/quality.js";
@@ -10,7 +10,7 @@ const rec = (over: Partial<MarketQualityRecord> & Pick<MarketQualityRecord, "mar
   ...over,
 });
 
-describe("PROPCAST quality/coverage metrics (no $-PnL)", () => {
+describe("Roar Markets quality/coverage metrics (no $-PnL)", () => {
   it("empty set: zeroed + no division-by-zero", () => {
     const m = aggregateQuality([], 0);
     expect(m.marketsSpawned).toBe(0);

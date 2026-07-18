@@ -1,4 +1,4 @@
-// PROPCAST quality/coverage metrics — the venue is graded on EXPERIENCE + TRUST, never profit. This module
+// Roar Markets quality/coverage metrics — the venue is graded on EXPERIENCE + TRUST, never profit. This module
 // reports market QUALITY and coverage ONLY: NO $-PnL, NO MM-profit, ever (the honesty contract). Pure +
 // side-effect-free: identical records ⇒ identical metrics; all timestamps are passed in (no clock / RNG /
 // global reads), mirroring the pricing kernel's purity discipline.

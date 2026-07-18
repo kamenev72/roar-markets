@@ -1,6 +1,6 @@
 # DEPLOYMENTS — Solana devnet
 
-The deployed programs PROPCAST consumes, the `market_id` scheme, and the proven phase 2c settle artifacts. PROPCAST
+The deployed programs Roar Markets consumes, the `market_id` scheme, and the proven phase 2c settle artifacts. Roar Markets
 itself is a TypeScript consumer + fan UI — it deploys no program of its own (no-duplicate-mechanism); it CALLS
 these.
 
@@ -9,7 +9,7 @@ these.
 | Program | Program id | Role |
 |---|---|---|
 | `kickoff_oracle` | `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw` | the trust root — mints the TxLINE-anchored `OuBoundReceipt` via CPI-gated `settle_ou_bound` |
-| `pitchmaker_book` | `JBK6odPfCTuHp1cb3Yr76PPTdnhpGgQwrZ9oszhSjh3R` | the binary escrow-cross venue (ADR-0003, in the PitchMaker repo) PROPCAST inits + seeds per micro-market |
+| `pitchmaker_book` | `JBK6odPfCTuHp1cb3Yr76PPTdnhpGgQwrZ9oszhSjh3R` | the binary escrow-cross venue (from Touchline MM, formerly PitchMaker) Roar Markets initializes and seeds per micro-market |
 | `txoracle` | `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J` | verifies the TxLINE Merkle stat proof (`validate_stat`) |
 
 `daily_scores_roots` PDA (the finalized day root the proof binds to): `CdUmkUdc4XBKeeq7Kq6JxQvnVMNuDA21mp98x4Rs3jHQ`.

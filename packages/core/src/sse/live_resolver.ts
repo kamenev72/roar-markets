@@ -1,4 +1,4 @@
-// PROPCAST resolver orchestration core: accept an injected score frame, recover the factory's canonical
+// Roar Markets resolver orchestration core: accept an injected score frame, recover the factory's canonical
 // market, ask an injected private hook for a receipt, verify its complete binding, and record evidence.
 // This module does not implement or prove the hook's trigger/finality policy or any venue payout.
 //

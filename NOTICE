@@ -1,4 +1,4 @@
-PROPCAST
+Roar Markets
 Copyright 2026 Roman Kamenev
 
 Licensed under the Apache License, Version 2.0 (see LICENSE).
@@ -11,24 +11,24 @@ Merkle-anchored receipt accounts. Finality selection and payout are not claimed 
 Clean-room provenance: all pricing math derives from PUBLIC sources only —
 standard proportional de-vig; Avellaneda-Stoikov (2008) and
 Guéant-Lehalle-Fernández-Tapia (GLFT) market-making. The on-chain venue and the
-settlement/dispute layer are CONSUMED as deployed programs; PROPCAST adds the
+settlement/dispute layer are CONSUMED as deployed programs; Roar Markets adds the
 per-prop market factory and the consumer surface, not a new venue or oracle. An
 exact compiled venue binary is included as a deterministic test fixture, as
 attributed below. No proprietary third-party code is included.
 
 This distribution includes material from the Apache-2.0-licensed sibling project:
 
-PitchMaker
+Touchline MM (formerly PitchMaker)
 Copyright 2026 Roman Kamenev
 Licensed under the Apache License, Version 2.0 (see LICENSE).
 
-Specifically, PROPCAST includes the exact compiled PitchMaker `pitchmaker_book.so`
+Specifically, Roar Markets includes the exact compiled former PitchMaker `pitchmaker_book.so`
 at `artifacts/fixtures/pitchmaker_book.so`, sourced from
 https://github.com/kamenev72/pitchmaker.git commit
 ed567ea53e87329819ac8b98fab2ad1ee3dbb031, repository-relative source path
 `artifacts/fixtures/pitchmaker_book.so`. It also includes the Apache-2.0 sibling-derived venue
 client, Borsh, discriminator, and transport seam under `packages/core/src/venue/` and `packages/core/src/loop/`,
-adapted where needed for PROPCAST's current ABI and in-memory factory integration.
+adapted where needed for Roar Markets' current ABI and in-memory factory integration.
 
 The kickoff-oracle account layouts this repository reads — including the
 OuBoundReceipt PDA scheme (["ou_bound", market_id]) — are hand-rolled from public

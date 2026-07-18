@@ -1,4 +1,4 @@
-// PROPCAST factory hardening (phase 3): per-key lock (race-free dedup + no cross-market starvation) + orphan-sweep.
+// Roar Markets factory hardening (phase 3): per-key lock (race-free dedup + no cross-market starvation) + orphan-sweep.
 
 import { describe, it, expect } from "vitest";
 import { MemoryTransport } from "../src/loop/memory_transport.js";
@@ -14,7 +14,7 @@ const goal = (fixtureId: bigint, minute: number, h: number, a: number): ScoreEve
   anotherGoalOdds: [1.8, 2.0],
 });
 
-describe("PROPCAST factory hardening", () => {
+describe("Roar Markets factory hardening", () => {
   it("per-key lock: concurrent re-deliveries of the SAME frame spawn ONE market (race-free dedup)", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const [a, b] = await Promise.all([f.onGoal(goal(3n, 10, 1, 0)), f.onGoal(goal(3n, 10, 1, 0))]);

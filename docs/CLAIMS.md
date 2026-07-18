@@ -1,6 +1,6 @@
 # CLAIMS
 
-Every public assertion PROPCAST makes, tagged. Tags: **VERIFIED-LIVE** (proven on devnet, hash on file),
+Every public assertion Roar Markets makes, tagged. Tags: **VERIFIED-LIVE** (proven on devnet, hash on file),
 **REPRODUCIBLE** (deterministic locally — run the gate), **DESIGN** (architecture intent, not yet proven
 live), **EXTERNAL** (a third-party fact), **NOT-CLAIMED** (an explicit non-claim, to pre-empt over-reading).
 
@@ -21,7 +21,7 @@ so the trust claim is checkable, not a bare green tick.
 ## What is proven
 
 - **VERIFIED-LIVE** — a real `OuBoundReceipt` was minted on Solana devnet via `kickoff_oracle::settle_ou_bound`,
-  gated by a TxLINE Merkle goal-total proof (`txoracle::validate_stat`), and PROPCAST's complete binding gate
+  gated by a TxLINE Merkle goal-total proof (`txoracle::validate_stat`), and Roar Markets' complete binding gate
   re-verified it on-chain (`over=false → NO`). Txs: proof `5k69yoyn…`, mint `4CzqNgSp…`, receipt `39vT6hs7…`,
   `market_id 532843…`, kickoff_oracle `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw`. See
   `artifacts/evidence/real_onchain_settle.md`.
@@ -37,7 +37,7 @@ so the trust claim is checkable, not a bare green tick.
   in-flight settlement with an opaque lease; forged market objects and sweep races fail closed.
 - **REPRODUCIBLE** — the SECONDARY "both teams to score" (BTTS) primitive: the consumer is grounded in the real
   `BttsBoundReceipt` layout (`yes`@48, the `["btts_bound", market_id]` PDA, the on-chain discriminator) and is
-  fail-closed + offset-pinned by `packages/core/test/btts.test.ts`. Not yet minted live for a PROPCAST market_id (DESIGN for
+  fail-closed + offset-pinned by `packages/core/test/btts.test.ts`. Not yet minted live for a Roar Markets market_id (DESIGN for
   the live mint); the OU primary is the proven (VERIFIED-LIVE) path.
 - **REPRODUCIBLE** — the goal-grain BREADTH: an O/U total-goals line-variant primitive (1.5 / 2.5 / 3.5),
   goal-key only, settling via the SAME `settle_ou_bound` rail but BOUND to its line — the consumer reads the
@@ -59,11 +59,11 @@ so the trust claim is checkable, not a bare green tick.
 - **DESIGN THESIS** — a named 2026-07-11 comparison sample informed the goal-grain supply-gap thesis; it is
   not a field-wide certainty or an external fact.
 - **EXTERNAL** — on-chain prediction markets, parlays, and in-game markets already exist (Azuro, Overtime, SX,
-  Totalis, Polymarket Combos). PROPCAST does NOT claim to be the first of those.
+  Totalis, Polymarket Combos). Roar Markets does NOT claim to be the first of those.
 
 ## Explicit non-claims
 
-- **NOT-CLAIMED** — no `$`-PnL, no MM-profit, no ROI. PROPCAST reports market **quality / coverage** only.
+- **NOT-CLAIMED** — no `$`-PnL, no MM-profit, no ROI. Roar Markets reports market **quality / coverage** only.
 - **NOT-CLAIMED** — device-local history, streak, accuracy, and the downloadable private SVG record card are not a
   public leaderboard, rank, reward, or "Prediction IQ". Those future concepts require identity, anti-sybil,
   server-authoritative pick locks, settlement and probability-scoring, retention, and proof prerequisites that v1

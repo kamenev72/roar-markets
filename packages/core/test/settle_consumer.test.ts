@@ -31,7 +31,7 @@ function acct(marketId: Uint8Array, data: Uint8Array, owner = KICKOFF_ORACLE_PRO
   return { pubkey: pubkey ?? ouReceiptPda(marketId), owner, data };
 }
 
-describe("PROPCAST settle-consumer (complete OuBoundReceipt market binding)", () => {
+describe("Roar Markets settle-consumer (complete OuBoundReceipt market binding)", () => {
   it("the pinned OU discriminator equals the real devnet receipt's first 8 bytes", () => {
     expect([...OU_BOUND_RECEIPT_DISCRIMINATOR]).toEqual([106, 75, 124, 75, 179, 40, 64, 35]);
   });

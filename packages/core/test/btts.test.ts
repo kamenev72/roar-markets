@@ -36,7 +36,7 @@ function acct(marketId: Uint8Array, data: Uint8Array, owner = KICKOFF_ORACLE_PRO
   return { pubkey: pubkey ?? bttsReceiptPda(marketId), owner, data };
 }
 
-describe("PROPCAST BTTS secondary primitive", () => {
+describe("Roar Markets BTTS secondary primitive", () => {
   it("the BTTS discriminator matches the on-chain account discriminator", () => {
     expect([...BTTS_BOUND_RECEIPT_DISCRIMINATOR]).toEqual([142, 71, 83, 247, 15, 163, 91, 164]);
   });

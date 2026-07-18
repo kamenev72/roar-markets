@@ -1,6 +1,6 @@
-# DEVLOG — PROPCAST
+# DEVLOG — Roar Markets
 
-Dated build journal for the PROPCAST goal-grain market and bound-receipt prototype (Track C).
+Dated build journal for the Roar Markets goal-grain market and bound-receipt prototype (Track C).
 
 ---
 
@@ -30,7 +30,7 @@ only; the intended hook was event-granular, not per-second; the factory reports 
 - `packages/core/test/settle_consumer.test.ts` 6/6 (53/53 total): valid over/under, the OU@50-vs-@48 crafted-`line_q` trap,
   the 3 gate negatives (foreign owner / wrong disc / wrong-market PDA), and the discriminator pinned to a
   REAL devnet receipt's first 8 bytes (`gvSwgSD8…`, owner `34FXjU…`, read this session).
-- **Deferred (rail/proof-gated):** the live devnet mint of a fresh OuBoundReceipt for a PROPCAST market_id
+- **Deferred (rail/proof-gated):** the live devnet mint of a fresh OuBoundReceipt for a Roar Markets market_id
   (needs the VSD total proof = a TxLINE Merkle fetch for an anchored fixture) + the venue-resolve tx. The
   TxLINE rail is now live (subscribe + X-Api-Token); a background watcher auto-captures the in-play scores
   schema during the next live WC match.
@@ -81,7 +81,7 @@ only; the intended hook was event-granular, not per-second; the factory reports 
 - **CP8 (if-time) — BTTS secondary primitive done** (`844fc38`): a "both teams to score" consumer
   (BTTS receipt parser, `yes`@48 — NOT 50, no `line_q`) + `bttsPrimitive`, grounded in the real
   `BttsBoundReceipt` layout + the verified discriminator + the `["btts_bound", market_id]` PDA;
-  fail-closed + offset-pinned by `packages/core/test/btts.test.ts` (6). Live mint for a PROPCAST market_id is DESIGN.
+  fail-closed + offset-pinned by `packages/core/test/btts.test.ts` (6). Live mint for a Roar Markets market_id is DESIGN.
   Remaining if-time: the live ~60s match beat (gated on a live WC match + the private proof-build).
 
 2026-06-29  **phase 2 schema PINNED — risk #1 CLOSED (the daemon caught a live match).** The

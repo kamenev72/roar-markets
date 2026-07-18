@@ -4,6 +4,21 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
+# The compatibility marker is allowed only when the entire git-grep record is
+# one of these three API-seam lines. Substring filtering would let an appended
+# retired-brand occurrence hide behind an allowed prefix.
+filter_brand_hits() {
+  grep -vFx 'packages/core/src/index.ts:export const PROPCAST = "propcast" as const;' \
+    | grep -vFx 'packages/core/test/smoke.test.ts:import { PROPCAST } from "../src/index.js";' \
+    | grep -vFx 'packages/core/test/smoke.test.ts:    expect(PROPCAST).toBe("propcast");'
+  return 0
+}
+
+if [[ "${1:-}" == "--filter-brand-hits" ]]; then
+  filter_brand_hits
+  exit 0
+fi
+
 # Proprietary-vocabulary patterns (internal finding-codes, memory layer, private repo names) + secret patterns.
 # Secret-shape patterns below use only POSIX ERE (no \s / \d) so they run identically on macOS BSD grep and CI GNU grep.
 PATTERNS=(
@@ -22,13 +37,46 @@ PATTERNS=(
   '(secretKey|secret_key|private[_-]?key)[": =]+[1-9A-HJ-NP-Za-km-z]{80,}'
 )
 FAIL=0
-# Search tracked files only (git ls-files); skip this script itself and lockfiles.
-FILES=$(git ls-files 2>/dev/null | grep -vE 'scripts/check_cleanroom\.sh$|\.lock$|yarn\.lock$' || true)
-[ -z "$FILES" ] && FILES=$(find . -type f -not -path './.git/*' -not -path './node_modules/*' -not -path './target/*' -not -name 'check_cleanroom.sh')
-# Optional extra files to scan (used by the selftest to prove the patterns fire on a synthetic; empty in CI).
-[ -n "${CLEANROOM_EXTRA_FILES:-}" ] && FILES="$FILES $CLEANROOM_EXTRA_FILES"
+
+# Emit paths as NUL-delimited records end to end. Whitespace-splitting a scalar
+# filename list would let a tracked secret in e.g. "submission notes.txt" evade
+# grep. CLEANROOM_EXTRA_FILES is newline-delimited when a selftest supplies more
+# than one path; production CI leaves it empty.
+extra_file_stream() {
+  local extra
+  [[ -n "${CLEANROOM_EXTRA_FILES:-}" ]] || return 0
+  while IFS= read -r extra; do
+    [[ -n "$extra" ]] && printf '%s\0' "$extra"
+  done <<< "$CLEANROOM_EXTRA_FILES"
+}
+
+scan_file_stream() {
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git ls-files -z -- . ':!scripts/check_cleanroom.sh' ':!*.lock' ':!yarn.lock'
+  else
+    find . -type f -not -path './.git/*' -not -path './node_modules/*' -not -path './target/*' -not -name 'check_cleanroom.sh' -print0
+  fi
+  extra_file_stream
+}
+
+# Roar Markets is the public product name. The lowercase compatibility domain
+# remains intentional; uppercase PROPCAST is permitted only at its exported API
+# seam and the assertion that proves that seam. Former PitchMaker material is
+# retained only as explicit Apache-2.0 provenance in NOTICE and its fixture note.
+collect_brand_hits() {
+  git grep -I -E 'PROPCAST|Propcast|PropCast' -- ':!package-lock.json' ':!app/package-lock.json' ':!scripts/check_cleanroom.sh' 2>/dev/null || true
+  if [ -n "${CLEANROOM_EXTRA_FILES:-}" ]; then
+    extra_file_stream | xargs -0 grep -HnIE 'PROPCAST|Propcast|PropCast' -- 2>/dev/null || true
+  fi
+}
+BRAND_HITS=$(collect_brand_hits | filter_brand_hits)
+if [ -n "$BRAND_HITS" ]; then
+  echo "❌ clean-room violation (retired public brand outside compatibility allowlist):"
+  echo "$BRAND_HITS"
+  FAIL=1
+fi
 for p in "${PATTERNS[@]}"; do
-  HITS=$(printf '%s\n' $FILES | xargs grep -nIE "$p" 2>/dev/null || true)
+  HITS=$(scan_file_stream | xargs -0 grep -nIE "$p" -- 2>/dev/null || true)
   if [ -n "$HITS" ]; then echo "❌ clean-room violation (pattern: $p):"; echo "$HITS"; FAIL=1; fi
 done
 

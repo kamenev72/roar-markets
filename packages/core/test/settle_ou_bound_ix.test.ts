@@ -1,4 +1,4 @@
-// PROPCAST's flagship claim is a REAL, CPI-gated kickoff receipt minted for a PROPCAST market — and it is
+// Roar Markets' flagship claim is a REAL, CPI-gated kickoff receipt minted for a Roar Markets market — and it is
 // produced by hand-encoding an instruction of a program we do not own. That encoder silently drifted once:
 // kickoff appended a trailing `min_final_ts: i64`, our mint kept sending the old shape, and every attempt died
 // with Anchor error 102 (InstructionDidNotDeserialize) while the script's comment still described the old

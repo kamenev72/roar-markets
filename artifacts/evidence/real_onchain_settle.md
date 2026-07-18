@@ -1,14 +1,14 @@
 # Real on-chain settle — devnet evidence
 
 One devnet receipt-binding evidence chain (NOT synthetic): a TxLINE Merkle total-proof, a real
-`OuBoundReceipt` minted through the `kickoff_oracle` `settle_ou_bound` CPI gate, and PROPCAST's complete
+`OuBoundReceipt` minted through the `kickoff_oracle` `settle_ou_bound` CPI gate, and Roar Markets' complete
 binding gate verifying that receipt. It does not prove a public finality hook or venue payout.
 
 | Step | Artifact (devnet) |
 |---|---|
 | 1. TxLINE total-proof (P1+P2, op=Add) **verified live** via `txoracle::validate_stat` | tx `5k69yoynmmieNqHNDpzCqozvffz8mKk8zwqZ7XTpDULSKwqGDLKQDZbkxkSvRoSrDd74teiDScQa1VyWuTPLCkpr` |
 | 2. real `OuBoundReceipt` minted via `kickoff_oracle::settle_ou_bound` (CPI-gated, Under 2.5) | tx `4CzqNgSp26tCbZ5NQx6mCErRQVHaZamScwD4JvTNmdo2Q885y2fHDtCqVfdyp8NDg7uajM2CsWMLrTvi1Z7kufAG` |
-| 3. PROPCAST complete binding gate over the on-chain receipt | `scripts/verify_real_settle.ts` → `over=false fixtureId=17588395 → NO` |
+| 3. Roar Markets complete binding gate over the on-chain receipt | `scripts/verify_real_settle.ts` → `over=false fixtureId=17588395 → NO` |
 
 - **market_id**: `532843d51b34f1140e08daf6570ee49204e65c670abf9b043bb37c7b5b452dc1` (`deriveMarketId(17588395, OuAnotherGoal, 0)`)
 - **receipt PDA**: `39vT6hs7hmqcQ3oaQ3AgCMJrdX2dz5973hhoffVQiX6n` (owner = `kickoff_oracle` `34FXjUuikioZy4fcUKSoP9NVW7WWKQnpJUZQcRDTNLtw`)
@@ -18,7 +18,7 @@ binding gate verifying that receipt. It does not prove a public finality hook or
 
 1. Build a fresh composite total proof for an ANCHORED fixture (fetch `/api/scores/stat-validation?fixtureId=&seq=&statKey=1&statKey2=2`, build the `validateStat` ix; the day's `daily_scores_roots` PDA must be anchored — finalized past days work, the current day anchors after it closes).
 2. `VSD_TOTAL_PATH=<fresh.json> node --import tsx scripts/mint_real_receipt.ts` → mints the receipt at `["ou_bound", market_id]`.
-3. `node --import tsx scripts/verify_real_settle.ts` → PROPCAST's consumer reads + verifies it on devnet.
+3. `node --import tsx scripts/verify_real_settle.ts` → Roar Markets' consumer reads + verifies it on devnet.
 
 ## Notes (load-bearing)
 

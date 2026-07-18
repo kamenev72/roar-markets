@@ -1,4 +1,4 @@
-// PROPCAST market_id contract — the single FROZEN seam threading spawn -> settle -> re-verify.
+// Roar Markets market_id contract — the single FROZEN seam threading spawn -> settle -> re-verify.
 //
 // One deterministic derivation produces BOTH forms a micro-market needs:
 //   - bytes  : the 32-byte id = SHA-256(domain || fixtureId_le64 || kind_u8 || nonce_le32). This is the kickoff

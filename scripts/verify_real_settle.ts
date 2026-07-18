@@ -1,5 +1,5 @@
 // Historical on-chain receipt check: read the REAL OuBoundReceipt minted via kickoff's settle_ou_bound CPI
-// path and run PROPCAST's complete market/fixture/line binding gate. This proves the account bytes and their
+// path and run Roar Markets' complete market/fixture/line binding gate. This proves the account bytes and their
 // immutable binding, not the private hook's mint-time finality policy or venue payout.
 import { Connection, PublicKey } from "@solana/web3.js";
 import { deriveMarketId, marketIdHex, PrimitiveKind } from "../packages/core/src/factory/market_id.js";

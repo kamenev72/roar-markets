@@ -29,7 +29,7 @@ function synthOu(marketId: Uint8Array, fixtureId: bigint, lineQ: number, over: b
   return d;
 }
 
-describe("PROPCAST total-goals O/U line-variant primitive (breadth)", () => {
+describe("Roar Markets total-goals O/U line-variant primitive (breadth)", () => {
   it("spawns 1.5 / 2.5 / 3.5 as THREE distinct, line-bound receipt markets", async () => {
     const f = new PropMarketFactory(new MemoryTransport());
     const m15 = await f.spawnTotalGoals(FIXTURE, 1.5, OU);

@@ -1,11 +1,11 @@
 # HONESTY
 
-The honesty invariant is the spine of PROPCAST. Every surface — UI, docs, demo — holds these lines.
+The honesty invariant is the spine of Roar Markets. Every surface — UI, docs, demo — holds these lines.
 
 1. **No money number.** No `$`-PnL, no MM-profit, no ROI, no "you could have made X". A fan venue is graded on
    experience + trust + coverage, never profit. The metrics module enforces this in code: a test asserts no
    metric field names a money quantity (`packages/core/test/metrics.test.ts`).
-2. **Goal grain only (v1).** Only goal stat keys (`statKey 1/2`) are TxLINE-validated on-chain. PROPCAST does
+2. **Goal grain only (v1).** Only goal stat keys (`statKey 1/2`) are TxLINE-validated on-chain. Roar Markets does
    not imply coverage of corners/cards/possession or arbitrary markets.
 3. **Event granularity, never per-second.** The intended private hook may act on goal/whistle frames; this
    public consumer does not prove that policy or finality. The free WC TxLINE tier is ~60s-delayed.

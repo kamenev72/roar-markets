@@ -1,6 +1,6 @@
 # MOCKS — the real-vs-simulated line
 
-PROPCAST draws this line precisely so nothing is over-read.
+Roar Markets draws this line precisely so nothing is over-read.
 
 ## REAL (on-chain, verifiable independently)
 

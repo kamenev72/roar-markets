@@ -43,21 +43,24 @@ goal-key primitive. All shown on the fan board with their de-vigged seeds.
 
 ## Run it locally (for the recording)
 
+Linux hosts must already provide Playwright's Chromium system libraries (or use a Playwright-supported image).
+The setup script never invokes `sudo`; CI alone provisions those libraries with
+`playwright install --with-deps chromium`.
+
 ```bash
-bash scripts/demo.sh        # one command: gate-green print + the on-chain re-verify (RPC key masked)
+bash scripts/judge_setup.sh # locked dependencies + Chromium + the complete deterministic gate
+bash scripts/demo.sh        # gate-green print + the on-chain re-verify (RPC key masked)
 # then, in a second terminal, open the fan board:
-npm --prefix app ci && npm --prefix app run dev
+npm --prefix app run dev
 ```
 
 Or step by step:
 
 ```bash
-npm ci
-npm run build && npm test && npm run ui:bundle-check && npm run ui:e2e # deterministic gates green
-npm run cleanroom && npm run doc-drift && npm run xss-guard            # release hygiene green
-npm --prefix app ci && npm --prefix app run dev                         # open the fan board
+bash scripts/judge_setup.sh                                            # install + all deterministic gates
+npm --prefix app run dev                                               # open the fan board
 # the REAL card re-verifies the live receipt; the SIMULATED walkthrough clicks through the flow
-node --import tsx scripts/verify_real_settle.ts                        # the same gate, in the terminal
+node --import tsx scripts/verify_real_settle.ts                        # the receipt gate, in the terminal
 ```
 
 ## Positioning one-liner

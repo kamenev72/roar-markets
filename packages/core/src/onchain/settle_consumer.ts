@@ -1,7 +1,7 @@
-// PROPCAST on-chain settle-consumer — a complete market/fixture/line fail-closed gate over a kickoff OuBoundReceipt,
-// then the over@50 read, mapped onto a PROPCAST "another goal" (O/U) micro-market resolution. The TS twin of
+// Roar Markets on-chain settle-consumer — a complete market/fixture/line fail-closed gate over a kickoff OuBoundReceipt,
+// then the over@50 read, mapped onto a Roar Markets "another goal" (O/U) micro-market resolution. The TS twin of
 // the parlay_slip program's verify_leg. A foreign / wrong-type / wrong-market account can NEVER resolve a
-// PROPCAST market (it throws). Pure (no I/O); the caller supplies the account read via getAccountInfo.
+// Roar Markets market (it throws). Pure (no I/O); the caller supplies the account read via getAccountInfo.
 
 import { PublicKey } from "@solana/web3.js";
 import {

@@ -1,4 +1,4 @@
-// PROPCAST goal-primitive trigger map. A scoring event yields the v1 PRIMARY prop: "will there be another
+// Roar Markets goal-primitive trigger map. A scoring event yields the v1 PRIMARY prop: "will there be another
 // goal" (an O/U-goals binary), seeded from the de-vigged consensus line. It has a kickoff bound-receipt rail.
 // "next-goal which-side" is emitted only as a labeled proxy because no on-chain proof attests goal order.
 
