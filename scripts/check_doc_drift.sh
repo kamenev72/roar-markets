@@ -168,7 +168,116 @@ if grep -q 'artifacts/evidence/ui' app/e2e/board.spec.ts; then
   fail=1
 fi
 
+# 5. Judge/share metadata must use the reviewed raster rather than the small SVG application mark. Keep one
+# byte-identical docs copy for review and pin the mobile glyph's native aspect ratio.
+SOCIAL_PUBLIC="app/public/roar-social-1280x640.png"
+SOCIAL_DOCS="docs/assets/roar-social-1280x640.png"
+SOCIAL_SVG="docs/assets/roar-social-1280x640.svg"
+SOCIAL_URL="https://roar-markets.vercel.app/roar-social-1280x640.png"
+if [[ ! -f "$SOCIAL_PUBLIC" || ! -f "$SOCIAL_DOCS" || ! -f "$SOCIAL_SVG" ]]; then
+  echo "❌ doc-drift: Roar social-preview source/public assets are incomplete"
+  fail=1
+else
+  og_url=$(grep -oE 'property="og:image" content="[^"]+"' app/index.html 2>/dev/null | sed -E 's/.*content="([^"]+)"/\1/' | head -1)
+  if [[ "$og_url" != "$SOCIAL_URL" ]]; then
+    echo "❌ doc-drift: og:image is '${og_url:-missing}', expected ${SOCIAL_URL}"
+    fail=1
+  elif ! grep -Fq 'property="og:image:type" content="image/png"' app/index.html ||
+       ! grep -Fq 'property="og:image:width" content="1280"' app/index.html ||
+       ! grep -Fq 'property="og:image:height" content="640"' app/index.html ||
+       ! grep -Fq 'name="twitter:card" content="summary_large_image"' app/index.html ||
+       ! grep -Fq "name=\"twitter:image\" content=\"$SOCIAL_URL\"" app/index.html; then
+    echo "❌ doc-drift: OG/Twitter metadata must declare the canonical 1280x640 PNG"
+    fail=1
+  elif ! cmp -s "$SOCIAL_PUBLIC" "$SOCIAL_DOCS"; then
+    echo "❌ doc-drift: public and reviewed Roar social-preview PNGs differ"
+    fail=1
+  else
+    if ! node - "$SOCIAL_PUBLIC" <<'JS'
+const fs = require("node:fs");
+const zlib = require("node:zlib");
+const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function validatePng(data) {
+  if (!data.subarray(0, 8).equals(signature)) throw new Error("bad PNG signature");
+  let offset = 8;
+  let ihdr = null;
+  const idat = [];
+  let sawIend = false;
+  let chunkIndex = 0;
+  while (offset < data.length) {
+    if (offset + 12 > data.length) throw new Error("truncated PNG chunk header");
+    const length = data.readUInt32BE(offset);
+    const kind = data.subarray(offset + 4, offset + 8);
+    const payloadEnd = offset + 8 + length;
+    const chunkEnd = payloadEnd + 4;
+    if (chunkEnd > data.length) throw new Error("truncated PNG chunk payload");
+    const payload = data.subarray(offset + 8, payloadEnd);
+    if (crc32(Buffer.concat([kind, payload])) !== data.readUInt32BE(payloadEnd)) throw new Error("PNG chunk CRC mismatch");
+    const name = kind.toString("ascii");
+    if (chunkIndex === 0 && name !== "IHDR") throw new Error("IHDR is not the first chunk");
+    if (name === "IHDR") {
+      if (ihdr || length !== 13) throw new Error("invalid IHDR");
+      ihdr = payload;
+    } else if (name === "IDAT") {
+      idat.push(payload);
+    } else if (name === "IEND") {
+      if (length !== 0 || chunkEnd !== data.length) throw new Error("invalid IEND or trailing bytes");
+      sawIend = true;
+      offset = chunkEnd;
+      break;
+    }
+    offset = chunkEnd;
+    chunkIndex += 1;
+  }
+  if (!ihdr || idat.length === 0 || !sawIend || offset !== data.length) throw new Error("PNG is missing IHDR, IDAT, or IEND");
+  const fields = [ihdr.readUInt32BE(0), ihdr.readUInt32BE(4), ...ihdr.subarray(8, 13)];
+  const expected = [1280, 640, 8, 2, 0, 0, 0];
+  if (!fields.every((value, index) => value === expected[index])) throw new Error("PNG must be non-interlaced 1280x640 8-bit RGB");
+  const decoded = zlib.inflateSync(Buffer.concat(idat));
+  const stride = 1 + 1280 * 3;
+  if (decoded.length !== 640 * stride) throw new Error("PNG scanline length mismatch");
+  for (let row = 0; row < 640; row += 1) if (decoded[row * stride] > 4) throw new Error("invalid PNG scanline filter");
+}
+
+const blob = fs.readFileSync(process.argv[2]);
+validatePng(blob);
+for (const corrupt of [blob.subarray(0, 24), Buffer.concat([blob.subarray(0, -1), Buffer.from([blob.at(-1) ^ 1])])]) {
+  try {
+    validatePng(corrupt);
+    throw new Error("PNG validator self-test accepted corrupt input");
+  } catch (error) {
+    if (error.message === "PNG validator self-test accepted corrupt input") throw error;
+  }
+}
+console.log("1280x640 RGB PNG decoded with valid chunks/CRCs");
+JS
+    then
+      echo "❌ doc-drift: public social preview is not a fully decodable 1280x640 RGB PNG"
+      fail=1
+    elif ! grep -Fq 'M8 6 A25 25 0 0 1 33 31' "$SOCIAL_SVG"; then
+      echo "❌ doc-drift: social-preview SVG does not carry the current Roar signal mark"
+      fail=1
+    else
+      echo "✅ social preview: canonical PNG metadata, 1280x640 bytes, docs/public parity, and current signal mark match."
+    fi
+  fi
+fi
+if ! grep -Fq '.brand img { width: 38px; height: auto; }' app/src/app.css; then
+  echo "❌ doc-drift: mobile Roar glyph must preserve its native 44:40 aspect ratio"
+  fail=1
+fi
+
 if [[ $fail -eq 0 ]]; then
-  echo "✅ doc-drift gate passed (no stale-progress language; deployed ids consistent)."
+  echo "✅ doc-drift gate passed (docs, deployment contract, social card, and mobile mark stay aligned)."
 fi
 exit $fail

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Roar Markets social preview</title>
+  <desc id="desc">The Roar Markets signal mark beside the words Roar Markets and Call the moment. Keep the proof.</desc>
+  <rect width="1280" height="640" fill="#06142E"/>
+  <path d="M0 486 430 640H0Z" fill="#0B2450"/>
+  <path d="M1280 0v178L900 0Z" fill="#0B2450"/>
+  <path d="M0 520h1280" stroke="#17345E" stroke-width="2"/>
+  <path d="M80 520c260-86 475-86 730 0s390 86 470 34" fill="none" stroke="#17345E" stroke-width="2"/>
+  <g transform="translate(72 186) scale(6)">
+    <circle cx="8" cy="31" r="5.5" fill="#FFD65A"/>
+    <path d="M8 20 A11 11 0 0 1 19 31" fill="none" stroke="#65D8FF" stroke-width="3.6" stroke-linecap="round"/>
+    <path d="M8 13 A18 18 0 0 1 26 31" fill="none" stroke="#65D8FF" stroke-width="4.2" stroke-linecap="round"/>
+    <path d="M8 6 A25 25 0 0 1 33 31" fill="none" stroke="#65D8FF" stroke-width="4.8" stroke-linecap="round"/>
+  </g>
+  <text x="410" y="302" fill="#F6F8FC" font-family="Arial, sans-serif" font-size="92" font-weight="700">Roar Markets</text>
+  <text x="416" y="382" fill="#B7C6D8" font-family="Arial, sans-serif" font-size="38">Call the moment. Keep the proof.</text>
+  <rect x="416" y="424" width="126" height="7" rx="3.5" fill="#FFD65A"/>
+  <rect x="552" y="424" width="52" height="7" rx="3.5" fill="#65D8FF"/>
+</svg>
