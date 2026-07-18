@@ -92,6 +92,28 @@ if [[ $? -ne 0 || "$actual_vercel_install" != "$expected_vercel_install" ]]; the
   echo "❌ doc-drift: Vercel install command must exactly run locked root then app installs"
   fail=1
 fi
+if ! node -e '
+  const lock = require("./app/package-lock.json");
+  const entry = lock.packages?.["node_modules/@playwright/test"];
+  if (!entry ||
+      entry.version !== "1.61.1" ||
+      entry.resolved !== "https://registry.npmjs.org/@playwright/test/-/test-1.61.1.tgz" ||
+      entry.integrity !== "sha512-8nKv6+0RJSL9FE4jYOEGXnPeM/Hg12qZpmqzZjRh3qM0Y7c3z1mrOTfFLids72RDQYVh9WpLEfR5WdpNX4fkig==") process.exit(2);
+' 2>/dev/null; then
+  echo "❌ doc-drift: app lockfile must pin the reviewed Playwright version, tarball, and integrity"
+  fail=1
+fi
+if ! node -e '
+  const fs = require("node:fs");
+  const expected = [
+    "node_modules/", "app/node_modules/", "app/dist/", "app/test-results/", "dist/", ".git/", ".github/",
+    "artifacts/fixtures/", "reports/", "scripts/", "packages/core/test/", "tests/", "docs/", "*.md", "!README.md",
+  ].join("\n") + "\n";
+  if (fs.readFileSync(".vercelignore", "utf8") !== expected) process.exit(2);
+' 2>/dev/null; then
+  echo "❌ doc-drift: .vercelignore must exactly preserve the reviewed deploy-context boundary"
+  fail=1
+fi
 if [[ ! -x scripts/judge_setup.sh ]]; then
   echo "❌ doc-drift: scripts/judge_setup.sh must be executable"
   fail=1
