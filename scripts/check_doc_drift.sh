@@ -193,10 +193,29 @@ else
     echo "❌ doc-drift: public and reviewed Roar social-preview PNGs differ"
     fail=1
   else
-    if ! node - "$SOCIAL_PUBLIC" <<'JS'
+    if ! node - "$SOCIAL_PUBLIC" "$SOCIAL_SVG" <<'JS'
 const fs = require("node:fs");
+const crypto = require("node:crypto");
 const zlib = require("node:zlib");
 const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+const reviewedPngSha256 = "286045577aed03b16155ff41f4f0af7e4676bce67b488da4cb18e83cd8867c61";
+const reviewedSvgSha256 = "c00f318c064b6534f18724e54d8f9fe8ccc254d0c0ee26fc0aaf9e8aa5f829a5";
+const signalPrimitives = [
+  '<circle cx="8" cy="31" r="5.5" fill="#FFD65A"/>',
+  '<path d="M8 20 A11 11 0 0 1 19 31" fill="none" stroke="#65D8FF" stroke-width="3.6" stroke-linecap="round"/>',
+  '<path d="M8 13 A18 18 0 0 1 26 31" fill="none" stroke="#65D8FF" stroke-width="4.2" stroke-linecap="round"/>',
+  '<path d="M8 6 A25 25 0 0 1 33 31" fill="none" stroke="#65D8FF" stroke-width="4.8" stroke-linecap="round"/>',
+];
+
+function sha256(data) {
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
+
+function validateSignalGeometry(source) {
+  for (const primitive of signalPrimitives) {
+    if (!source.includes(primitive)) throw new Error(`social-preview SVG is missing signal primitive: ${primitive}`);
+  }
+}
 
 function crc32(buffer) {
   let crc = 0xffffffff;
@@ -250,7 +269,13 @@ function validatePng(data) {
 }
 
 const blob = fs.readFileSync(process.argv[2]);
+const svgBlob = fs.readFileSync(process.argv[3]);
+const svgSource = svgBlob.toString("utf8");
 validatePng(blob);
+validateSignalGeometry(svgSource);
+if (sha256(blob) !== reviewedPngSha256 || sha256(svgBlob) !== reviewedSvgSha256) {
+  throw new Error("social-preview PNG/SVG no longer match the reviewed source/raster pair");
+}
 for (const corrupt of [blob.subarray(0, 24), Buffer.concat([blob.subarray(0, -1), Buffer.from([blob.at(-1) ^ 1])])]) {
   try {
     validatePng(corrupt);
@@ -259,16 +284,20 @@ for (const corrupt of [blob.subarray(0, 24), Buffer.concat([blob.subarray(0, -1)
     if (error.message === "PNG validator self-test accepted corrupt input") throw error;
   }
 }
-console.log("1280x640 RGB PNG decoded with valid chunks/CRCs");
+const withoutDot = svgSource.replace(signalPrimitives[0], "");
+try {
+  validateSignalGeometry(withoutDot);
+  throw new Error("signal-geometry self-test accepted an SVG without the canonical dot");
+} catch (error) {
+  if (error.message === "signal-geometry self-test accepted an SVG without the canonical dot") throw error;
+}
+console.log("reviewed 1280x640 RGB PNG/SVG pair decoded and retained all signal primitives");
 JS
     then
       echo "❌ doc-drift: public social preview is not a fully decodable 1280x640 RGB PNG"
       fail=1
-    elif ! grep -Fq 'M8 6 A25 25 0 0 1 33 31' "$SOCIAL_SVG"; then
-      echo "❌ doc-drift: social-preview SVG does not carry the current Roar signal mark"
-      fail=1
     else
-      echo "✅ social preview: canonical PNG metadata, 1280x640 bytes, docs/public parity, and current signal mark match."
+      echo "✅ social preview: canonical metadata, docs/public parity, and reviewed SVG/PNG signal pair match."
     fi
   fi
 fi
