@@ -1,24 +1,30 @@
 <p align="center">
-  <img src="app/public/roar-mark.svg" width="88" height="88" alt="Roar Markets mark">
+  <img src="app/public/roar-mark.svg" width="96" height="96" alt="Roar Markets mark">
 </p>
 
 <h1 align="center">Roar Markets</h1>
 
 <p align="center">
   <strong>Call the next match moment. Keep its proof attached.</strong><br>
-  A fan-first World Cup prototype for quick yes-or-no picks whose result stays bound to the exact fixture and line.
+  A fan-first World Cup prototype for quick yes-or-no picks whose result stays bound to the exact
+  market, fixture and line — re-checkable in your browser, no wallet, no signup.
 </p>
 
 <p align="center">
-  <a href="https://roar-markets.vercel.app"><img src="https://img.shields.io/badge/app-live%20demo-65D8FF?style=flat-square" alt="Roar Markets live demo"></a>
-  <img src="https://img.shields.io/badge/network-Solana%20devnet-06142E?style=flat-square" alt="Solana devnet">
-  <img src="https://img.shields.io/badge/proof-fixture%20%2B%20line%20bound-3AD29F?style=flat-square" alt="Fixture and line bound proof">
-  <img src="https://img.shields.io/badge/tests-judge%20gate-FFD65A?style=flat-square" alt="Judge test gate">
-  <img src="https://img.shields.io/badge/license-Apache--2.0-64748B?style=flat-square" alt="Apache 2.0 license">
+  <em>Don't trust our resolver — re-check ours.</em>
 </p>
 
 <p align="center">
-  <strong><a href="https://roar-markets.vercel.app">Open the live Roar Markets match experience →</a></strong>
+  <a href="https://roar-markets.vercel.app"><img src="https://img.shields.io/badge/app-live%20demo-65D8FF?style=flat-square&labelColor=030B1C" alt="Roar Markets live demo"></a>
+  <img src="https://img.shields.io/badge/network-Solana%20devnet-2A4066?style=flat-square&labelColor=030B1C" alt="Solana devnet">
+  <img src="https://img.shields.io/badge/proof-market%20%C2%B7%20fixture%20%C2%B7%20line%20bound-3AD29F?style=flat-square&labelColor=030B1C" alt="Market, fixture and line bound proof">
+  <img src="https://img.shields.io/badge/gate-npm%20run%20judge--demo-FFD65A?style=flat-square&labelColor=030B1C" alt="Judge gate command">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-8FA6C1?style=flat-square&labelColor=030B1C" alt="Apache 2.0 license">
+</p>
+
+<p align="center">
+  <strong><a href="https://roar-markets.vercel.app">Open the live match experience →</a></strong>
+  &nbsp;·&nbsp; <code>npm run judge-demo</code> runs the whole gate
 </p>
 
 ## The problem

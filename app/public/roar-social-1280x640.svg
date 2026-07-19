@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Roar Markets social preview</title>
+  <desc id="desc">The Roar Markets signal mark beside the words Roar Markets and Call the next match moment. Keep its proof attached.</desc>
+  <rect width="1280" height="640" fill="#030B1C"></rect>
+  <g transform="translate(1208 72)">
+    <circle r="22" fill="#FFD65A"></circle>
+    <path d="M-130 0 A130 130 0 0 0 0 130" fill="none" stroke="#65D8FF" stroke-opacity="0.5" stroke-width="20" stroke-linecap="round"></path>
+    <path d="M-230 0 A230 230 0 0 0 0 230" fill="none" stroke="#65D8FF" stroke-opacity="0.28" stroke-width="24" stroke-linecap="round"></path>
+    <path d="M-330 0 A330 330 0 0 0 0 330" fill="none" stroke="#65D8FF" stroke-opacity="0.14" stroke-width="28" stroke-linecap="round"></path>
+    <path d="M-430 0 A430 430 0 0 0 0 430" fill="none" stroke="#65D8FF" stroke-opacity="0.07" stroke-width="32" stroke-linecap="round"></path>
+  </g>
+  <rect x="72" y="64" width="196" height="46" rx="4" fill="none" stroke="#2A4066" stroke-width="1.5"></rect>
+  <circle cx="96" cy="87" r="6" fill="#FF6B5F"></circle>
+  <text x="112" y="95" fill="#F7F6EF" font-family="Menlo, Consolas, monospace" font-size="22" font-weight="700" letter-spacing="2">LIVE · WC 2026</text>
+  <text x="72" y="298" fill="#F7F6EF" font-family="&#39;Arial Narrow&#39;, Arial, sans-serif" font-size="132" font-weight="700" letter-spacing="-3">ROAR <tspan fill="#65D8FF">MARKETS</tspan></text>
+  <rect x="76" y="336" width="72" height="6" fill="#FFD65A"></rect>
+  <text x="172" y="358" fill="#D5DFEC" font-family="Arial, sans-serif" font-size="34" font-weight="600">Call the next match moment. Keep its proof attached.</text>
+  <path d="M72 520h1136" stroke="#2A4066" stroke-width="1.5"></path>
+  <text x="72" y="566" fill="#8FA6C1" font-family="Menlo, Consolas, monospace" font-size="24" letter-spacing="1">roar-markets.vercel.app</text>
+  <text x="1208" y="566" fill="#65D8FF" font-family="Menlo, Consolas, monospace" font-size="24" letter-spacing="1" text-anchor="end">don&#39;t trust our resolver — re-check ours</text>
+</svg>
